@@ -22,14 +22,22 @@ public class PlayerController : MonoBehaviour
 
     private CharacterController _cc;
     private InputReader _input;
+    private SkeletonBody _skeletonBody;
     private Vector3 _velocity;
     private Vector3 _smoothMoveVelocity;
     private float _coyoteTimer;
+
+    private bool _isFirstPerson;
+    public void SetFirstPersonLock(bool locked)
+    {
+        _isFirstPerson = locked;
+    }
 
     private void Awake()
     {
         _cc = GetComponent<CharacterController>();
         _input = GetComponent<InputReader>();
+        _skeletonBody = GetComponent<SkeletonBody>();
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -40,6 +48,13 @@ public class PlayerController : MonoBehaviour
         bool isGrounded = CheckGround();
 
         HandleGravity(isGrounded);
+        if (_skeletonBody.IsIncapacitated || _isFirstPerson)
+        {
+            _input.ConsumeJump(); 
+            
+            _cc.Move(Vector3.SmoothDamp(_smoothMoveVelocity, Vector3.zero, ref _smoothMoveVelocity, accelerationTime) * Time.deltaTime);
+            return;
+        }
         HandleJump(isGrounded);
         HandleMovement();
     }
@@ -68,6 +83,11 @@ public class PlayerController : MonoBehaviour
 
     private void HandleJump(bool isGrounded)
     {
+        if (_skeletonBody.GetLegCount() == 0)
+        {
+            _input.ConsumeJump();
+            return;
+        }
         if (_input.JumpPressed && _coyoteTimer > 0f)
         {
             _velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
@@ -85,9 +105,10 @@ public class PlayerController : MonoBehaviour
 
         if (move.magnitude > 1f) move.Normalize();
 
-        float speed = _input.IsRunning ? runSpeed : walkSpeed;
+        float currentMaxSpeed = _input.IsRunning ? runSpeed : walkSpeed;
+        float finalSpeed = currentMaxSpeed * _skeletonBody.GetMovementMultiplier();
 
-        Vector3 targetVelocity = move * speed;
+        Vector3 targetVelocity = move * finalSpeed;
         Vector3 smoothedVelocity = Vector3.SmoothDamp(_smoothMoveVelocity, targetVelocity, ref _smoothMoveVelocity, accelerationTime);
 
         _cc.Move(smoothedVelocity * Time.deltaTime);
