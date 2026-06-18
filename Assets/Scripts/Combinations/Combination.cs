@@ -10,7 +10,7 @@ public class Combination
     private readonly int _requiredCardCount;
 
     // GC Optimization: Переиспользуемый буфер для исключения аллокаций в куче (Heap Allocation) во время рекурсии
-    private static readonly List<CardData> _executionBuffer = new List<CardData>(13);
+    private static readonly List<CardData> _executionBuffer = new List<CardData>(32);
 
     public string DisplayName => _displayName;
     public string Description => _description;
@@ -23,7 +23,7 @@ public class Combination
         _rules = rules ?? new List<CombinationRule>();
         _rules = _rules.OrderBy(GetRulePriority).ToList();
 
-        //Ищем минимальный ParamN среди правил, где он задан (> 0)
+        //Ищем максимальный ParamN среди правил, где он задан (> 0)
         var rulesWithParamN = _rules.Where(r => r.ParamN > 0).ToList();
         _requiredCardCount = rulesWithParamN.Count > 0
             ? rulesWithParamN.Max(r => r.ParamN)
@@ -120,21 +120,51 @@ public class Combination
             if ((rule.Type == CombinationRuleType.AllDifferentRanks || rule.Type == CombinationRuleType.AllDifferentSuits)
                 && !rule.Check(currentSubset))
                 return false;
+
+            if (rule.Type == CombinationRuleType.ExactCardCount)
+            {
+                if (currentCount > rule.ParamN)
+                    return false;
+
+                if (rule.Check(currentSubset))
+                {
+                    bool allPassed = true;
+                    for (int r1 = 0; r1 < _rules.Count; r1++)
+                    {
+                        if (r1 == r) continue;
+
+                        if (!_rules[r1].Check(currentSubset))
+                        {
+                            allPassed = false;
+                            break;
+                        }
+                    }
+                    if (allPassed) return true;
+                    }
+
+                    return false;
+                }
         }
 
-        // Базовый случай: Набрали нужное число карт, проводим финальную проверку тяжелых правил (последовательности и др.)
-        if (currentCount == _requiredCardCount)
+        // Базовый случай: Набрали нужное число карт, проводим финальную проверку
+        if (currentCount >= _requiredCardCount)
         {
+            bool allRulesPassed = true;
             for (int r = 0; r < _rules.Count; r++)
             {
-                if (!_rules[r].Check(currentSubset)) return false;
+                if (!_rules[r].Check(currentSubset))
+                {
+                    allRulesPassed = false;
+                    break;
+                }
             }
-            return true;
+            if (allRulesPassed) return true;
         }
 
         // Оптимизация: Если оставшихся в пуле карт физически не хватит до размера комбинации — выходим
         int cardsNeeded = _requiredCardCount - currentCount;
-        if (pool.Count - startIndex < cardsNeeded) return false;
+        if (cardsNeeded > 0 && (pool.Count - startIndex < cardsNeeded))
+            return false;
 
         // Рекурсивное построение комбинаций. startIndex гарантирует движение только вперед (исключает дубликаты перестановок)
         for (int i = startIndex; i < pool.Count; i++)

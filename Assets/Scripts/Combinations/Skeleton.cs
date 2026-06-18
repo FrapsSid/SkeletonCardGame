@@ -3,8 +3,8 @@ public class Skeleton
 {
     public Hand Hand { get; private set; }
 
-    public Skeleton(int armsCount)
+    public Skeleton()
     {
-        Hand = new Hand(armsCount);
+        Hand = new Hand();
     }
 }
