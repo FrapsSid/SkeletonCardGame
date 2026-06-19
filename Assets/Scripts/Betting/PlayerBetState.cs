@@ -1,39 +1,19 @@
 using System;
 using System.Collections.Generic;
-
-using Player = Skeleton;
+using System.Linq;
 
 [Serializable]
-public class PlayerBetState {
-    public Player player;
-    public DeclaredCombinationTier declaredTarget;
-    public bool hasDeclaredTarget;
+public class PlayerBetState
+{
+    public DeclaredCombinationTier? declaredTarget;
+    public bool HasDeclaredTarget { get => declaredTarget != null; }
     public bool hasFolded;
-    public List<StakeAsset> committedAssets = new List<StakeAsset>();
-    public int committedValue;
-    public bool hasMatchedCurrentPrice;
+    public IList<StakeAsset> committedAssets = new List<StakeAsset>();
+    public int committedValue = 0;
+    public int AssetsValue { get => committedAssets.Sum(a => a.stakeValue); }
 
-    public bool folded
+    public PlayerBetState(DeclaredCombinationTier? declaredTarget = null)
     {
-        get => hasFolded;
-        set => hasFolded = value;
-    }
-
-    public PlayerBetState() {
-    }
-
-    public PlayerBetState(Player player) {
-        this.player = player;
-    }
-
-    public PlayerBetState(DeclaredCombinationTier declaredTarget) {
         this.declaredTarget = declaredTarget;
-        hasDeclaredTarget = true;
-    }
-
-    public PlayerBetState(DeclaredCombinationTier declaredTarget, bool folded) {
-        this.declaredTarget = declaredTarget;
-        hasDeclaredTarget = true;
-        hasFolded = folded;
     }
 }
