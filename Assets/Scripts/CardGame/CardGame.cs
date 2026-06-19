@@ -14,9 +14,11 @@ namespace Assets.Scripts.CardGame
      4. Call StartRound(): moves to BettingRoundStart and raises OnRoundStarted.
      5. Call StartBettingRound(): moves to Betting, raises OnBettingRoundStarted,
         then OnTurnStarted for the first active player.
-     6. During Betting, external input should call round.Call/Raise/TakeCard/Fold/EndTurn for CurrentPlayer.
+     6. During Betting, external input should call round.Call/Raise/AllIn/TakeCard/Fold/EndTurn for CurrentPlayer.
         These methods can raise OnTargetDeclared, OnTargetUpgraded, OnPriceMatched, OnPriceRaised,
         OnCardTaken, OnPlayerFolded, OnTurnEnded, and OnTurnStarted as turns advance.
+        An all-in team no longer has to match future bets, but its players still receive turns,
+        can take cards or fold, and participate in scoring while active.
      7. When a betting round ends, OnBettingRoundEnded is raised. If phase becomes AddingCards,
         call DealTableCards(): it deals table cards, raises OnTableCardsDealt, and moves to BettingRoundStart.
         Then call StartBettingRound() again.
@@ -44,6 +46,7 @@ namespace Assets.Scripts.CardGame
             public Dictionary<Player, PlayerTurnState> playerTurnStates = new Dictionary<Player, PlayerTurnState>();
             public int currentParticipationPrice;
             private readonly HashSet<Player> activePlayers = new HashSet<Player>();
+            private readonly HashSet<Team> allInTeams = new HashSet<Team>();
             public IReadOnlyCollection<Player> ActivePlayers => activePlayers;
             private CardGame game;
             public int lastRaise = 0;
@@ -67,6 +70,7 @@ namespace Assets.Scripts.CardGame
             public bool CanRaise(Player player)
             {
                 return IsBettingPhase()
+                    && !IsTeamAllIn(player.team)
                     && playerTurnStates[player] != PlayerTurnState.TakenACard;
             }
             public bool CanTakeCard(Player player)
@@ -108,6 +112,8 @@ namespace Assets.Scripts.CardGame
             public bool CanBet(Player player, int bet, IList<StakeAsset> assets, DeclaredCombinationTier combination)
             {
                 if (!IsBettingPhase())
+                    return false;
+                if (IsTeamAllIn(player.team))
                     return false;
 
                 if (bet < currentParticipationPrice)
@@ -154,6 +160,60 @@ namespace Assets.Scripts.CardGame
                     game.RaisePriceMatched(player, currentParticipationPrice);
                 }
             }
+            public bool IsTeamAllIn(Team team)
+            {
+                return allInTeams.Contains(team);
+            }
+            public bool CanAllIn(Player player, DeclaredCombinationTier combination)
+            {
+                if (!IsBettingPhase())
+                    return false;
+                if (CurrentPlayer != player)
+                    return false;
+                if (!activePlayers.Contains(player))
+                    return false;
+                if (IsTeamAllIn(player.team))
+                    return false;
+                return CanUpdateCombination(player, combination);
+            }
+            public void AllIn(Player player, DeclaredCombinationTier combination)
+            {
+                EnsureBettingPhase();
+                CheckPlayersTurn(player);
+                if (!CanAllIn(player, combination))
+                    throw new InvalidOperationException("Invalid all-in");
+
+                var state = playerStates[player];
+                DeclaredCombinationTier? oldTarget = state.declaredTarget;
+                List<StakeAsset> assets = player.team.Assets.ToList();
+
+                state.committedValue = CalculateStakeValue(assets);
+                state.committedAssets.Clear();
+                foreach (StakeAsset asset in assets)
+                {
+                    state.committedAssets.Add(asset);
+                }
+
+                state.declaredTarget = combination;
+                allInTeams.Add(player.team);
+
+                if (oldTarget == null)
+                    game.RaiseTargetDeclared(player, combination);
+                else if (combination > oldTarget.Value)
+                    game.RaiseTargetUpgraded(player, combination);
+
+                if (state.committedValue > currentParticipationPrice)
+                {
+                    currentParticipationPrice = state.committedValue;
+                    playerTurnStates[player] = PlayerTurnState.Raised;
+                    lastRaise = 0;
+                    game.RaisePriceRaised(player, currentParticipationPrice);
+                }
+                else
+                {
+                    game.RaisePriceMatched(player, currentParticipationPrice);
+                }
+            }
             public void TakeCard(Player player)
             {
                 EnsureBettingPhase();
@@ -165,7 +225,7 @@ namespace Assets.Scripts.CardGame
             }
             public bool HasMatchedBet(Player player)
             {
-                return playerStates[player].committedValue == currentParticipationPrice;
+                return IsTeamAllIn(player.team) || playerStates[player].committedValue == currentParticipationPrice;
             }
             public void EndTurn(Player player)
             {
@@ -188,7 +248,6 @@ namespace Assets.Scripts.CardGame
 
                 if (activePlayers.Count <= 1)
                     throw new InvalidOperationException("Last active player cannot fold");
-
                 PlayerBetState state = playerStates[player];
                 state.hasFolded = true;
                 activePlayers.Remove(player);
