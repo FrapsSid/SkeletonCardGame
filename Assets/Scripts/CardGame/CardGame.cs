@@ -6,6 +6,25 @@ namespace Assets.Scripts.CardGame
 {
     using Player = Skeleton;
 
+    /*
+     External game flow:
+     1. Subscribe to events before starting the round flow. Every phase assignment raises OnPhaseChanged.
+     2. Call DealPlayersCards(): deals private cards and moves to ShowingCombinations.
+     3. Call ShowCombinations(): creates round and moves to RoundStart.
+     4. Call StartRound(): moves to BettingRoundStart and raises OnRoundStarted.
+     5. Call StartBettingRound(): moves to Betting, raises OnBettingRoundStarted,
+        then OnTurnStarted for the first active player.
+     6. During Betting, external input should call round.Call/Raise/TakeCard/Fold/EndTurn for CurrentPlayer.
+        These methods can raise OnTargetDeclared, OnTargetUpgraded, OnPriceMatched, OnPriceRaised,
+        OnCardTaken, OnPlayerFolded, OnTurnEnded, and OnTurnStarted as turns advance.
+     7. When a betting round ends, OnBettingRoundEnded is raised. If phase becomes AddingCards,
+        call DealTableCards(): it deals table cards, raises OnTableCardsDealt, and moves to BettingRoundStart.
+        Then call StartBettingRound() again.
+     8. If phase becomes End, no winners or assets are resolved automatically. External code must call
+        round.DetermineWinners(), then round.ResolvePot(). ResolvePot transfers assets, raises
+        OnPotResolved, then raises OnRoundEnded.
+     9. Call ResetRound() from DealingCards or End to return to DealingCards for a new round.
+     */
     public class CardGame
     {
         public class Round
