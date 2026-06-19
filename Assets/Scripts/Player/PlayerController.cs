@@ -24,10 +24,11 @@ public class PlayerController : MonoBehaviour
     private InputReader _input;
     private SkeletonBody _skeletonBody;
     private Vector3 _velocity;
+    private Vector3 _horizontalVelocity;
     private Vector3 _smoothMoveVelocity;
     private float _coyoteTimer;
-
     private bool _isFirstPerson;
+
     public void SetFirstPersonLock(bool locked)
     {
         _isFirstPerson = locked;
@@ -48,13 +49,13 @@ public class PlayerController : MonoBehaviour
         bool isGrounded = CheckGround();
 
         HandleGravity(isGrounded);
-        if (_skeletonBody.IsIncapacitated || _isFirstPerson)
+        if (_skeletonBody.IsIncapacitated || InventoryUI.IsAnyInventoryOpen)
         {
-            _input.ConsumeJump(); 
-            
-            _cc.Move(Vector3.SmoothDamp(_smoothMoveVelocity, Vector3.zero, ref _smoothMoveVelocity, accelerationTime) * Time.deltaTime);
+            _input.ConsumeJump();
+            StopHorizontalMovement();
             return;
         }
+
         HandleJump(isGrounded);
         HandleMovement();
     }
@@ -70,7 +71,10 @@ public class PlayerController : MonoBehaviour
         if (isGrounded)
         {
             _coyoteTimer = coyoteTime;
-            if (_velocity.y < 0) _velocity.y = -2f;
+            if (_velocity.y < 0)
+            {
+                _velocity.y = -2f;
+            }
         }
         else
         {
@@ -88,36 +92,52 @@ public class PlayerController : MonoBehaviour
             _input.ConsumeJump();
             return;
         }
+
         if (_input.JumpPressed && _coyoteTimer > 0f)
         {
             _velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             _coyoteTimer = 0f;
         }
+
         _input.ConsumeJump();
     }
 
     private void HandleMovement()
     {
         Vector2 input = _input.MoveInput;
-        Vector3 move = new Vector3(input.x, 0f, input.y);
+        Vector3 move = _isFirstPerson
+            ? transform.right * input.x + transform.forward * input.y
+            : new Vector3(input.x, 0f, input.y);
 
-        move = Quaternion.Euler(0, cameraTransform.eulerAngles.y, 0) * move;
+        if (!_isFirstPerson && cameraTransform != null)
+        {
+            move = Quaternion.Euler(0f, cameraTransform.eulerAngles.y, 0f) * move;
+        }
 
-        if (move.magnitude > 1f) move.Normalize();
+        if (move.magnitude > 1f)
+        {
+            move.Normalize();
+        }
 
         float currentMaxSpeed = _input.IsRunning ? runSpeed : walkSpeed;
         float finalSpeed = currentMaxSpeed * _skeletonBody.GetMovementMultiplier();
 
         Vector3 targetVelocity = move * finalSpeed;
-        Vector3 smoothedVelocity = Vector3.SmoothDamp(_smoothMoveVelocity, targetVelocity, ref _smoothMoveVelocity, accelerationTime);
+        _horizontalVelocity = Vector3.SmoothDamp(_horizontalVelocity, targetVelocity, ref _smoothMoveVelocity, accelerationTime);
 
-        _cc.Move(smoothedVelocity * Time.deltaTime);
+        _cc.Move(_horizontalVelocity * Time.deltaTime);
 
-        if (move.magnitude > 0.1f)
+        if (!_isFirstPerson && move.magnitude > 0.1f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(move);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         }
+    }
+
+    private void StopHorizontalMovement()
+    {
+        _horizontalVelocity = Vector3.SmoothDamp(_horizontalVelocity, Vector3.zero, ref _smoothMoveVelocity, accelerationTime);
+        _cc.Move(_horizontalVelocity * Time.deltaTime);
     }
 
     private void OnDrawGizmosSelected()
