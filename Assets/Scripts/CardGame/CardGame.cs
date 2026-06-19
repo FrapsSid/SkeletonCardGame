@@ -12,7 +12,8 @@ namespace Assets.Scripts.CardGame
             private int _currentPlayerIndex = 0;
             public int bettingRound { get; private set; } = 0;
             public Player CurrentPlayer { get => game.players[_currentPlayerIndex]; }
-            public IReadOnlyList<Team>? winners { get; private set; }
+            public IReadOnlyList<Team>? winners { get => result!.winners; }
+            public RoundResult? result { get; private set; }
             public enum PlayerTurnState
             {
                 NONE,
@@ -27,7 +28,7 @@ namespace Assets.Scripts.CardGame
             private CardGame game;
             public int lastRaise = 0;
             private List<CardData> _tableCards = new List<CardData>();
-            public IReadOnlyList<CardData> tableCards;
+            public readonly IReadOnlyList<CardData> tableCards;
             public readonly RoundCombinationSet combinations;
 
             public Round(CardGame cardGame, RoundCombinationSet combinations)
@@ -186,7 +187,7 @@ namespace Assets.Scripts.CardGame
                 {
                     throw new System.Exception();
                 }
-                //TODO
+                result = game.roundScorer.CalculateRoundResults(game.teams, tableCards.ToList(), combinations, playerStates);
             }
         }
         public enum GamePhase
@@ -205,6 +206,7 @@ namespace Assets.Scripts.CardGame
         private List<Team> teams;
         public Round? round { get; private set; }
         public readonly CombinationGenerator combinationGenerator = new CombinationGenerator();
+        public readonly RoundScorer roundScorer = new RoundScorer();
 
         public CardGame(IEnumerable<Team> teams, IEnumerable<Player> players)
         {
