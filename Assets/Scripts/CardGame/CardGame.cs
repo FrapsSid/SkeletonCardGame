@@ -392,7 +392,10 @@ namespace Assets.Scripts.CardGame
             {
                 if (game.phase != GamePhase.End)
                     throw new InvalidOperationException("Winners can only be determined at round end");
-                result = game.roundScorer.CalculateRoundResults(game.teams, tableCards.ToList(), combinations, playerStates);
+                List<Team> activeTeams = game.teams
+                    .Where(team => team != null && team.Skeletons.Any(activePlayers.Contains))
+                    .ToList();
+                result = game.roundScorer.CalculateRoundResults(activeTeams, tableCards.ToList(), combinations, playerStates);
                 result.assetDistribution = SplitPotBetweenWinners(GetCommittedAssets(), result.winners);
             }
 
