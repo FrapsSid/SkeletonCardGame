@@ -341,7 +341,7 @@ namespace Assets.Scripts.CardGame
                     return;
                 }
 
-                if (bettingRound == 4)
+                if (bettingRound == 5)
                 {
                     game.phase = GamePhase.End;
                     return;
@@ -532,8 +532,8 @@ namespace Assets.Scripts.CardGame
             if (round == null || phase != GamePhase.AddingCards)
                 throw new InvalidOperationException();
             if (round.bettingRound == 1)
-                round.DealTableCards(3);
-            if (round.bettingRound > 1 && round.bettingRound <= 3)
+                round.DealTableCards(2);
+            if (round.bettingRound > 1 && round.bettingRound <= 4)
                 round.DealTableCards(1);
             phase = GamePhase.BettingRoundStart;
         }
