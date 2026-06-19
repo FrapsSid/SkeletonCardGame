@@ -208,6 +208,7 @@ namespace Assets.Scripts.CardGame
                 }
 
                 game.RaisePotResolved(result.winners, resolvedAssets);
+                game.RaiseRoundEnded(result);
             }
             private void BeginPlayersTurn(Player player)
             {
