@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,13 +9,13 @@ public class RoundScorer
         RoundCombinationSet combos,
         PlayerBetState betState)
     {
-        DeclaredCombinationTier declaredTarget = betState != null
-            ? betState.declaredTarget
+        DeclaredCombinationTier declaredTarget = betState != null && betState.declaredTarget != null
+            ? (DeclaredCombinationTier)betState.declaredTarget
             : DeclaredCombinationTier.Easy;
 
         var evaluation = new PlayerRoundEvaluation(player, declaredTarget);
 
-        if (player == null || combos == null || betState == null || betState.folded)
+        if (player == null || combos == null || betState == null || betState.hasFolded)
         {
             evaluation.folded = true;
             evaluation.contributesToSharedPool = false;
