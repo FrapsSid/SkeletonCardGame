@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using CardGameModel = Assets.Scripts.CardGame.CardGame;
+using CardGameRound = Assets.Scripts.CardGame.CardGame.Round;
 using GamePhase = Assets.Scripts.CardGame.CardGame.GamePhase;
 
 public sealed class GameManager : MonoBehaviour
@@ -11,17 +12,23 @@ public sealed class GameManager : MonoBehaviour
     [SerializeField]
     private bool startOnStart = true;
 
+    [SerializeField]
+    private BettingDiscussionGate? bettingDiscussionGate;
+
     private readonly List<Team> teams = new List<Team>();
     private readonly List<Skeleton> players = new List<Skeleton>();
     private bool roundResolved;
 
     public CardGameModel? CardGame { get; private set; }
+    public BettingDiscussionGate? BettingDiscussionGate => bettingDiscussionGate;
     public MatchScoreTracker ScoreTracker { get; } = new MatchScoreTracker();
     public IReadOnlyList<Team> Teams => teams;
     public IReadOnlyList<Skeleton> Players => players;
 
     private void Start()
     {
+        EnsureBettingDiscussionGate();
+
         if (startOnStart)
             StartGame();
     }
@@ -29,20 +36,25 @@ public sealed class GameManager : MonoBehaviour
     private void OnDestroy()
     {
         Unsubscribe();
+        UnsubscribeFromDiscussionManager();
+        bettingDiscussionGate?.StopDiscussion();
     }
 
     public void StartGame()
     {
         Unsubscribe();
+        UnsubscribeFromDiscussionManager();
+        EnsureBettingDiscussionGate();
+        bettingDiscussionGate?.StopDiscussion();
         CreateTestPlayers();
 
         CardGame = new CardGameModel(teams, players);
         Subscribe(CardGame);
+        SubscribeToDiscussionManager();
 
         CardGame.DealPlayersCards();
         CardGame.ShowCombinations();
         CardGame.StartRound();
-        CardGame.StartBettingRound();
     }
 
     private void CreateTestPlayers()
@@ -99,10 +111,13 @@ public sealed class GameManager : MonoBehaviour
         if (CardGame?.round == null)
             return;
 
-        if (phase == GamePhase.AddingCards)
+        if (phase == GamePhase.BettingRoundStart)
+        {
+            bettingDiscussionGate?.StartPostDealDiscussion(CardGame.round);
+        }
+        else if (phase == GamePhase.AddingCards)
         {
             CardGame.DealTableCards();
-            CardGame.StartBettingRound();
         }
         else if (phase == GamePhase.End && !roundResolved)
         {
@@ -120,5 +135,35 @@ public sealed class GameManager : MonoBehaviour
     private void HandleRoundEnded(RoundResult result)
     {
         ScoreTracker.AddRoundResult(result);
+    }
+
+    private void HandleDiscussionCompleted(CardGameRound round)
+    {
+        if (CardGame?.round != round || CardGame.phase != GamePhase.BettingRoundStart)
+            return;
+
+        CardGame.StartBettingRound();
+    }
+
+    private void EnsureBettingDiscussionGate()
+    {
+        if (bettingDiscussionGate != null)
+            return;
+
+        bettingDiscussionGate = GetComponent<BettingDiscussionGate>();
+        if (bettingDiscussionGate == null)
+            bettingDiscussionGate = gameObject.AddComponent<BettingDiscussionGate>();
+    }
+
+    private void SubscribeToDiscussionManager()
+    {
+        if (bettingDiscussionGate != null)
+            bettingDiscussionGate.OnDiscussionCompleted += HandleDiscussionCompleted;
+    }
+
+    private void UnsubscribeFromDiscussionManager()
+    {
+        if (bettingDiscussionGate != null)
+            bettingDiscussionGate.OnDiscussionCompleted -= HandleDiscussionCompleted;
     }
 }

@@ -26,6 +26,7 @@ public class BettingDiscussionGate : MonoBehaviour
 
     public event Action<float> OnDiscussionStarted;
     public event Action<List<Player>> OnPlayersSeated;
+    public event Action<CardGameRound> OnDiscussionCompleted;
     public event Action<CardGameRound> OnBettingOpenedAfterDiscussion;
 
     private Coroutine discussionCoroutine;
@@ -48,13 +49,31 @@ public class BettingDiscussionGate : MonoBehaviour
 
     public void ForceSeatPlayersAndOpenBetting()
     {
+        ForceCompleteDiscussion();
+    }
+
+    public void ForceCompleteDiscussion()
+    {
         if (discussionCoroutine != null)
         {
             StopCoroutine(discussionCoroutine);
             discussionCoroutine = null;
         }
 
-        CompleteDiscussionAndOpenBetting();
+        CompleteDiscussion();
+    }
+
+    public void StopDiscussion()
+    {
+        if (discussionCoroutine != null)
+        {
+            StopCoroutine(discussionCoroutine);
+            discussionCoroutine = null;
+        }
+
+        CurrentRound = null;
+        IsDiscussionActive = false;
+        ArePlayersSeated = false;
     }
 
     private IEnumerator RunDiscussionTimer()
@@ -63,10 +82,10 @@ public class BettingDiscussionGate : MonoBehaviour
             yield return new WaitForSeconds(discussionDurationSeconds);
 
         discussionCoroutine = null;
-        CompleteDiscussionAndOpenBetting();
+        CompleteDiscussion();
     }
 
-    private void CompleteDiscussionAndOpenBetting()
+    private void CompleteDiscussion()
     {
         if (CurrentRound == null)
             return;
@@ -75,8 +94,7 @@ public class BettingDiscussionGate : MonoBehaviour
         ArePlayersSeated = true;
 
         OnPlayersSeated?.Invoke(CurrentRound.ActivePlayers.ToList());
-
-        CurrentRound.StartBettingRound();
+        OnDiscussionCompleted?.Invoke(CurrentRound);
         OnBettingOpenedAfterDiscussion?.Invoke(CurrentRound);
     }
 }
