@@ -368,7 +368,7 @@ public class CombinationGenerator
         {
             foreach (CardValue value in Enum.GetValues(typeof(CardValue)))
             {
-                cards.Add(new CardData(suit, value));
+                cards.Add(new CardData(suit, value, true));
             }
         }
 

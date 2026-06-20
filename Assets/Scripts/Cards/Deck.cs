@@ -23,7 +23,7 @@ public class Deck
         {
             foreach (CardValue value in Enum.GetValues(typeof(CardValue)))
             {
-                _cards.Add(new CardData(suit, value));
+                _cards.Add(new CardData(suit, value, false));
             }
         }
     }
@@ -78,6 +78,8 @@ public class Deck
     public void ReturnCard(CardData card)
     {
         if (card == null) return;
+
+        card.IsRevealed = false;
 
         _cards.Insert(0, card);
     }

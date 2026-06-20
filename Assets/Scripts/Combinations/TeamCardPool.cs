@@ -3,12 +3,12 @@ using UnityEngine;
 
 public class TeamCardPool
 {
-    // РўРµРєСѓС‰РёР№ РєСЌС€РёСЂРѕРІР°РЅРЅС‹Р№ РїСѓР» РґР°РЅРЅС‹С… РєР°СЂС‚ РєРѕРјР°РЅРґС‹
+    // Текущий кэшированный пул данных карт команды
     private List<CardData> _currentPool = new List<CardData>();
 
     public List<CardData> CurrentPool => _currentPool;
 
-    //РЎРѕР±РёСЂР°РµС‚ РєР°СЂС‚С‹ РёР· СЂСѓРє РІСЃРµС… СЃРєРµР»РµС‚РѕРІ РєРѕРјР°РЅРґС‹ Рё РєР°СЂС‚ РЅР° СЃС‚РѕР»Рµ РІ РѕРґРёРЅ РїР»РѕСЃРєРёР№ СЃРїРёСЃРѕРє
+    //Собирает карты из рук всех скелетов команды и карт на столе в один плоский список
     public List<CardData> BuildPool(Team team, List<CardData> tableCards)
     {
         _currentPool.Clear();
@@ -35,7 +35,7 @@ public class TeamCardPool
         return _currentPool;
     }
 
-    //РџСЂРѕРІРµСЂСЏРµС‚, СЃРѕР±СЂР°РЅР° Р»Рё РєРѕРЅРєСЂРµС‚РЅР°СЏ РєРѕРјР±РёРЅР°С†РёСЏ РЅР° РѕСЃРЅРѕРІРµ С‚РµРєСѓС‰РµРіРѕ РїСѓР»Р°
+    //Проверяет, собрана ли конкретная комбинация на основе текущего пула
     public bool CheckCombination(Combination combo)
     {
         if (combo == null) return false;
@@ -43,7 +43,7 @@ public class TeamCardPool
         return combo.IsSatisfied(_currentPool);
     }
 
-    //РџСЂРѕРІРµСЂСЏРµС‚ РјР°СЃСЃРёРІ РєРѕРјР±РёРЅР°С†РёР№ Рё РІРѕР·РІСЂР°С‰Р°РµС‚ СЃР»РѕРІР°СЂСЊ СЃС‚Р°С‚СѓСЃРѕРІ (СЃРѕР±СЂР°РЅР°/РЅРµС‚)
+    //Проверяет массив комбинаций и возвращает словарь статусов (собрана/нет)
     public Dictionary<Combination, bool> CheckAllCombinations(List<Combination> combos)
     {
         var results = new Dictionary<Combination, bool>();

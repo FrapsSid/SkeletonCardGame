@@ -25,6 +25,8 @@ public static class CombinationDifficultyExtensions
 
     public static bool IsScoringDifficulty(this CombinationDifficulty difficulty)
     {
-        return difficulty != CombinationDifficulty.Anti;
+        return difficulty == CombinationDifficulty.Easy
+            || difficulty == CombinationDifficulty.Medium
+            || difficulty == CombinationDifficulty.Hard;
     }
 }
