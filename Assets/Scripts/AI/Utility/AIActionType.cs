@@ -1,8 +1,9 @@
 public enum AIActionType
 {
     CheckCall,
+    Fold,
+    Raise,
     DrawCard,
     ChangeCombination,
-    Fold,
-    Raise
+    Pass
 }

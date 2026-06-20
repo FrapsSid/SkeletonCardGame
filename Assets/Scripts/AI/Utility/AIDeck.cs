@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,9 +15,7 @@ public class AIDeck
         GenerateStandardDeck();
     }
 
-    /// <summary>
-    /// Генерирует стандартную колоду из 52 карт.
-    /// </summary>
+    /// Р“РµРЅРµСЂРёСЂСѓРµС‚ СЃС‚Р°РЅРґР°СЂС‚РЅСѓСЋ РєРѕР»РѕРґСѓ РёР· 52 РєР°СЂС‚.
     private void GenerateStandardDeck()
     {
         _cards.Clear();
@@ -26,7 +24,7 @@ public class AIDeck
         {
             foreach (CardValue value in Enum.GetValues(typeof(CardValue)))
             {
-                _cards.Add(new CardData(suit, value, false));
+                _cards.Add(new CardData(suit, value));
             }
         }
     }
@@ -36,30 +34,24 @@ public class AIDeck
         _cards.Add(card);
     }
 
-    /// <summary>
-    /// Достает СЛУЧАЙНУЮ карту из колоды по случайному индексу (вместо шафла).
-    /// </summary>
+    /// Р”РѕСЃС‚Р°РµС‚ РЎР›РЈР§РђР™РќРЈР® РєР°СЂС‚Сѓ РёР· РєРѕР»РѕРґС‹ РїРѕ СЃР»СѓС‡Р°Р№РЅРѕРјСѓ РёРЅРґРµРєСЃСѓ.
     public CardData DrawCard()
     {
         if (IsEmpty)
         {
-            Debug.LogWarning("Виртуальная колода пуста! Невозможно взять карту.");
+            Debug.LogWarning("Р’РёСЂС‚СѓР°Р»СЊРЅР°СЏ РєРѕР»РѕРґР° РїСѓСЃС‚Р°! РќРµРІРѕР·РјРѕР¶РЅРѕ РІР·СЏС‚СЊ РєР°СЂС‚Сѓ.");
             return null;
         }
 
-        // Выбираем случайный индекс в пределах текущего размера колоды
         int randomIndex = _random.Next(0, _cards.Count);
         CardData drawnCard = _cards[randomIndex];
 
-        // Удаляем карту из этой позиции, чтобы она не выпала снова
         _cards.RemoveAt(randomIndex);
 
         return drawnCard;
     }
 
-    /// <summary>
-    /// Достает указанное количество случайных карт из колоды.
-    /// </summary>
+    /// Р”РѕСЃС‚Р°РµС‚ СѓРєР°Р·Р°РЅРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ СЃР»СѓС‡Р°Р№РЅС‹С… РєР°СЂС‚ РёР· РєРѕР»РѕРґС‹.
     public List<CardData> DrawCards(int count)
     {
         List<CardData> drawnCards = new List<CardData>();
@@ -75,9 +67,7 @@ public class AIDeck
         return drawnCards;
     }
 
-    /// <summary>
-    /// Убирает конкретную карту из колоды по совпадению масти и значения.
-    /// </summary>
+    /// РЈР±РёСЂР°РµС‚ РєРѕРЅРєСЂРµС‚РЅСѓСЋ РєР°СЂС‚Сѓ РёР· РєРѕР»РѕРґС‹ РїРѕ СЃРѕРІРїР°РґРµРЅРёСЋ РјР°СЃС‚Рё Рё Р·РЅР°С‡РµРЅРёСЏ.
     public bool RemoveCard(CardData targetCard)
     {
         if (targetCard == null) return false;
@@ -93,9 +83,7 @@ public class AIDeck
         return false;
     }
 
-    /// <summary>
-    /// Убирает из колоды список известных карт.
-    /// </summary>
+    /// РЈР±РёСЂР°РµС‚ РёР· РєРѕР»РѕРґС‹ СЃРїРёСЃРѕРє РёР·РІРµСЃС‚РЅС‹С… РєР°СЂС‚.
     public void RemoveCards(List<CardData> cardsToRemove)
     {
         if (cardsToRemove == null) return;
@@ -106,15 +94,13 @@ public class AIDeck
         }
     }
 
-    /// <summary>
-    /// Полный сброс и синхронизация колоды. Исключает все карты, которые бот видит.
-    /// </summary>
+    /// РџРѕР»РЅС‹Р№ СЃР±СЂРѕСЃ Рё СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ РєРѕР»РѕРґС‹. РСЃРєР»СЋС‡Р°РµС‚ РІСЃРµ РєР°СЂС‚С‹, РєРѕС‚РѕСЂС‹Рµ Р±РѕС‚ РІРёРґРёС‚.
     public void SyncWithAIData(AIData aiData)
     {
         if (aiData == null) return;
 
         RemoveCards(aiData.HandCards);
         RemoveCards(aiData.TableCards);
-        RemoveCards(aiData.AllyVisibleCards);
+        RemoveCards(aiData.AllyCards);
     }
 }
