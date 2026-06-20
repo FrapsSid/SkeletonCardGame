@@ -34,3 +34,29 @@ public class BodyPart : MonoBehaviour
         transform.localRotation = Quaternion.identity;
     }
 }
+
+public static class BodyPartExtensions 
+{ 
+    public static int GetBodyPartCost(BodyPart bodyPart) 
+    { 
+        switch (bodyPart.Type) 
+        { 
+            case BodyPartType.Head:
+                return 3; 
+            case BodyPartType.LeftArm:
+                return 2;
+            case BodyPartType.RightArm:
+                return 2;
+            case BodyPartType.LeftLeg:
+                return 2;
+            case BodyPartType.RightLeg:
+                return 2;
+            case BodyPartType.Soul:
+                return 6;
+            case BodyPartType.Torso:
+                return 1;
+            default:
+                return 1;
+        }
+    }
+}
