@@ -42,11 +42,11 @@ public class CardAtlas : ScriptableObject, ISerializationCallbackReceiver
             return sprite;
         }
 
-        Debug.LogError($"Спрайт для карты {value} {suit} не найден в атласе!");
+        Debug.LogError($"РЎРїСЂР°Р№С‚ РґР»СЏ РєР°СЂС‚С‹ {value} {suit} РЅРµ РЅР°Р№РґРµРЅ РІ Р°С‚Р»Р°СЃРµ!");
         return null;
     }
 
-    #region Реализация ISerializationCallbackReceiver
+    #region Р РµР°Р»РёР·Р°С†РёСЏ ISerializationCallbackReceiver
     public void OnBeforeSerialize() { }
 
     public void OnAfterDeserialize()
