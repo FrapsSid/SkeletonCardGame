@@ -39,9 +39,6 @@ public class PlayerController : MonoBehaviour
         _cc = GetComponent<CharacterController>();
         _input = GetComponent<InputReader>();
         _skeletonBody = GetComponent<SkeletonBody>();
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
     }
 
     private void Update()

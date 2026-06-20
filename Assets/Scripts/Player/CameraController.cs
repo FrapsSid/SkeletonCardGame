@@ -70,10 +70,33 @@ public class CameraController : MonoBehaviour
         {
             SetFirstPerson(!_isFirstPerson);
         }
+        HandleCursorToggle();
     }
+    private bool _cursorUnlocked;
+    private void HandleCursorToggle()
+    {
+        if (Keyboard.current == null) return;
 
+        bool altHeld = Keyboard.current.leftAltKey.isPressed || Keyboard.current.rightAltKey.isPressed;
+
+        if (altHeld && !_cursorUnlocked)
+        {
+            SetCursorLocked(false);
+        }
+        else if (!altHeld && _cursorUnlocked)
+        {
+            SetCursorLocked(true);
+        }
+    }
+    private void SetCursorLocked(bool locked)
+    {
+        _cursorUnlocked = !locked;
+        Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
+        Cursor.visible = !locked;
+    }
     private void LateUpdate()
     {
+        if (_cursorUnlocked) return;
         if (InventoryUI.IsAnyInventoryOpen || _input == null)
         {
             return;
