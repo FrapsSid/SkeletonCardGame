@@ -4,6 +4,6 @@ public enum BettingAction
     MatchCurrentPrice,
     RaiseCurrentPrice,
     UpgradeTarget,
-    Pass,
+    Check,
     Fold
 }
