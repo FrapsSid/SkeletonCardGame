@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,12 +8,14 @@ using UnityEngine;
 using CardGameRound = CardGame.Round;
 using Player = Skeleton;
 
-public class BettingDiscussionGate : MonoBehaviour
+public sealed class BettingDiscussionGate : MonoBehaviour
 {
     public const float DefaultDiscussionDurationSeconds = 30f;
 
     [SerializeField]
     private float discussionDurationSeconds = DefaultDiscussionDurationSeconds;
+
+    private Coroutine? discussionCoroutine;
 
     public float DiscussionDurationSeconds
     {
@@ -20,30 +23,26 @@ public class BettingDiscussionGate : MonoBehaviour
         set => discussionDurationSeconds = Mathf.Max(0f, value);
     }
 
-    public CardGameRound CurrentRound { get; private set; }
+    public CardGameRound? CurrentRound { get; private set; }
     public bool IsDiscussionActive { get; private set; }
     public bool ArePlayersSeated { get; private set; }
 
-    public event Action<float> OnDiscussionStarted;
-    public event Action<List<Player>> OnPlayersSeated;
-    public event Action<CardGameRound> OnDiscussionCompleted;
-    public event Action<CardGameRound> OnBettingOpenedAfterDiscussion;
-
-    private Coroutine discussionCoroutine;
+    public event Action<float>? OnDiscussionStarted;
+    public event Action<List<Player>>? OnPlayersSeated;
+    public event Action<CardGameRound>? OnDiscussionCompleted;
 
     public void StartPostDealDiscussion(CardGameRound round)
     {
         if (round == null)
             throw new ArgumentNullException(nameof(round));
 
-        if (discussionCoroutine != null)
-            StopCoroutine(discussionCoroutine);
+        StopDiscussionTimer();
 
         CurrentRound = round;
         IsDiscussionActive = true;
         ArePlayersSeated = false;
 
-        OnDiscussionStarted?.Invoke(discussionDurationSeconds);
+        OnDiscussionStarted?.Invoke(DiscussionDurationSeconds);
         discussionCoroutine = StartCoroutine(RunDiscussionTimer());
     }
 
@@ -54,23 +53,13 @@ public class BettingDiscussionGate : MonoBehaviour
 
     public void ForceCompleteDiscussion()
     {
-        if (discussionCoroutine != null)
-        {
-            StopCoroutine(discussionCoroutine);
-            discussionCoroutine = null;
-        }
-
+        StopDiscussionTimer();
         CompleteDiscussion();
     }
 
     public void StopDiscussion()
     {
-        if (discussionCoroutine != null)
-        {
-            StopCoroutine(discussionCoroutine);
-            discussionCoroutine = null;
-        }
-
+        StopDiscussionTimer();
         CurrentRound = null;
         IsDiscussionActive = false;
         ArePlayersSeated = false;
@@ -78,16 +67,25 @@ public class BettingDiscussionGate : MonoBehaviour
 
     private IEnumerator RunDiscussionTimer()
     {
-        if (discussionDurationSeconds > 0f)
-            yield return new WaitForSeconds(discussionDurationSeconds);
+        if (DiscussionDurationSeconds > 0f)
+            yield return new WaitForSeconds(DiscussionDurationSeconds);
 
         discussionCoroutine = null;
         CompleteDiscussion();
     }
 
+    private void StopDiscussionTimer()
+    {
+        if (discussionCoroutine == null)
+            return;
+
+        StopCoroutine(discussionCoroutine);
+        discussionCoroutine = null;
+    }
+
     private void CompleteDiscussion()
     {
-        if (CurrentRound == null)
+        if (CurrentRound == null || !IsDiscussionActive)
             return;
 
         IsDiscussionActive = false;
@@ -95,6 +93,5 @@ public class BettingDiscussionGate : MonoBehaviour
 
         OnPlayersSeated?.Invoke(CurrentRound.ActivePlayers.ToList());
         OnDiscussionCompleted?.Invoke(CurrentRound);
-        OnBettingOpenedAfterDiscussion?.Invoke(CurrentRound);
     }
 }

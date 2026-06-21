@@ -546,6 +546,13 @@ public class CardGame
             throw new InvalidOperationException();
         phase = GamePhase.DealingCards;
         deck.Reset();
+        foreach (var player in players)
+        {
+            foreach (var card in player.Hand.GetCards())
+            {
+                player.Hand.RemoveCard(card);
+            }
+        }
         if (round != null)
             round = null;
     }

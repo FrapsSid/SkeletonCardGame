@@ -1,88 +1,72 @@
 #nullable enable
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using static CardGame;
 
+[RequireComponent(typeof(BettingDiscussionGate))]
 public sealed class GameManager : MonoBehaviour
 {
-    [SerializeField]
-    private bool startOnStart = true;
-
-    [SerializeField]
-    private BettingDiscussionGate? bettingDiscussionGate;
-
     private readonly List<Team> teams = new List<Team>();
     private readonly List<Skeleton> players = new List<Skeleton>();
+    private BettingDiscussionGate? bettingDiscussionGate;
+    private Coroutine? restartRoundCoroutine;
     private bool roundResolved;
 
-    public CardGame? cardGame { get; private set; }
-    public BettingDiscussionGate? BettingDiscussionGate => bettingDiscussionGate;
-    public MatchScoreTracker ScoreTracker { get; } = new MatchScoreTracker();
-    public IReadOnlyList<Team> Teams => teams;
-    public IReadOnlyList<Skeleton> Players => players;
+    public CardGame? CardGame { get; private set; }
 
-    private void Start()
+    private void Awake()
     {
-        EnsureBettingDiscussionGate();
-
-        if (startOnStart)
-            StartGame();
+        bettingDiscussionGate = GetComponent<BettingDiscussionGate>();
     }
 
     private void OnDestroy()
     {
         Unsubscribe();
-        UnsubscribeFromDiscussionManager();
+        UnsubscribeFromDiscussionGate();
+        StopRestartRound();
         bettingDiscussionGate?.StopDiscussion();
+    }
+
+    public void StartGame(IEnumerable<Team> gameTeams, IEnumerable<Skeleton> gamePlayers)
+    {
+        if (gameTeams == null)
+            throw new ArgumentNullException(nameof(gameTeams));
+        if (gamePlayers == null)
+            throw new ArgumentNullException(nameof(gamePlayers));
+
+        teams.Clear();
+        players.Clear();
+        teams.AddRange(gameTeams);
+        players.AddRange(gamePlayers);
+
+        StartGame();
     }
 
     public void StartGame()
     {
+        if (teams.Count == 0 || players.Count == 0)
+            throw new InvalidOperationException("GameManager needs teams and players before starting a game.");
+
         Unsubscribe();
-        UnsubscribeFromDiscussionManager();
-        EnsureBettingDiscussionGate();
-        bettingDiscussionGate?.StopDiscussion();
-        CreateTestPlayers();
+        UnsubscribeFromDiscussionGate();
+        StopRestartRound();
 
-        cardGame = new CardGame(teams, players);
-        Subscribe(cardGame);
-        SubscribeToDiscussionManager();
-
-        cardGame.DealPlayersCards();
-        cardGame.ShowCombinations();
-        cardGame.StartRound();
-    }
-
-    private void CreateTestPlayers()
-    {
-        teams.Clear();
-        players.Clear();
+        bettingDiscussionGate = GetRequiredBettingDiscussionGate();
+        SubscribeToDiscussionGate();
         roundResolved = false;
 
-        Team firstTeam = CreateTestTeam();
-        Team secondTeam = CreateTestTeam();
-
-        teams.Add(firstTeam);
-        teams.Add(secondTeam);
-
-        players.Add(CreatePlayer(firstTeam));
-        players.Add(CreatePlayer(secondTeam));
+        CardGame = new CardGame(teams, players);
+        Subscribe(CardGame);
+        StartRoundFlow(CardGame);
     }
 
-    private static Team CreateTestTeam()
+    private void StartRoundFlow(CardGame game)
     {
-        var team = new Team();
-        team.RegisterAsset(new StakeAsset(team, StakeAssetType.Soul, 1));
-        team.RegisterAsset(new StakeAsset(team, StakeAssetType.Soul, 2));
-        team.RegisterAsset(new StakeAsset(team, StakeAssetType.OtherTeamAsset, 3));
-        return team;
-    }
-
-    private static Skeleton CreatePlayer(Team team)
-    {
-        var player = new Skeleton(team);
-        team.AddSkeleton(player);
-        return player;
+        game.DealPlayersCards();
+        game.ShowCombinations();
+        game.StartRound();
     }
 
     private void Subscribe(CardGame game)
@@ -94,32 +78,33 @@ public sealed class GameManager : MonoBehaviour
 
     private void Unsubscribe()
     {
-        if (cardGame == null)
+        if (CardGame == null)
             return;
 
-        cardGame.OnPhaseChanged -= HandlePhaseChanged;
-        cardGame.OnTurnStarted -= HandleTurnStarted;
-        cardGame.OnRoundEnded -= HandleRoundEnded;
+        CardGame.OnPhaseChanged -= HandlePhaseChanged;
+        CardGame.OnTurnStarted -= HandleTurnStarted;
+        CardGame.OnRoundEnded -= HandleRoundEnded;
     }
 
     private void HandlePhaseChanged(GamePhase phase)
     {
-        if (cardGame?.round == null)
+        CardGame? game = CardGame;
+        if (game?.round == null)
             return;
 
         if (phase == GamePhase.BettingRoundStart)
         {
-            bettingDiscussionGate?.StartPostDealDiscussion(cardGame.round);
+            StartBettingDiscussion(game.round);
         }
         else if (phase == GamePhase.AddingCards)
         {
-            cardGame.DealTableCards();
+            game.DealTableCards();
         }
         else if (phase == GamePhase.End && !roundResolved)
         {
             roundResolved = true;
-            cardGame.round.DetermineWinners();
-            cardGame.round.ResolvePot();
+            game.round.DetermineWinners();
+            game.round.ResolvePot();
         }
     }
 
@@ -130,36 +115,70 @@ public sealed class GameManager : MonoBehaviour
 
     private void HandleRoundEnded(RoundResult result)
     {
-        ScoreTracker.AddRoundResult(result);
+        StopRestartRound();
+        restartRoundCoroutine = StartCoroutine(RestartRoundAfterRoundEnded());
+    }
+
+    private IEnumerator RestartRoundAfterRoundEnded()
+    {
+        yield return null;
+        restartRoundCoroutine = null;
+
+        CardGame? game = CardGame;
+        if (game == null || game.phase != GamePhase.End)
+            yield break;
+
+        game.ResetRound();
+        roundResolved = false;
+        StartRoundFlow(game);
+    }
+
+    private void StartBettingDiscussion(Round round)
+    {
+        BettingDiscussionGate gate = GetRequiredBettingDiscussionGate();
+        gate.StopDiscussion();
+        gate.StartPostDealDiscussion(round);
     }
 
     private void HandleDiscussionCompleted(Round round)
     {
-        if (cardGame?.round != round || cardGame.phase != GamePhase.BettingRoundStart)
+        CardGame? game = CardGame;
+        if (game?.round != round || game.phase != GamePhase.BettingRoundStart)
             return;
 
-        cardGame.StartBettingRound();
+        game.StartBettingRound();
     }
 
-    private void EnsureBettingDiscussionGate()
-    {
-        if (bettingDiscussionGate != null)
-            return;
-
-        bettingDiscussionGate = GetComponent<BettingDiscussionGate>();
-        if (bettingDiscussionGate == null)
-            bettingDiscussionGate = gameObject.AddComponent<BettingDiscussionGate>();
-    }
-
-    private void SubscribeToDiscussionManager()
+    private void SubscribeToDiscussionGate()
     {
         if (bettingDiscussionGate != null)
             bettingDiscussionGate.OnDiscussionCompleted += HandleDiscussionCompleted;
     }
 
-    private void UnsubscribeFromDiscussionManager()
+    private void UnsubscribeFromDiscussionGate()
     {
         if (bettingDiscussionGate != null)
             bettingDiscussionGate.OnDiscussionCompleted -= HandleDiscussionCompleted;
+    }
+
+    private BettingDiscussionGate GetRequiredBettingDiscussionGate()
+    {
+        if (bettingDiscussionGate != null)
+            return bettingDiscussionGate;
+
+        bettingDiscussionGate = GetComponent<BettingDiscussionGate>();
+        if (bettingDiscussionGate == null)
+            throw new InvalidOperationException("GameManager requires a BettingDiscussionGate component.");
+
+        return bettingDiscussionGate;
+    }
+
+    private void StopRestartRound()
+    {
+        if (restartRoundCoroutine == null)
+            return;
+
+        StopCoroutine(restartRoundCoroutine);
+        restartRoundCoroutine = null;
     }
 }

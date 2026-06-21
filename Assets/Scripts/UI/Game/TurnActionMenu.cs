@@ -1,11 +1,10 @@
 using System;
-using Assets.Scripts.CardGame;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-using CardGameModel = Assets.Scripts.CardGame.CardGame;
-using CardGameRound = Assets.Scripts.CardGame.CardGame.Round;
+using CardGameModel = CardGame;
+using CardGameRound = CardGame.Round;
 
 public sealed class TurnActionMenu : GameUIScreen
 {
