@@ -222,7 +222,18 @@ public sealed class BetScreen : GameUIScreen
         CardGameRound round = CurrentRound;
         Skeleton player = CurrentPlayer;
         if (round == null || player == null)
+        {
+            statusText.text = "Waiting for your turn.";
+            Refresh();
             return;
+        }
+
+        if (round.CurrentPlayer != player)
+        {
+            statusText.text = "Waiting for your turn.";
+            Refresh();
+            return;
+        }
 
         try
         {
@@ -272,7 +283,7 @@ public sealed class BetScreen : GameUIScreen
     private void HandlePlayerChanged(Skeleton player) => Refresh();
 
     private CardGameRound CurrentRound => UI.GameManager != null && UI.GameManager.CardGame != null ? UI.GameManager.CardGame.round : null;
-    private Skeleton CurrentPlayer => CurrentRound != null ? CurrentRound.CurrentPlayer : null;
+    private Skeleton CurrentPlayer => UI.GameManager != null && UI.GameManager.IsHumanPlayer(UI.GameManager.CurrentPlayer) ? UI.GameManager.CurrentPlayer : null;
 
     private static string AssetLabel(StakeAsset asset)
     {

@@ -13,7 +13,7 @@ public sealed class SkeletonGameUIBootstrap : MonoBehaviour
     private static GameUIManager instance;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void CreateRuntimeUI()
+    public static void EnsureRuntimeUI()
     {
         if (instance != null)
             return;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,7 +20,9 @@ public sealed class TurnActionMenu : GameUIScreen
     private Button skipButton;
     private Button hideButton;
 
+    private GameManager subscribedManager;
     private CardGameModel subscribedGame;
+    private Skeleton subscribedPlayer;
     private Skeleton currentPlayer;
     private bool menuHidden;
     private bool previewMode;
@@ -59,7 +62,10 @@ public sealed class TurnActionMenu : GameUIScreen
             return;
         }
 
-        bool shouldShow = currentPlayer != null && UI.ActiveScreen == ScreenId.None;
+        SyncCurrentPlayerFromGameManager();
+
+        bool shouldShow = IsCurrentHumanTurn()
+            && UI.ActiveScreen == ScreenId.None;
         if (shouldShow && !gameObject.activeSelf)
             UI.ShowHud(Id);
         else if (!shouldShow && gameObject.activeSelf)
@@ -95,23 +101,33 @@ public sealed class TurnActionMenu : GameUIScreen
     private void EnsureSubscribed()
     {
         UI.RefreshGameManager();
-        CardGameModel game = UI.GameManager != null ? UI.GameManager.CardGame : null;
-        if (game == subscribedGame)
+        GameManager manager = UI.GameManager;
+        CardGameModel game = manager != null ? manager.CardGame : null;
+        Skeleton player = manager != null ? manager.HumanPlayer : null;
+        if (manager == subscribedManager && game == subscribedGame && player == subscribedPlayer)
             return;
 
         Unsubscribe();
+        subscribedManager = manager;
         subscribedGame = game;
+        subscribedPlayer = player;
         if (subscribedGame == null)
             return;
 
-        subscribedGame.OnTurnStarted += HandleTurnStarted;
-        subscribedGame.OnTurnEnded += HandleTurnEnded;
+        if (subscribedPlayer != null)
+        {
+            if (subscribedGame.TurnStartedByPlayer.TryGetValue(subscribedPlayer, out CardGameModel.PlayerTurnEvent turnStarted))
+                turnStarted.Fired += HandleTurnStarted;
+            if (subscribedGame.TurnEndedByPlayer.TryGetValue(subscribedPlayer, out CardGameModel.PlayerTurnEvent turnEnded))
+                turnEnded.Fired += HandleTurnEnded;
+        }
         subscribedGame.OnPriceRaised += HandleBettingChanged;
         subscribedGame.OnPriceMatched += HandleBettingChanged;
         subscribedGame.OnPlayerFolded += HandlePlayerFolded;
         subscribedGame.OnTargetUpgraded += HandleTargetChanged;
         subscribedGame.OnTargetDeclared += HandleTargetChanged;
         subscribedGame.OnBettingRoundEnded += HandleBettingRoundEnded;
+        SyncCurrentPlayerFromGameManager();
     }
 
     private void OnDestroy()
@@ -124,21 +140,28 @@ public sealed class TurnActionMenu : GameUIScreen
         if (subscribedGame == null)
             return;
 
-        subscribedGame.OnTurnStarted -= HandleTurnStarted;
-        subscribedGame.OnTurnEnded -= HandleTurnEnded;
+        if (subscribedPlayer != null)
+        {
+            if (subscribedGame.TurnStartedByPlayer.TryGetValue(subscribedPlayer, out CardGameModel.PlayerTurnEvent turnStarted))
+                turnStarted.Fired -= HandleTurnStarted;
+            if (subscribedGame.TurnEndedByPlayer.TryGetValue(subscribedPlayer, out CardGameModel.PlayerTurnEvent turnEnded))
+                turnEnded.Fired -= HandleTurnEnded;
+        }
         subscribedGame.OnPriceRaised -= HandleBettingChanged;
         subscribedGame.OnPriceMatched -= HandleBettingChanged;
         subscribedGame.OnPlayerFolded -= HandlePlayerFolded;
         subscribedGame.OnTargetUpgraded -= HandleTargetChanged;
         subscribedGame.OnTargetDeclared -= HandleTargetChanged;
         subscribedGame.OnBettingRoundEnded -= HandleBettingRoundEnded;
+        subscribedManager = null;
         subscribedGame = null;
+        subscribedPlayer = null;
     }
 
     private void Refresh()
     {
         CardGameRound round = subscribedGame != null ? subscribedGame.round : null;
-        bool hasTurn = previewMode || (round != null && currentPlayer != null);
+        bool hasTurn = previewMode || IsCurrentHumanTurn(round);
 
         indicatorText.gameObject.SetActive(hasTurn);
         menuPanel.gameObject.SetActive(hasTurn && !menuHidden);
@@ -159,13 +182,14 @@ public sealed class TurnActionMenu : GameUIScreen
             return;
         }
 
+        bool isCurrentHumanTurn = IsCurrentHumanTurn(round);
         bool betRaised = round.currentParticipationPrice > 0;
         bool hasMatched = round.HasMatchedBet(currentPlayer);
 
-        betButton.interactable = round.CanRaise(currentPlayer);
-        takeCardButton.interactable = round.CanTakeCard(currentPlayer);
-        passButton.interactable = betRaised;
-        skipButton.interactable = !betRaised && hasMatched;
+        betButton.interactable = isCurrentHumanTurn && CanOpenBetScreen(round);
+        takeCardButton.interactable = isCurrentHumanTurn && round.CanTakeCard(currentPlayer);
+        passButton.interactable = isCurrentHumanTurn && betRaised;
+        skipButton.interactable = isCurrentHumanTurn && hasMatched;
     }
 
     private void HandleTurnStarted(Skeleton player)
@@ -173,6 +197,8 @@ public sealed class TurnActionMenu : GameUIScreen
         currentPlayer = player;
         menuHidden = false;
         statusText.text = string.Empty;
+        if (UI.ActiveScreen == ScreenId.None && !gameObject.activeSelf)
+            UI.ShowHud(Id);
         Refresh();
     }
 
@@ -180,6 +206,8 @@ public sealed class TurnActionMenu : GameUIScreen
     {
         if (currentPlayer == player)
             currentPlayer = null;
+        if (gameObject.activeSelf)
+            UI.HideHud(Id);
         Refresh();
     }
 
@@ -195,13 +223,30 @@ public sealed class TurnActionMenu : GameUIScreen
 
     private void OpenBetScreen()
     {
+        CardGameRound round = subscribedGame != null ? subscribedGame.round : null;
+        if (!CanUseCurrentTurn(round))
+            return;
+
+        if (!CanOpenBetScreen(round))
+        {
+            statusText.text = "Betting is not available for this turn.";
+            Refresh();
+            return;
+        }
+
         statusText.text = string.Empty;
         UI.PushModal(ScreenId.BetScreen);
     }
 
     private void TakeCard()
     {
-        TryRoundAction(round => round.TakeCard(currentPlayer));
+        TryRoundAction(round =>
+        {
+            if (!round.CanTakeCard(currentPlayer))
+                throw new InvalidOperationException("Taking a card is not available for this turn.");
+
+            round.TakeCard(currentPlayer);
+        });
     }
 
     private void Fold()
@@ -211,7 +256,13 @@ public sealed class TurnActionMenu : GameUIScreen
 
     private void EndTurn()
     {
-        TryRoundAction(round => round.EndTurn(currentPlayer));
+        TryRoundAction(round =>
+        {
+            if (!round.HasMatchedBet(currentPlayer))
+                throw new InvalidOperationException("Match the current price before ending the turn.");
+
+            round.EndTurn(currentPlayer);
+        });
     }
 
     private void ToggleMenuHidden()
@@ -223,7 +274,7 @@ public sealed class TurnActionMenu : GameUIScreen
     private void TryRoundAction(Action<CardGameRound> action)
     {
         CardGameRound round = subscribedGame != null ? subscribedGame.round : null;
-        if (round == null || currentPlayer == null)
+        if (!CanUseCurrentTurn(round))
             return;
 
         try
@@ -236,6 +287,76 @@ public sealed class TurnActionMenu : GameUIScreen
             statusText.text = exception.Message;
         }
 
+        Refresh();
+    }
+
+    private bool CanUseCurrentTurn(CardGameRound round)
+    {
+        if (round == null || currentPlayer == null)
+            return false;
+
+        if (!IsCurrentHumanTurn(round))
+        {
+            statusText.text = "Waiting for your turn.";
+            Refresh();
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool CanOpenBetScreen(CardGameRound round)
+    {
+        if (round == null || currentPlayer == null || round.CurrentPlayer != currentPlayer)
+            return false;
+
+        List<StakeAsset> ownedAssets = GetOwnedAssets(currentPlayer);
+        StakeAsset[] noAssets = Array.Empty<StakeAsset>();
+        foreach (DeclaredCombinationTier tier in Enum.GetValues(typeof(DeclaredCombinationTier)))
+        {
+            if (round.CanCall(currentPlayer, noAssets, tier)
+                || round.CanCall(currentPlayer, ownedAssets, tier)
+                || round.CanRaise(currentPlayer, ownedAssets, tier))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static List<StakeAsset> GetOwnedAssets(Skeleton player)
+    {
+        var assets = new List<StakeAsset>();
+        if (player == null || player.team == null)
+            return assets;
+
+        foreach (StakeAsset asset in player.team.Assets)
+        {
+            if (asset != null && player.team.OwnsAsset(asset))
+                assets.Add(asset);
+        }
+
+        return assets;
+    }
+
+    private bool IsCurrentHumanTurn(CardGameRound round = null)
+    {
+        GameManager manager = UI.GameManager;
+        if (manager == null || currentPlayer == null || !manager.IsHumanPlayer(currentPlayer))
+            return false;
+
+        CardGameRound activeRound = round != null ? round : subscribedGame != null ? subscribedGame.round : null;
+        return activeRound != null
+            && ReferenceEquals(manager.CurrentPlayer, currentPlayer)
+            && ReferenceEquals(activeRound.CurrentPlayer, currentPlayer);
+    }
+
+    private void SyncCurrentPlayerFromGameManager()
+    {
+        GameManager manager = UI.GameManager;
+        Skeleton player = manager != null ? manager.CurrentPlayer : null;
+        currentPlayer = manager != null && manager.IsHumanPlayer(player) ? player : null;
         Refresh();
     }
 }

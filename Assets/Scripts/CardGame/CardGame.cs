@@ -28,6 +28,16 @@ using Player = Skeleton;
  */
 public class CardGame
 {
+    public sealed class PlayerTurnEvent
+    {
+        public event Action<Player>? Fired;
+
+        internal void Invoke(Player player)
+        {
+            Fired?.Invoke(player);
+        }
+    }
+
     public class Round
     {
         private int _currentPlayerIndex = 0;
@@ -487,11 +497,21 @@ public class CardGame
     public event Action<Player, CardData>? OnCardTaken;
     public event Action<IReadOnlyList<CardData>>? OnTableCardsDealt;
     public event Action<IReadOnlyList<Team>, IReadOnlyList<StakeAsset>>? OnPotResolved;
+    public IReadOnlyDictionary<Player, PlayerTurnEvent> TurnStartedByPlayer => turnStartedByPlayer;
+    public IReadOnlyDictionary<Player, PlayerTurnEvent> TurnEndedByPlayer => turnEndedByPlayer;
+
+    private readonly Dictionary<Player, PlayerTurnEvent> turnStartedByPlayer = new Dictionary<Player, PlayerTurnEvent>();
+    private readonly Dictionary<Player, PlayerTurnEvent> turnEndedByPlayer = new Dictionary<Player, PlayerTurnEvent>();
 
     public CardGame(IEnumerable<Team> teams, IEnumerable<Player> players)
     {
         this.teams = teams.ToList();
         this.players = players.ToList();
+        foreach (Player player in this.players)
+        {
+            turnStartedByPlayer[player] = new PlayerTurnEvent();
+            turnEndedByPlayer[player] = new PlayerTurnEvent();
+        }
     }
     public void DealPlayersCards()
     {
@@ -595,10 +615,14 @@ public class CardGame
     private void RaiseTurnStarted(Player player)
     {
         OnTurnStarted?.Invoke(player);
+        if (turnStartedByPlayer.TryGetValue(player, out PlayerTurnEvent turnEvent))
+            turnEvent.Invoke(player);
     }
     private void RaiseTurnEnded(Player player)
     {
         OnTurnEnded?.Invoke(player);
+        if (turnEndedByPlayer.TryGetValue(player, out PlayerTurnEvent turnEvent))
+            turnEvent.Invoke(player);
     }
     private void RaiseCardTaken(Player player, CardData card)
     {

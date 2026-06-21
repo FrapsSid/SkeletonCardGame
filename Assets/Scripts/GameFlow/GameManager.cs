@@ -15,6 +15,12 @@ public sealed class GameManager : MonoBehaviour
     private bool roundResolved;
 
     public CardGame? CardGame { get; private set; }
+    public Skeleton? CurrentPlayer { get; private set; }
+    public Skeleton? HumanPlayer { get; private set; }
+    public IReadOnlyList<Team> Teams => teams;
+    public IReadOnlyList<Skeleton> Players => players;
+
+    public event Action<CardGame>? OnGameCreated;
 
     private void Awake()
     {
@@ -40,6 +46,7 @@ public sealed class GameManager : MonoBehaviour
         players.Clear();
         teams.AddRange(gameTeams);
         players.AddRange(gamePlayers);
+        HumanPlayer = players.Count > 0 ? players[0] : null;
 
         StartGame();
     }
@@ -53,12 +60,14 @@ public sealed class GameManager : MonoBehaviour
         UnsubscribeFromDiscussionGate();
         StopRestartRound();
 
+        CurrentPlayer = null;
         bettingDiscussionGate = GetRequiredBettingDiscussionGate();
         SubscribeToDiscussionGate();
         roundResolved = false;
 
         CardGame = new CardGame(teams, players);
         Subscribe(CardGame);
+        OnGameCreated?.Invoke(CardGame);
         StartRoundFlow(CardGame);
     }
 
@@ -73,6 +82,7 @@ public sealed class GameManager : MonoBehaviour
     {
         game.OnPhaseChanged += HandlePhaseChanged;
         game.OnTurnStarted += HandleTurnStarted;
+        game.OnTurnEnded += HandleTurnEnded;
         game.OnRoundEnded += HandleRoundEnded;
     }
 
@@ -83,7 +93,18 @@ public sealed class GameManager : MonoBehaviour
 
         CardGame.OnPhaseChanged -= HandlePhaseChanged;
         CardGame.OnTurnStarted -= HandleTurnStarted;
+        CardGame.OnTurnEnded -= HandleTurnEnded;
         CardGame.OnRoundEnded -= HandleRoundEnded;
+    }
+
+    public bool IsHumanPlayer(Skeleton? player)
+    {
+        return player != null && HumanPlayer != null && ReferenceEquals(HumanPlayer, player);
+    }
+
+    public bool IsAiPlayer(Skeleton? player)
+    {
+        return player != null && HumanPlayer != null && !ReferenceEquals(HumanPlayer, player);
     }
 
     private void HandlePhaseChanged(GamePhase phase)
@@ -110,7 +131,14 @@ public sealed class GameManager : MonoBehaviour
 
     private void HandleTurnStarted(Skeleton player)
     {
+        CurrentPlayer = player;
         Debug.Log($"Turn started: {players.IndexOf(player)}", this);
+    }
+
+    private void HandleTurnEnded(Skeleton player)
+    {
+        if (ReferenceEquals(CurrentPlayer, player))
+            CurrentPlayer = null;
     }
 
     private void HandleRoundEnded(RoundResult result)
@@ -129,6 +157,7 @@ public sealed class GameManager : MonoBehaviour
             yield break;
 
         game.ResetRound();
+        CurrentPlayer = null;
         roundResolved = false;
         StartRoundFlow(game);
     }
