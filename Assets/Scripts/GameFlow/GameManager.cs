@@ -1,11 +1,7 @@
 #nullable enable
-
 using System.Collections.Generic;
 using UnityEngine;
-
-using CardGameModel = Assets.Scripts.CardGame.CardGame;
-using CardGameRound = Assets.Scripts.CardGame.CardGame.Round;
-using GamePhase = Assets.Scripts.CardGame.CardGame.GamePhase;
+using static CardGame;
 
 public sealed class GameManager : MonoBehaviour
 {
@@ -19,7 +15,7 @@ public sealed class GameManager : MonoBehaviour
     private readonly List<Skeleton> players = new List<Skeleton>();
     private bool roundResolved;
 
-    public CardGameModel? CardGame { get; private set; }
+    public CardGame? cardGame { get; private set; }
     public BettingDiscussionGate? BettingDiscussionGate => bettingDiscussionGate;
     public MatchScoreTracker ScoreTracker { get; } = new MatchScoreTracker();
     public IReadOnlyList<Team> Teams => teams;
@@ -48,13 +44,13 @@ public sealed class GameManager : MonoBehaviour
         bettingDiscussionGate?.StopDiscussion();
         CreateTestPlayers();
 
-        CardGame = new CardGameModel(teams, players);
-        Subscribe(CardGame);
+        cardGame = new CardGame(teams, players);
+        Subscribe(cardGame);
         SubscribeToDiscussionManager();
 
-        CardGame.DealPlayersCards();
-        CardGame.ShowCombinations();
-        CardGame.StartRound();
+        cardGame.DealPlayersCards();
+        cardGame.ShowCombinations();
+        cardGame.StartRound();
     }
 
     private void CreateTestPlayers()
@@ -89,7 +85,7 @@ public sealed class GameManager : MonoBehaviour
         return player;
     }
 
-    private void Subscribe(CardGameModel game)
+    private void Subscribe(CardGame game)
     {
         game.OnPhaseChanged += HandlePhaseChanged;
         game.OnTurnStarted += HandleTurnStarted;
@@ -98,32 +94,32 @@ public sealed class GameManager : MonoBehaviour
 
     private void Unsubscribe()
     {
-        if (CardGame == null)
+        if (cardGame == null)
             return;
 
-        CardGame.OnPhaseChanged -= HandlePhaseChanged;
-        CardGame.OnTurnStarted -= HandleTurnStarted;
-        CardGame.OnRoundEnded -= HandleRoundEnded;
+        cardGame.OnPhaseChanged -= HandlePhaseChanged;
+        cardGame.OnTurnStarted -= HandleTurnStarted;
+        cardGame.OnRoundEnded -= HandleRoundEnded;
     }
 
     private void HandlePhaseChanged(GamePhase phase)
     {
-        if (CardGame?.round == null)
+        if (cardGame?.round == null)
             return;
 
         if (phase == GamePhase.BettingRoundStart)
         {
-            bettingDiscussionGate?.StartPostDealDiscussion(CardGame.round);
+            bettingDiscussionGate?.StartPostDealDiscussion(cardGame.round);
         }
         else if (phase == GamePhase.AddingCards)
         {
-            CardGame.DealTableCards();
+            cardGame.DealTableCards();
         }
         else if (phase == GamePhase.End && !roundResolved)
         {
             roundResolved = true;
-            CardGame.round.DetermineWinners();
-            CardGame.round.ResolvePot();
+            cardGame.round.DetermineWinners();
+            cardGame.round.ResolvePot();
         }
     }
 
@@ -137,12 +133,12 @@ public sealed class GameManager : MonoBehaviour
         ScoreTracker.AddRoundResult(result);
     }
 
-    private void HandleDiscussionCompleted(CardGameRound round)
+    private void HandleDiscussionCompleted(Round round)
     {
-        if (CardGame?.round != round || CardGame.phase != GamePhase.BettingRoundStart)
+        if (cardGame?.round != round || cardGame.phase != GamePhase.BettingRoundStart)
             return;
 
-        CardGame.StartBettingRound();
+        cardGame.StartBettingRound();
     }
 
     private void EnsureBettingDiscussionGate()

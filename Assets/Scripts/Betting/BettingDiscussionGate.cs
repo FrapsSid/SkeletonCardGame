@@ -4,13 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-using CardGameRound = Assets.Scripts.CardGame.CardGame.Round;
+using CardGameRound = CardGame.Round;
 using Player = Skeleton;
 
 public class BettingDiscussionGate : MonoBehaviour
 {
     public const float DefaultDiscussionDurationSeconds = 30f;
-    
+
     [SerializeField]
     private float discussionDurationSeconds = DefaultDiscussionDurationSeconds;
 
