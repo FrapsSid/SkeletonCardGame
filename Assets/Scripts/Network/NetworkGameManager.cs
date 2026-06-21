@@ -26,6 +26,7 @@ namespace Multiplayer
 
         private readonly List<NetworkPlayer> _connectedPlayers = new List<NetworkPlayer>();
         public List<NetworkPlayer> ConnectedPlayers => _connectedPlayers;
+        private bool _isDisconnecting;
 
         public event Action<NetworkPlayer> OnPlayerConnected;
         public event Action<NetworkPlayer> OnPlayerDisconnected;
@@ -73,13 +74,29 @@ namespace Multiplayer
 
         public void Disconnect()
         {
+            if (_isDisconnecting) return;
             if (NetworkManager.Singleton == null) return;
             if (NetworkManager.Singleton.ShutdownInProgress) return;
 
+            _isDisconnecting = true;
             bool wasHost = NetworkManager.Singleton.IsHost;
-            NetworkManager.Singleton.Shutdown();
-            _connectedPlayers.Clear();
-            OnDisconnected?.Invoke(wasHost ? DisconnectReason.HostShutdown : DisconnectReason.ClientDisconnected);
+            try
+            {
+                if (NetworkManager.Singleton.IsListening
+                    || NetworkManager.Singleton.IsClient
+                    || NetworkManager.Singleton.IsServer
+                    || NetworkManager.Singleton.IsHost)
+                {
+                    NetworkManager.Singleton.Shutdown();
+                }
+
+                _connectedPlayers.Clear();
+                OnDisconnected?.Invoke(wasHost ? DisconnectReason.HostShutdown : DisconnectReason.ClientDisconnected);
+            }
+            finally
+            {
+                _isDisconnecting = false;
+            }
         }
 
         public void RegisterPlayer(NetworkPlayer player)
