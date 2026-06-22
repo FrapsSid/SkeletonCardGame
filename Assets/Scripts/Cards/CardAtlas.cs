@@ -37,12 +37,14 @@ public class CardAtlas : ScriptableObject, ISerializationCallbackReceiver
 
     public Sprite GetFaceSprite(CardSuit suit, CardValue value)
     {
+        EnsureLookup();
+
         if (_faceSpritesDictionary != null && _faceSpritesDictionary.TryGetValue((suit, value), out Sprite sprite))
         {
             return sprite;
         }
 
-        Debug.LogError($"Спрайт для карты {value} {suit} не найден в атласе!");
+        Debug.LogError($"Sprite for card {value} of {suit} was not found in the card atlas.");
         return null;
     }
 
@@ -50,6 +52,20 @@ public class CardAtlas : ScriptableObject, ISerializationCallbackReceiver
     public void OnBeforeSerialize() { }
 
     public void OnAfterDeserialize()
+    {
+        RebuildLookup();
+    }
+    #endregion
+
+    private void EnsureLookup()
+    {
+        if (_faceSpritesDictionary == null)
+        {
+            RebuildLookup();
+        }
+    }
+
+    private void RebuildLookup()
     {
         _faceSpritesDictionary = new Dictionary<(CardSuit, CardValue), Sprite>();
 
@@ -62,5 +78,4 @@ public class CardAtlas : ScriptableObject, ISerializationCallbackReceiver
             }
         }
     }
-    #endregion
 }
