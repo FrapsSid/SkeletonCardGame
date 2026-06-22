@@ -48,7 +48,7 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
         players.Add(firstPlayer);
         players.Add(secondPlayer);
 
-        manager.StartGame(teams, players);
+        manager.StartGame(teams, players, players[0]);
 
         if (useRealBodies)
         {
@@ -83,6 +83,15 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
         return seat != null
             ? Instantiate(skeletonBodyPrefab, seat.position, seat.rotation)
             : Instantiate(skeletonBodyPrefab);
+        EnsureTestAiTurnAdapter();
+        manager.StartGame(teams, players, players[0]);
+
+        GameUIManager? ui = FindFirstObjectByType<GameUIManager>();
+        if (ui == null)
+            return;
+
+        ui.RefreshGameManager();
+        ui.EnterGameHud();
     }
 
     private static Team CreateTestTeam()
@@ -99,5 +108,11 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
         var player = new Skeleton(team);
         team.AddSkeleton(player);
         return player;
+    }
+
+    private void EnsureTestAiTurnAdapter()
+    {
+        if (GetComponent<TestAiTurnAdapter>() == null)
+            gameObject.AddComponent<TestAiTurnAdapter>();
     }
 }

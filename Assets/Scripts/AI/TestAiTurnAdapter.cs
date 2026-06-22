@@ -62,7 +62,7 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
 
         foreach (Skeleton player in gameManager.Players)
         {
-            if (!gameManager.IsAiPlayer(player))
+            if (gameManager.LocalPlayer == player)
                 continue;
 
             if (subscribedGame.TurnStartedByPlayer.TryGetValue(player, out CardGameModel.PlayerTurnEvent turnStarted))
@@ -90,7 +90,7 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
 
     private void HandleTurnStarted(Skeleton player)
     {
-        if (gameManager == null || !gameManager.IsAiPlayer(player))
+        if (gameManager == null || player == gameManager.LocalPlayer)
             return;
 
         StopPendingTurn();
@@ -111,7 +111,7 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
     private void ExecuteAiTurn(Skeleton player)
     {
         CardGameRound? round = subscribedGame?.round;
-        if (round == null || round.CurrentPlayer != player || gameManager == null || !gameManager.IsAiPlayer(player))
+        if (round == null || round.CurrentPlayer != player || gameManager == null || player == gameManager.LocalPlayer)
             return;
 
         try

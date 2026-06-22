@@ -89,7 +89,7 @@ public sealed class BetScreen : GameUIScreen
     private void Refresh()
     {
         CardGameRound round = CurrentRound;
-        Skeleton player = CurrentPlayer;
+        Skeleton player = LocalPlayerForCurrentTurn;
         PlayerBetState state = round != null && player != null && round.playerStates.ContainsKey(player)
             ? round.playerStates[player]
             : null;
@@ -220,7 +220,7 @@ public sealed class BetScreen : GameUIScreen
     private void Confirm()
     {
         CardGameRound round = CurrentRound;
-        Skeleton player = CurrentPlayer;
+        Skeleton player = LocalPlayerForCurrentTurn;
         if (round == null || player == null)
         {
             statusText.text = "Waiting for your turn.";
@@ -283,7 +283,7 @@ public sealed class BetScreen : GameUIScreen
     private void HandlePlayerChanged(Skeleton player) => Refresh();
 
     private CardGameRound CurrentRound => UI.GameManager != null && UI.GameManager.CardGame != null ? UI.GameManager.CardGame.round : null;
-    private Skeleton CurrentPlayer => UI.GameManager != null && UI.GameManager.IsHumanPlayer(UI.GameManager.CurrentPlayer) ? UI.GameManager.CurrentPlayer : null;
+    private Skeleton LocalPlayerForCurrentTurn => UI.GameManager != null && UI.GameManager.LocalPlayer == UI.GameManager.CardGame?.round?.CurrentPlayer ? UI.GameManager.LocalPlayer : null;
 
     private static string AssetLabel(StakeAsset asset)
     {

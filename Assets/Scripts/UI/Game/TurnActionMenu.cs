@@ -103,7 +103,7 @@ public sealed class TurnActionMenu : GameUIScreen
         UI.RefreshGameManager();
         GameManager manager = UI.GameManager;
         CardGameModel game = manager != null ? manager.CardGame : null;
-        Skeleton player = manager != null ? manager.HumanPlayer : null;
+        Skeleton player = manager != null ? manager.LocalPlayer : null;
         if (manager == subscribedManager && game == subscribedGame && player == subscribedPlayer)
             return;
 
@@ -343,20 +343,20 @@ public sealed class TurnActionMenu : GameUIScreen
     private bool IsCurrentHumanTurn(CardGameRound round = null)
     {
         GameManager manager = UI.GameManager;
-        if (manager == null || currentPlayer == null || !manager.IsHumanPlayer(currentPlayer))
+        if (manager == null || currentPlayer == null)
             return false;
 
         CardGameRound activeRound = round != null ? round : subscribedGame != null ? subscribedGame.round : null;
         return activeRound != null
-            && ReferenceEquals(manager.CurrentPlayer, currentPlayer)
+            && ReferenceEquals(manager.LocalPlayer, currentPlayer)
             && ReferenceEquals(activeRound.CurrentPlayer, currentPlayer);
     }
 
     private void SyncCurrentPlayerFromGameManager()
     {
         GameManager manager = UI.GameManager;
-        Skeleton player = manager != null ? manager.CurrentPlayer : null;
-        currentPlayer = manager != null && manager.IsHumanPlayer(player) ? player : null;
+        Skeleton player = manager != null ? manager.LocalPlayer : null;
+        currentPlayer = player;
         Refresh();
     }
 }

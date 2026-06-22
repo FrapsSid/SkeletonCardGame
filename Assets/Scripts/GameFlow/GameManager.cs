@@ -15,7 +15,7 @@ public sealed class GameManager : MonoBehaviour
     private bool _roundResolved;
 
     public CardGame? CardGame { get; private set; }
-    public Skeleton? CurrentPlayer { get; private set; }
+    public Skeleton? LocalPlayer { get; private set; }
     public IReadOnlyList<Team> Teams => _teams;
     public IReadOnlyList<Skeleton> Players => _players;
     public event Action<CardGame>? OnGameCreated;
@@ -33,7 +33,7 @@ public sealed class GameManager : MonoBehaviour
         _bettingDiscussionGate.StopDiscussion();
     }
 
-    public void StartGame(IEnumerable<Team> gameTeams, IEnumerable<Skeleton> gamePlayers, Skeleton currentPlayer)
+    public void StartGame(IEnumerable<Team> gameTeams, IEnumerable<Skeleton> gamePlayers, Skeleton localPlayer)
     {
         if (gameTeams == null)
             throw new ArgumentNullException(nameof(gameTeams));
@@ -44,7 +44,7 @@ public sealed class GameManager : MonoBehaviour
         _players.Clear();
         _teams.AddRange(gameTeams);
         _players.AddRange(gamePlayers);
-        CurrentPlayer = currentPlayer;
+        LocalPlayer = localPlayer;
 
         StartGame();
     }
@@ -53,12 +53,13 @@ public sealed class GameManager : MonoBehaviour
     {
         if (_teams.Count == 0 || _players.Count == 0)
             throw new InvalidOperationException("GameManager needs teams and players before starting a game.");
+        if (LocalPlayer == null || !_players.Contains(LocalPlayer))
+            throw new InvalidOperationException("GameManager needs a local player from the player list before starting a game.");
 
         Unsubscribe();
         UnsubscribeFromDiscussionGate();
         StopRestartRound();
 
-        CurrentPlayer = null;
         SubscribeToDiscussionGate();
         _roundResolved = false;
 
@@ -127,7 +128,6 @@ public sealed class GameManager : MonoBehaviour
             yield break;
 
         game.ResetRound();
-        CurrentPlayer = null;
         _roundResolved = false;
         StartRoundFlow(game);
     }

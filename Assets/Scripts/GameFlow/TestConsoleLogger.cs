@@ -172,7 +172,7 @@ public sealed class TestConsoleLogger : MonoBehaviour
 
     private void HandleCardTaken(Skeleton player, CardData card)
     {
-        string cardText = gameManager != null && gameManager.IsAiPlayer(player) ? $" Card: {FormatCard(card)}." : string.Empty;
+        string cardText = gameManager != null && IsAiControlled(player) ? $" Card: {FormatCard(card)}." : string.Empty;
         Debug.Log($"[Test] {PlayerLabel(player)} took a card.{cardText}", this);
         LogNonHumanHands("Debug non-human hands after card draw");
     }
@@ -199,7 +199,7 @@ public sealed class TestConsoleLogger : MonoBehaviour
             return;
 
         IEnumerable<string> hands = gameManager.Players
-            .Where(gameManager.IsAiPlayer)
+            .Where(IsAiControlled)
             .Select(player => $"{PlayerLabel(player)}: {FormatCards(player.Hand.GetCards())}");
 
         Debug.Log($"[Test] {title}: {JoinOrNone(hands)}", this);
@@ -236,7 +236,12 @@ public sealed class TestConsoleLogger : MonoBehaviour
 
     private string ControlLabel(Skeleton player)
     {
-        return gameManager != null && gameManager.IsHumanPlayer(player) ? "human UI" : "AI";
+        return gameManager != null && ReferenceEquals(gameManager.LocalPlayer, player) ? "human UI" : "AI";
+    }
+
+    private bool IsAiControlled(Skeleton player)
+    {
+        return gameManager != null && !ReferenceEquals(gameManager.LocalPlayer, player);
     }
 
     private string FormatTeams(IReadOnlyList<Team>? teams)
