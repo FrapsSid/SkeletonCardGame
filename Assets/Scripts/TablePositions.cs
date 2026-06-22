@@ -23,6 +23,8 @@ public sealed class TablePositions : MonoBehaviour
     [SerializeField, HideInInspector] private List<Transform> playerPositions = new();
     [SerializeField, HideInInspector] private List<Transform> playerDealCardPositions = new();
 
+    private readonly Dictionary<Skeleton, int> _playerIndices = new();
+
     public IReadOnlyList<Transform?> TableCardPositions => tableCardPositions;
     public int PlayerCount
     {
@@ -80,9 +82,19 @@ public sealed class TablePositions : MonoBehaviour
         return GetCalculatedPosition(playerPositions, playerIndex, nameof(playerIndex));
     }
 
+    public Transform GetPlayerPosition(Skeleton player)
+    {
+        return GetPlayerPosition(GetPlayerIndex(player));
+    }
+
     public Transform GetPlayerDealCardPosition(int playerIndex)
     {
         return GetCalculatedPosition(playerDealCardPositions, playerIndex, nameof(playerIndex));
+    }
+
+    public Transform GetPlayerDealCardPosition(Skeleton player)
+    {
+        return GetPlayerDealCardPosition(GetPlayerIndex(player));
     }
 
     public bool TryGetTableCardPosition(int index, out Transform? position)
@@ -95,6 +107,62 @@ public sealed class TablePositions : MonoBehaviour
 
         position = tableCardPositions[index];
         return position != null;
+    }
+
+    public void SetPlayers(IReadOnlyList<Skeleton> players)
+    {
+        if (players == null)
+        {
+            throw new ArgumentNullException(nameof(players));
+        }
+
+        PlayerCount = players.Count;
+        _playerIndices.Clear();
+
+        for (int i = 0; i < players.Count; i++)
+        {
+            Skeleton player = players[i];
+            if (player == null)
+            {
+                throw new ArgumentException("Player list cannot contain null players.", nameof(players));
+            }
+
+            if (!_playerIndices.TryAdd(player, i))
+            {
+                throw new ArgumentException("Player list cannot contain the same player twice.", nameof(players));
+            }
+        }
+    }
+
+    public void ClearPlayers()
+    {
+        _playerIndices.Clear();
+    }
+
+    public bool TryGetPlayerIndex(Skeleton player, out int playerIndex)
+    {
+        if (player == null)
+        {
+            playerIndex = -1;
+            return false;
+        }
+
+        return _playerIndices.TryGetValue(player, out playerIndex);
+    }
+
+    public int GetPlayerIndex(Skeleton player)
+    {
+        if (player == null)
+        {
+            throw new ArgumentNullException(nameof(player));
+        }
+
+        if (!_playerIndices.TryGetValue(player, out int playerIndex))
+        {
+            throw new InvalidOperationException("Player is not assigned to a table position.");
+        }
+
+        return playerIndex;
     }
 
     private Transform GetCalculatedPosition(List<Transform> positions, int index, string parameterName)
