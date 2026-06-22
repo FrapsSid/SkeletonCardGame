@@ -14,14 +14,20 @@ public class PlayerInteractor : MonoBehaviour {
     public Pickupable CurrentTarget => _currentTarget;
 
     private PlayerInventoryOwner _player;
+    private SkeletonBody _skeletonBody;
     private Pickupable _currentTarget;
     private readonly Collider[] _overlapResults = new Collider[32];
 
     private void Awake() {
         _player = GetComponent<PlayerInventoryOwner>();
+        _skeletonBody = GetComponent<SkeletonBody>();
     }
 
     private void Update() {
+        if (!CanInteract()) {
+            SetCurrentTarget(null);
+            return;
+        }
         UpdateCurrentTarget();
 
         if (InputKeyUtils.WasPressedThisFrame(pickupKey)) {
@@ -104,8 +110,24 @@ public class PlayerInteractor : MonoBehaviour {
         }
     }
 
+    private void OnEnable() {
+        if (_skeletonBody != null) {
+            _skeletonBody.OnBodyChanged += HandleBodyChanged;
+        }
+    }
     private void OnDisable() {
+        if (_skeletonBody != null) {
+            _skeletonBody.OnBodyChanged -= HandleBodyChanged;
+        }
         SetCurrentTarget(null);
+    }
+    private void HandleBodyChanged() {
+        if (!CanInteract()) {
+            SetCurrentTarget(null);
+        }
+    }
+    private bool CanInteract() {
+        return _skeletonBody == null || _skeletonBody.GetArmCount() > 0;
     }
 
     private void OnDrawGizmosSelected() {

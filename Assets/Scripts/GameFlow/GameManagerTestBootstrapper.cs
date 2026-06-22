@@ -1,14 +1,18 @@
 #nullable enable
 using System.Collections.Generic;
 using UnityEngine;
+using System.Collections;
 
 [RequireComponent(typeof(GameManager))]
 public sealed class GameManagerTestBootstrapper : MonoBehaviour
 {
     [SerializeField]
     private bool startOnStart = true;
+    [SerializeField] private SkeletonBody? skeletonBodyPrefab;
+    [SerializeField] private Transform[] seatPositions = new Transform[0];
 
     private GameManager? gameManager;
+    private int _nextSeatIndex;
 
     private void Awake()
     {
@@ -25,20 +29,60 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
     {
         GameManager manager = gameManager != null ? gameManager : GetComponent<GameManager>();
         gameManager = manager;
+        _nextSeatIndex = 0;
 
         var teams = new List<Team>();
         var players = new List<Skeleton>();
 
-        Team firstTeam = CreateTestTeam();
-        Team secondTeam = CreateTestTeam();
+        bool useRealBodies = skeletonBodyPrefab != null;
+
+        Team firstTeam = useRealBodies ? new Team() : CreateTestTeam();
+        Team secondTeam = useRealBodies ? new Team() : CreateTestTeam();
 
         teams.Add(firstTeam);
         teams.Add(secondTeam);
 
-        players.Add(CreatePlayer(firstTeam));
-        players.Add(CreatePlayer(secondTeam));
+        Skeleton firstPlayer = CreatePlayer(firstTeam);
+        Skeleton secondPlayer = CreatePlayer(secondTeam);
+
+        players.Add(firstPlayer);
+        players.Add(secondPlayer);
 
         manager.StartGame(teams, players);
+
+        if (useRealBodies)
+        {
+            SpawnAndLinkBody(firstTeam, firstPlayer);
+            SpawnAndLinkBody(secondTeam, secondPlayer);
+        }
+    }
+
+    private void SpawnAndLinkBody(Team team, Skeleton player)
+    {
+        SkeletonBody? body = SpawnSkeletonBody();
+        if (body == null)
+            return;
+
+        StartCoroutine(LinkBodyNextFrame(team, player, body));
+    }
+
+    private IEnumerator LinkBodyNextFrame(Team team, Skeleton player, SkeletonBody body)
+    {
+        yield return null;
+        SkeletonStakeLinker.RegisterBodyAssets(team, player, body);
+    }
+
+    private SkeletonBody? SpawnSkeletonBody()
+    {
+        if (skeletonBodyPrefab == null)
+            return null;
+
+        Transform? seat = _nextSeatIndex < seatPositions.Length ? seatPositions[_nextSeatIndex] : null;
+        _nextSeatIndex++;
+
+        return seat != null
+            ? Instantiate(skeletonBodyPrefab, seat.position, seat.rotation)
+            : Instantiate(skeletonBodyPrefab);
     }
 
     private static Team CreateTestTeam()

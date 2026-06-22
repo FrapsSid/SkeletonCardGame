@@ -10,6 +10,9 @@ public class BodyPart : MonoBehaviour
     public GameObject CurrentOwner;
     public GameObject OriginalOwner;
 
+    [Header("Pickup")]
+    public ItemData itemData;
+
     public void Initialize(GameObject owner)
     {
         OriginalOwner = owner;
@@ -22,16 +25,40 @@ public class BodyPart : MonoBehaviour
         State = BodyPartState.Detached;
         CurrentOwner = null;
         transform.SetParent(null);
+        EnableWorldPickup();
     }
 
     public void Attach(GameObject newOwner, Transform boneParent)
     {
         State = BodyPartState.Attached;
         CurrentOwner = newOwner;
+        DisableWorldPickup();
         
         transform.SetParent(boneParent);
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
+    }
+
+    private void EnableWorldPickup()
+    {
+        if (GetComponent<Rigidbody>() == null)
+            gameObject.AddComponent<Rigidbody>();
+
+        Pickupable pickupable = GetComponent<Pickupable>();
+        if (pickupable == null)
+            pickupable = gameObject.AddComponent<Pickupable>();
+
+        pickupable.itemData = itemData;
+        pickupable.SetPickupable(true);
+    }
+
+    private void DisableWorldPickup()
+    {
+        Pickupable pickupable = GetComponent<Pickupable>();
+        if (pickupable != null) Destroy(pickupable);
+
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null) Destroy(rb);
     }
 }
 
