@@ -8,23 +8,21 @@ using static CardGame;
 [RequireComponent(typeof(BettingDiscussionGate))]
 public sealed class GameManager : MonoBehaviour
 {
-    private readonly List<Team> teams = new List<Team>();
-    private readonly List<Skeleton> players = new List<Skeleton>();
-    private BettingDiscussionGate? bettingDiscussionGate;
-    private Coroutine? restartRoundCoroutine;
-    private bool roundResolved;
+    private readonly List<Team> _teams = new();
+    private readonly List<Skeleton> _players = new();
+    private BettingDiscussionGate _bettingDiscussionGate = null!;
+    private Coroutine? _restartRoundCoroutine;
+    private bool _roundResolved;
 
     public CardGame? CardGame { get; private set; }
     public Skeleton? CurrentPlayer { get; private set; }
-    public Skeleton? HumanPlayer { get; private set; }
-    public IReadOnlyList<Team> Teams => teams;
-    public IReadOnlyList<Skeleton> Players => players;
-
+    public IReadOnlyList<Team> Teams => _teams;
+    public IReadOnlyList<Skeleton> Players => _players;
     public event Action<CardGame>? OnGameCreated;
 
     private void Awake()
     {
-        bettingDiscussionGate = GetComponent<BettingDiscussionGate>();
+        _bettingDiscussionGate = GetComponent<BettingDiscussionGate>() ?? throw new NullReferenceException(nameof(BettingDiscussionGate));
     }
 
     private void OnDestroy()
@@ -32,28 +30,28 @@ public sealed class GameManager : MonoBehaviour
         Unsubscribe();
         UnsubscribeFromDiscussionGate();
         StopRestartRound();
-        bettingDiscussionGate?.StopDiscussion();
+        _bettingDiscussionGate.StopDiscussion();
     }
 
-    public void StartGame(IEnumerable<Team> gameTeams, IEnumerable<Skeleton> gamePlayers)
+    public void StartGame(IEnumerable<Team> gameTeams, IEnumerable<Skeleton> gamePlayers, Skeleton currentPlayer)
     {
         if (gameTeams == null)
             throw new ArgumentNullException(nameof(gameTeams));
         if (gamePlayers == null)
             throw new ArgumentNullException(nameof(gamePlayers));
 
-        teams.Clear();
-        players.Clear();
-        teams.AddRange(gameTeams);
-        players.AddRange(gamePlayers);
-        HumanPlayer = players.Count > 0 ? players[0] : null;
+        _teams.Clear();
+        _players.Clear();
+        _teams.AddRange(gameTeams);
+        _players.AddRange(gamePlayers);
+        CurrentPlayer = currentPlayer;
 
         StartGame();
     }
 
     public void StartGame()
     {
-        if (teams.Count == 0 || players.Count == 0)
+        if (_teams.Count == 0 || _players.Count == 0)
             throw new InvalidOperationException("GameManager needs teams and players before starting a game.");
 
         Unsubscribe();
@@ -61,11 +59,10 @@ public sealed class GameManager : MonoBehaviour
         StopRestartRound();
 
         CurrentPlayer = null;
-        bettingDiscussionGate = GetRequiredBettingDiscussionGate();
         SubscribeToDiscussionGate();
-        roundResolved = false;
+        _roundResolved = false;
 
-        CardGame = new CardGame(teams, players);
+        CardGame = new CardGame(_teams, _players);
         Subscribe(CardGame);
         OnGameCreated?.Invoke(CardGame);
         StartRoundFlow(CardGame);
@@ -81,8 +78,6 @@ public sealed class GameManager : MonoBehaviour
     private void Subscribe(CardGame game)
     {
         game.OnPhaseChanged += HandlePhaseChanged;
-        game.OnTurnStarted += HandleTurnStarted;
-        game.OnTurnEnded += HandleTurnEnded;
         game.OnRoundEnded += HandleRoundEnded;
     }
 
@@ -92,19 +87,7 @@ public sealed class GameManager : MonoBehaviour
             return;
 
         CardGame.OnPhaseChanged -= HandlePhaseChanged;
-        CardGame.OnTurnStarted -= HandleTurnStarted;
-        CardGame.OnTurnEnded -= HandleTurnEnded;
         CardGame.OnRoundEnded -= HandleRoundEnded;
-    }
-
-    public bool IsHumanPlayer(Skeleton? player)
-    {
-        return player != null && HumanPlayer != null && ReferenceEquals(HumanPlayer, player);
-    }
-
-    public bool IsAiPlayer(Skeleton? player)
-    {
-        return player != null && HumanPlayer != null && !ReferenceEquals(HumanPlayer, player);
     }
 
     private void HandlePhaseChanged(GamePhase phase)
@@ -121,36 +104,23 @@ public sealed class GameManager : MonoBehaviour
         {
             game.DealTableCards();
         }
-        else if (phase == GamePhase.End && !roundResolved)
+        else if (phase == GamePhase.End && !_roundResolved)
         {
-            roundResolved = true;
+            _roundResolved = true;
             game.round.DetermineWinners();
             game.round.ResolvePot();
         }
     }
-
-    private void HandleTurnStarted(Skeleton player)
-    {
-        CurrentPlayer = player;
-        Debug.Log($"Turn started: {players.IndexOf(player)}", this);
-    }
-
-    private void HandleTurnEnded(Skeleton player)
-    {
-        if (ReferenceEquals(CurrentPlayer, player))
-            CurrentPlayer = null;
-    }
-
     private void HandleRoundEnded(RoundResult result)
     {
         StopRestartRound();
-        restartRoundCoroutine = StartCoroutine(RestartRoundAfterRoundEnded());
+        _restartRoundCoroutine = StartCoroutine(RestartRoundAfterRoundEnded());
     }
 
     private IEnumerator RestartRoundAfterRoundEnded()
     {
         yield return null;
-        restartRoundCoroutine = null;
+        _restartRoundCoroutine = null;
 
         CardGame? game = CardGame;
         if (game == null || game.phase != GamePhase.End)
@@ -158,15 +128,14 @@ public sealed class GameManager : MonoBehaviour
 
         game.ResetRound();
         CurrentPlayer = null;
-        roundResolved = false;
+        _roundResolved = false;
         StartRoundFlow(game);
     }
 
     private void StartBettingDiscussion(Round round)
     {
-        BettingDiscussionGate gate = GetRequiredBettingDiscussionGate();
-        gate.StopDiscussion();
-        gate.StartPostDealDiscussion(round);
+        _bettingDiscussionGate.StopDiscussion();
+        _bettingDiscussionGate.StartPostDealDiscussion(round);
     }
 
     private void HandleDiscussionCompleted(Round round)
@@ -180,34 +149,20 @@ public sealed class GameManager : MonoBehaviour
 
     private void SubscribeToDiscussionGate()
     {
-        if (bettingDiscussionGate != null)
-            bettingDiscussionGate.OnDiscussionCompleted += HandleDiscussionCompleted;
+        _bettingDiscussionGate.OnDiscussionCompleted += HandleDiscussionCompleted;
     }
 
     private void UnsubscribeFromDiscussionGate()
     {
-        if (bettingDiscussionGate != null)
-            bettingDiscussionGate.OnDiscussionCompleted -= HandleDiscussionCompleted;
-    }
-
-    private BettingDiscussionGate GetRequiredBettingDiscussionGate()
-    {
-        if (bettingDiscussionGate != null)
-            return bettingDiscussionGate;
-
-        bettingDiscussionGate = GetComponent<BettingDiscussionGate>();
-        if (bettingDiscussionGate == null)
-            throw new InvalidOperationException("GameManager requires a BettingDiscussionGate component.");
-
-        return bettingDiscussionGate;
+        _bettingDiscussionGate.OnDiscussionCompleted -= HandleDiscussionCompleted;
     }
 
     private void StopRestartRound()
     {
-        if (restartRoundCoroutine == null)
+        if (_restartRoundCoroutine == null)
             return;
 
-        StopCoroutine(restartRoundCoroutine);
-        restartRoundCoroutine = null;
+        StopCoroutine(_restartRoundCoroutine);
+        _restartRoundCoroutine = null;
     }
 }
