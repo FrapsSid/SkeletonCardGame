@@ -41,39 +41,39 @@ public class CardGame
     public class Round
     {
         private int _currentPlayerIndex = 0;
-        public int bettingRound { get; private set; } = 0;
-        public Player CurrentPlayer { get => game.players[_currentPlayerIndex]; }
-        public IReadOnlyList<Team>? winners { get => result?.winners; }
-        public RoundResult? result { get; private set; }
+        public int BettingRound { get; private set; } = 0;
+        public Player CurrentPlayer => _game.players[_currentPlayerIndex];
+        public IReadOnlyList<Team>? Winners => Result?.winners;
+        public RoundResult? Result { get; private set; }
         public enum PlayerTurnState
         {
             None,
             Raised,
             TakenACard
         }
-        public Dictionary<Player, PlayerBetState> playerStates = new Dictionary<Player, PlayerBetState>();
-        public Dictionary<Player, PlayerTurnState> playerTurnStates = new Dictionary<Player, PlayerTurnState>();
-        public int currentParticipationPrice;
-        private readonly HashSet<Player> activePlayers = new HashSet<Player>();
-        private readonly HashSet<Team> allInTeams = new HashSet<Team>();
-        public IReadOnlyCollection<Player> ActivePlayers => activePlayers;
-        private CardGame game;
-        public int lastRaise = 0;
-        private List<CardData> _tableCards = new List<CardData>();
-        public readonly IReadOnlyList<CardData> tableCards;
-        public readonly RoundCombinationSet combinations;
+        public Dictionary<Player, PlayerBetState> playerStates = new();
+        public Dictionary<Player, PlayerTurnState> playerTurnStates = new();
+        public int currentParticipationPrice { get; private set; }
+        private readonly HashSet<Player> _activePlayers = new();
+        private readonly HashSet<Team> _allInTeams = new();
+        public IReadOnlyCollection<Player> ActivePlayers => _activePlayers;
+        private readonly CardGame _game;
+        private int _lastRaise = 0;
+        private readonly List<CardData> _tableCards = new();
+        public readonly IReadOnlyList<CardData> TableCards;
+        public readonly RoundCombinationSet Combinations;
 
         public Round(CardGame cardGame, RoundCombinationSet combinations)
         {
-            this.game = cardGame;
-            tableCards = _tableCards.AsReadOnly();
-            this.combinations = combinations;
+            this._game = cardGame;
+            TableCards = _tableCards.AsReadOnly();
+            this.Combinations = combinations;
 
-            foreach (var player in game.players)
+            foreach (var player in _game.players)
             {
                 playerStates[player] = new PlayerBetState();
                 playerTurnStates[player] = PlayerTurnState.None;
-                activePlayers.Add(player);
+                _activePlayers.Add(player);
             }
         }
         public bool CanRaise(Player player)
@@ -153,25 +153,25 @@ public class CardGame
 
             state.declaredTarget = combination;
             if (oldTarget == null)
-                game.RaiseTargetDeclared(player, combination);
+                _game.RaiseTargetDeclared(player, combination);
             else if (combination > oldTarget.Value)
-                game.RaiseTargetUpgraded(player, combination);
+                _game.RaiseTargetUpgraded(player, combination);
 
             if (state.committedValue > currentParticipationPrice)
             {
                 currentParticipationPrice = state.committedValue;
                 playerTurnStates[player] = PlayerTurnState.Raised;
-                lastRaise = 0;
-                game.RaisePriceRaised(player, currentParticipationPrice);
+                _lastRaise = 0;
+                _game.RaisePriceRaised(player, currentParticipationPrice);
             }
             else
             {
-                game.RaisePriceMatched(player, currentParticipationPrice);
+                _game.RaisePriceMatched(player, currentParticipationPrice);
             }
         }
         public bool IsTeamAllIn(Team team)
         {
-            return allInTeams.Contains(team);
+            return _allInTeams.Contains(team);
         }
         public bool CanAllIn(Player player, DeclaredCombinationTier combination)
         {
@@ -179,7 +179,7 @@ public class CardGame
                 return false;
             if (CurrentPlayer != player)
                 return false;
-            if (!activePlayers.Contains(player))
+            if (!_activePlayers.Contains(player))
                 return false;
             if (IsTeamAllIn(player.team))
                 return false;
@@ -204,33 +204,33 @@ public class CardGame
             }
 
             state.declaredTarget = combination;
-            allInTeams.Add(player.team);
+            _allInTeams.Add(player.team);
 
             if (oldTarget == null)
-                game.RaiseTargetDeclared(player, combination);
+                _game.RaiseTargetDeclared(player, combination);
             else if (combination > oldTarget.Value)
-                game.RaiseTargetUpgraded(player, combination);
+                _game.RaiseTargetUpgraded(player, combination);
 
             if (state.committedValue > currentParticipationPrice)
             {
                 currentParticipationPrice = state.committedValue;
                 playerTurnStates[player] = PlayerTurnState.Raised;
-                lastRaise = 0;
-                game.RaisePriceRaised(player, currentParticipationPrice);
+                _lastRaise = 0;
+                _game.RaisePriceRaised(player, currentParticipationPrice);
             }
             else
             {
-                game.RaisePriceMatched(player, currentParticipationPrice);
+                _game.RaisePriceMatched(player, currentParticipationPrice);
             }
         }
         public void TakeCard(Player player)
         {
             EnsureBettingPhase();
             CheckPlayersTurn(player);
-            CardData card = game.deck.DrawCard();
+            CardData card = _game.deck.DrawCard();
             player.Hand.AddCard(card);
             playerTurnStates[player] = PlayerTurnState.TakenACard;
-            game.RaiseCardTaken(player, card);
+            _game.RaiseCardTaken(player, card);
         }
         public bool HasMatchedBet(Player player)
         {
@@ -244,9 +244,9 @@ public class CardGame
                 throw new InvalidOperationException("Player has not matched the current price");
 
             if (playerTurnStates[player] == PlayerTurnState.Raised)
-                lastRaise = 0;
+                _lastRaise = 0;
 
-            game.RaiseTurnEnded(player);
+            _game.RaiseTurnEnded(player);
             MoveToNextPlayerOrEndBettingRound();
         }
 
@@ -255,20 +255,20 @@ public class CardGame
             EnsureBettingPhase();
             CheckPlayersTurn(player);
 
-            if (activePlayers.Count <= 1)
+            if (_activePlayers.Count <= 1)
                 throw new InvalidOperationException("Last active player cannot fold");
             PlayerBetState state = playerStates[player];
             state.hasFolded = true;
-            activePlayers.Remove(player);
+            _activePlayers.Remove(player);
 
-            game.RaisePlayerFolded(player);
-            game.RaiseTurnEnded(player);
+            _game.RaisePlayerFolded(player);
+            _game.RaiseTurnEnded(player);
 
-            if (activePlayers.Count <= 1)
+            if (_activePlayers.Count <= 1)
             {
-                bettingRound++;
-                game.RaiseBettingRoundEnded(this);
-                game.phase = GamePhase.End;
+                BettingRound++;
+                _game.RaiseBettingRoundEnded(this);
+                _game.phase = GamePhase.End;
                 return;
             }
 
@@ -277,15 +277,15 @@ public class CardGame
         }
         public void ResolvePot()
         {
-            if (game.phase != GamePhase.End)
+            if (_game.phase != GamePhase.End)
                 throw new InvalidOperationException("Pot can only be resolved at round end");
-            if (result == null)
+            if (Result == null)
                 throw new InvalidOperationException("Winners must be determined before resolving the pot");
-            if (result.assetDistribution.Count == 0)
+            if (Result.assetDistribution.Count == 0)
                 throw new InvalidOperationException("Asset distribution must be calculated before resolving the pot");
 
             List<StakeAsset> resolvedAssets = new List<StakeAsset>();
-            foreach (var pair in result.assetDistribution)
+            foreach (var pair in Result.assetDistribution)
             {
                 foreach (StakeAsset asset in pair.Value)
                 {
@@ -294,26 +294,26 @@ public class CardGame
                 }
             }
 
-            game.RaisePotResolved(result.winners, resolvedAssets);
-            game.RaiseRoundEnded(result);
+            _game.RaisePotResolved(Result.winners, resolvedAssets);
+            _game.RaiseRoundEnded(Result);
         }
         private void BeginPlayersTurn(Player player)
         {
             playerTurnStates[player] = PlayerTurnState.None;
-            game.RaiseTurnStarted(player);
+            _game.RaiseTurnStarted(player);
         }
         private void CheckPlayersTurn(Player player)
         {
             if (player == null)
                 throw new ArgumentNullException(nameof(player));
-            if (activePlayers.Count == 0)
+            if (_activePlayers.Count == 0)
                 throw new InvalidOperationException("No active players");
-            if (_currentPlayerIndex < 0 || _currentPlayerIndex >= game.players.Count || CurrentPlayer != player)
+            if (_currentPlayerIndex < 0 || _currentPlayerIndex >= _game.players.Count || CurrentPlayer != player)
                 throw new InvalidOperationException("Not player's turn");
         }
         private bool IsBettingPhase()
         {
-            return game.phase == GamePhase.Betting;
+            return _game.phase == GamePhase.Betting;
         }
         private void EnsureBettingPhase()
         {
@@ -322,62 +322,62 @@ public class CardGame
         }
         public void StartBettingRound()
         {
-            if (game.phase != GamePhase.BettingRoundStart)
+            if (_game.phase != GamePhase.BettingRoundStart)
                 throw new InvalidOperationException("Betting round cannot start in the current phase");
 
-            game.phase = GamePhase.Betting;
-            game.RaiseBettingRoundStarted(this);
-            lastRaise = 0;
+            _game.phase = GamePhase.Betting;
+            _game.RaiseBettingRoundStarted(this);
+            _lastRaise = 0;
 
-            if (activePlayers.Count == 0)
+            if (_activePlayers.Count == 0)
             {
                 EndBettingRound();
                 return;
             }
 
-            _currentPlayerIndex = game.players.Count - 1;
+            _currentPlayerIndex = _game.players.Count - 1;
             MoveToNextActivePlayer();
             BeginPlayersTurn(CurrentPlayer);
         }
         public void EndBettingRound()
         {
-            bettingRound++;
-            game.RaiseBettingRoundEnded(this);
+            BettingRound++;
+            _game.RaiseBettingRoundEnded(this);
 
-            if (activePlayers.Count <= 1)
+            if (_activePlayers.Count <= 1)
             {
-                game.phase = GamePhase.End;
+                _game.phase = GamePhase.End;
                 return;
             }
 
-            if (bettingRound == 5)
+            if (BettingRound == 5)
             {
-                game.phase = GamePhase.End;
+                _game.phase = GamePhase.End;
                 return;
             }
 
-            game.phase = GamePhase.AddingCards;
+            _game.phase = GamePhase.AddingCards;
         }
         public void DealTableCards(int number)
         {
             List<CardData> dealtCards = new List<CardData>();
             for (int i = 0; i < number; i++)
             {
-                CardData card = game.deck.DrawCard();
+                CardData card = _game.deck.DrawCard();
                 _tableCards.Add(card);
                 dealtCards.Add(card);
             }
 
-            game.RaiseTableCardsDealt(dealtCards);
+            _game.RaiseTableCardsDealt(dealtCards);
         }
         private void MoveToNextPlayerOrEndBettingRound()
         {
-            if (activePlayers.Count == 0)
+            if (_activePlayers.Count == 0)
             {
                 EndBettingRound();
                 return;
             }
-            if (lastRaise++ >= activePlayers.Count - 1)
+            if (_lastRaise++ >= _activePlayers.Count - 1)
             {
                 EndBettingRound();
                 return;
@@ -388,10 +388,10 @@ public class CardGame
         }
         private void MoveToNextActivePlayer()
         {
-            for (int i = 0; i < game.players.Count; i++)
+            for (int i = 0; i < _game.players.Count; i++)
             {
-                _currentPlayerIndex = (_currentPlayerIndex + 1) % game.players.Count;
-                if (activePlayers.Contains(CurrentPlayer))
+                _currentPlayerIndex = (_currentPlayerIndex + 1) % _game.players.Count;
+                if (_activePlayers.Contains(CurrentPlayer))
                     return;
             }
 
@@ -399,13 +399,13 @@ public class CardGame
         }
         public void DetermineWinners()
         {
-            if (game.phase != GamePhase.End)
+            if (_game.phase != GamePhase.End)
                 throw new InvalidOperationException("Winners can only be determined at round end");
-            List<Team> activeTeams = game.teams
-                .Where(team => team != null && team.Skeletons.Any(activePlayers.Contains))
+            List<Team> activeTeams = _game.teams
+                .Where(team => team != null && team.Skeletons.Any(_activePlayers.Contains))
                 .ToList();
-            result = game.roundScorer.CalculateRoundResults(activeTeams, tableCards.ToList(), combinations, playerStates);
-            result.assetDistribution = SplitPotBetweenWinners(GetCommittedAssets(), result.winners);
+            Result = _game.RoundScorer.CalculateRoundResults(activeTeams, TableCards.ToList(), Combinations, playerStates);
+            Result.assetDistribution = SplitPotBetweenWinners(GetCommittedAssets(), Result.winners);
         }
 
         private List<StakeAsset> GetCommittedAssets()
@@ -479,8 +479,8 @@ public class CardGame
     private List<Player> players;
     private List<Team> teams;
     public Round? round { get; private set; }
-    public readonly CombinationGenerator combinationGenerator = new CombinationGenerator();
-    public readonly RoundScorer roundScorer = new RoundScorer();
+    public readonly CombinationGenerator CombinationGenerator = new();
+    public readonly RoundScorer RoundScorer = new();
 
     public event Action<GamePhase>? OnPhaseChanged;
     public event Action<Round>? OnRoundStarted;
@@ -497,11 +497,11 @@ public class CardGame
     public event Action<Player, CardData>? OnCardTaken;
     public event Action<IReadOnlyList<CardData>>? OnTableCardsDealt;
     public event Action<IReadOnlyList<Team>, IReadOnlyList<StakeAsset>>? OnPotResolved;
-    public IReadOnlyDictionary<Player, PlayerTurnEvent> TurnStartedByPlayer => turnStartedByPlayer;
-    public IReadOnlyDictionary<Player, PlayerTurnEvent> TurnEndedByPlayer => turnEndedByPlayer;
+    public IReadOnlyDictionary<Player, PlayerTurnEvent> TurnStartedByPlayer => _turnStartedByPlayer;
+    public IReadOnlyDictionary<Player, PlayerTurnEvent> TurnEndedByPlayer => _turnEndedByPlayer;
 
-    private readonly Dictionary<Player, PlayerTurnEvent> turnStartedByPlayer = new Dictionary<Player, PlayerTurnEvent>();
-    private readonly Dictionary<Player, PlayerTurnEvent> turnEndedByPlayer = new Dictionary<Player, PlayerTurnEvent>();
+    private readonly Dictionary<Player, PlayerTurnEvent> _turnStartedByPlayer = new();
+    private readonly Dictionary<Player, PlayerTurnEvent> _turnEndedByPlayer = new();
 
     public CardGame(IEnumerable<Team> teams, IEnumerable<Player> players)
     {
@@ -509,8 +509,8 @@ public class CardGame
         this.players = players.ToList();
         foreach (Player player in this.players)
         {
-            turnStartedByPlayer[player] = new PlayerTurnEvent();
-            turnEndedByPlayer[player] = new PlayerTurnEvent();
+            _turnStartedByPlayer[player] = new PlayerTurnEvent();
+            _turnEndedByPlayer[player] = new PlayerTurnEvent();
         }
     }
     public void DealPlayersCards()
@@ -531,7 +531,7 @@ public class CardGame
     {
         if (round != null || phase != GamePhase.ShowingCombinations)
             throw new InvalidOperationException();
-        round = new Round(this, combinationGenerator.GenerateRoundCombinations());
+        round = new Round(this, CombinationGenerator.GenerateRoundCombinations());
         phase = GamePhase.RoundStart;
     }
     public void StartRound()
@@ -553,9 +553,9 @@ public class CardGame
     {
         if (round == null || phase != GamePhase.AddingCards)
             throw new InvalidOperationException();
-        if (round.bettingRound == 1)
+        if (round.BettingRound == 1)
             round.DealTableCards(2);
-        if (round.bettingRound > 1 && round.bettingRound <= 4)
+        if (round.BettingRound > 1 && round.BettingRound <= 4)
             round.DealTableCards(1);
         phase = GamePhase.BettingRoundStart;
     }
@@ -615,13 +615,13 @@ public class CardGame
     private void RaiseTurnStarted(Player player)
     {
         OnTurnStarted?.Invoke(player);
-        if (turnStartedByPlayer.TryGetValue(player, out PlayerTurnEvent turnEvent))
+        if (_turnStartedByPlayer.TryGetValue(player, out PlayerTurnEvent turnEvent))
             turnEvent.Invoke(player);
     }
     private void RaiseTurnEnded(Player player)
     {
         OnTurnEnded?.Invoke(player);
-        if (turnEndedByPlayer.TryGetValue(player, out PlayerTurnEvent turnEvent))
+        if (_turnEndedByPlayer.TryGetValue(player, out PlayerTurnEvent turnEvent))
             turnEvent.Invoke(player);
     }
     private void RaiseCardTaken(Player player, CardData card)

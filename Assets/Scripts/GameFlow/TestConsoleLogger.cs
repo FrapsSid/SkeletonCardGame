@@ -120,19 +120,19 @@ public sealed class TestConsoleLogger : MonoBehaviour
 
     private void HandleRoundStarted(CardGameRound round)
     {
-        Debug.Log($"[Test] Round started. Table: {FormatCards(round.tableCards)}", this);
-        Debug.Log($"[Test] Round combinations: {FormatCombinationSet(round.combinations)}", this);
+        Debug.Log($"[Test] Round started. Table: {FormatCards(round.TableCards)}", this);
+        Debug.Log($"[Test] Round combinations: {FormatCombinationSet(round.Combinations)}", this);
         LogTeamOwnership("Team ownership at round start");
     }
 
     private void HandleBettingRoundStarted(CardGameRound round)
     {
-        Debug.Log($"[Test] Betting started. Current price: {round.currentParticipationPrice}. Table: {FormatCards(round.tableCards)}", this);
+        Debug.Log($"[Test] Betting started. Current price: {round.currentParticipationPrice}. Table: {FormatCards(round.TableCards)}", this);
     }
 
     private void HandleBettingRoundEnded(CardGameRound round)
     {
-        Debug.Log($"[Test] Betting ended. Betting round: {round.bettingRound + 1}. Table: {FormatCards(round.tableCards)}", this);
+        Debug.Log($"[Test] Betting ended. Betting round: {round.BettingRound + 1}. Table: {FormatCards(round.TableCards)}", this);
     }
 
     private void HandleTurnStarted(Skeleton player)
@@ -179,7 +179,7 @@ public sealed class TestConsoleLogger : MonoBehaviour
 
     private void HandleTableCardsDealt(IReadOnlyList<CardData> cards)
     {
-        Debug.Log($"[Test] Table cards dealt: {FormatCards(cards)}. Full table: {FormatCards(subscribedGame?.round?.tableCards)}", this);
+        Debug.Log($"[Test] Table cards dealt: {FormatCards(cards)}. Full table: {FormatCards(subscribedGame?.round?.TableCards)}", this);
     }
 
     private void HandlePotResolved(IReadOnlyList<Team> winners, IReadOnlyList<StakeAsset> assets)
