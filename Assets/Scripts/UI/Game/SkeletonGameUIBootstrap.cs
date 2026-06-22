@@ -10,19 +10,29 @@ using UnityEngine.InputSystem.UI;
 [DefaultExecutionOrder(-1000)]
 public sealed class SkeletonGameUIBootstrap : MonoBehaviour
 {
-    private static GameUIManager instance;
-
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     public static void EnsureRuntimeUI()
     {
-        if (instance != null)
-            return;
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
+        SceneManager.sceneLoaded += HandleSceneLoaded;
 
+        EnsureRuntimeUIForScene(SceneManager.GetActiveScene());
+    }
+
+    private static void EnsureRuntimeUIForScene(Scene scene)
+    {
         EnsureEventSystem();
         DisableLegacyConnectionUi();
 
+        if (TryRefreshSceneGameUIManager(scene))
+            return;
+
+        CreateFallbackGameUIManager();
+    }
+
+    private static void CreateFallbackGameUIManager()
+    {
         GameObject root = new GameObject("Skeleton Game UI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        DontDestroyOnLoad(root);
 
         Canvas canvas = root.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -34,9 +44,25 @@ public sealed class SkeletonGameUIBootstrap : MonoBehaviour
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
         scaler.matchWidthOrHeight = 0.5f;
 
-        instance = root.AddComponent<GameUIManager>();
-        instance.Initialize();
-        SceneManager.sceneLoaded += HandleSceneLoaded;
+        root.AddComponent<GameUIManager>();
+    }
+
+    private static bool TryRefreshSceneGameUIManager(Scene scene)
+    {
+        if (!scene.IsValid())
+            return false;
+
+        GameUIManager[] managers = FindObjectsByType<GameUIManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (GameUIManager manager in managers)
+        {
+            if (manager == null || manager.gameObject.scene != scene)
+                continue;
+
+            manager.RefreshGameManager();
+            return true;
+        }
+
+        return false;
     }
 
     private static void EnsureEventSystem()
@@ -62,9 +88,6 @@ public sealed class SkeletonGameUIBootstrap : MonoBehaviour
 
     private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        EnsureEventSystem();
-        DisableLegacyConnectionUi();
-        if (instance != null)
-            instance.RefreshGameManager();
+        EnsureRuntimeUIForScene(scene);
     }
 }

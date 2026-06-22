@@ -16,6 +16,9 @@ public sealed class GameUIManager : MonoBehaviour
     private RectTransform showcasePanel;
     private bool uiOwnsCursor;
 
+    [SerializeField]
+    private bool openMainMenuOnStart = true;
+
     public event Action<ScreenId> OnScreenOpened;
     public event Action<ScreenId> OnScreenClosed;
 
@@ -64,7 +67,8 @@ public sealed class GameUIManager : MonoBehaviour
         CreateScreens();
         CreateShowcaseControls();
         GameTooltip.Create(transform);
-        OpenScreen(ScreenId.MainMenu);
+        if (openMainMenuOnStart)
+            OpenScreen(ScreenId.MainMenu);
     }
 
     public void RefreshGameManager()
