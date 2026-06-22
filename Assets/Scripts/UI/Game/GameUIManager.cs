@@ -303,6 +303,8 @@ public sealed class GameUIManager : MonoBehaviour
         }
         else if (uiOwnsCursor)
         {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
             uiOwnsCursor = false;
         }
     }
