@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2511039522
+  GlobalObjectIdHash: 30595891
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -207,6 +207,7 @@ MonoBehaviour:
   State: 0
   CurrentOwner: {fileID: 8475517132512086332}
   OriginalOwner: {fileID: 8475517132512086332}
+  itemData: {fileID: 0}
 --- !u!1 &1132669788458787179
 GameObject:
   m_ObjectHideFlags: 0
@@ -255,6 +256,7 @@ MonoBehaviour:
   State: 0
   CurrentOwner: {fileID: 8475517132512086332}
   OriginalOwner: {fileID: 8475517132512086332}
+  itemData: {fileID: 0}
 --- !u!1 &1477086846485838454
 GameObject:
   m_ObjectHideFlags: 0
@@ -666,6 +668,7 @@ MonoBehaviour:
   State: 0
   CurrentOwner: {fileID: 8475517132512086332}
   OriginalOwner: {fileID: 8475517132512086332}
+  itemData: {fileID: 0}
 --- !u!1 &4655997250187884049
 GameObject:
   m_ObjectHideFlags: 0
@@ -749,6 +752,7 @@ MonoBehaviour:
   State: 0
   CurrentOwner: {fileID: 8475517132512086332}
   OriginalOwner: {fileID: 8475517132512086332}
+  itemData: {fileID: 0}
 --- !u!1 &6375256173056475249
 GameObject:
   m_ObjectHideFlags: 0
@@ -797,6 +801,7 @@ MonoBehaviour:
   State: 0
   CurrentOwner: {fileID: 8475517132512086332}
   OriginalOwner: {fileID: 8475517132512086332}
+  itemData: {fileID: 0}
 --- !u!1 &6908529050129429831
 GameObject:
   m_ObjectHideFlags: 0
@@ -845,6 +850,7 @@ MonoBehaviour:
   State: 0
   CurrentOwner: {fileID: 8475517132512086332}
   OriginalOwner: {fileID: 8475517132512086332}
+  itemData: {fileID: 0}
 --- !u!1 &6943525517038661071
 GameObject:
   m_ObjectHideFlags: 0
@@ -1327,7 +1333,8 @@ MonoBehaviour:
   thirdPersonCam: {fileID: 8032240882677121809}
   firstPersonCam: {fileID: 3579005514392924762}
   brain: {fileID: 8154361752157849882}
-  firstPersonMaxAngle: 30
+  firstPersonMinPitch: -80
+  firstPersonMaxPitch: 80
   playerController: {fileID: 8345557302075166416}
 --- !u!114 &4818701814869272944
 MonoBehaviour:
@@ -1423,3 +1430,4 @@ MonoBehaviour:
   State: 0
   CurrentOwner: {fileID: 8475517132512086332}
   OriginalOwner: {fileID: 8475517132512086332}
+  itemData: {fileID: 0}

@@ -19,7 +19,7 @@ public class SkeletonBody : MonoBehaviour
     public bool IsIncapacitated => !HasSoul();
     public bool CanHoldCards => GetArmCount() > 0;
 
-    private void Start()
+    private void Awake()
     {
         BodyPart[] initialParts = GetComponentsInChildren<BodyPart>();
         foreach (var part in initialParts)
