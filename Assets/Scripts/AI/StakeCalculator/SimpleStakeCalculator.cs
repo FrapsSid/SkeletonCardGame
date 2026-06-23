@@ -1,14 +1,14 @@
-using System.Collections.Generic;
+п»їusing System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
 public class SimpleStakeCalculator : BaseStakeCalculator
 {
     [Header("Risk Thresholds")]
-    [Tooltip("Если риск ниже этого значения, бот сбросит карты")]
+    [Tooltip("Р•СЃР»Рё СЂРёСЃРє РЅРёР¶Рµ СЌС‚РѕРіРѕ Р·РЅР°С‡РµРЅРёСЏ, Р±РѕС‚ СЃР±СЂРѕСЃРёС‚ РєР°СЂС‚С‹")]
     public float shouldFoldThreshold = 0.2f;
 
-    [Tooltip("Если риск ниже этого значения, бот не будет повышать")]
+    [Tooltip("Р•СЃР»Рё СЂРёСЃРє РЅРёР¶Рµ СЌС‚РѕРіРѕ Р·РЅР°С‡РµРЅРёСЏ, Р±РѕС‚ РЅРµ Р±СѓРґРµС‚ РїРѕРІС‹С€Р°С‚СЊ")]
     public float shouldRaiseThreshold = 0.4f;
     protected override int CalculateTradeActionPrice(float risk, SkeletonBody skeletonBody)
     {
