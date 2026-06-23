@@ -1,7 +1,7 @@
 #nullable enable
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Collections;
 
 [RequireComponent(typeof(GameManager))]
 public sealed class GameManagerTestBootstrapper : MonoBehaviour
@@ -48,12 +48,20 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
         players.Add(firstPlayer);
         players.Add(secondPlayer);
 
-        manager.StartGame(teams, players);
+        EnsureTestAiTurnAdapter();
+        manager.StartGame(teams, players, players[0]);
 
         if (useRealBodies)
         {
             SpawnAndLinkBody(firstTeam, firstPlayer);
             SpawnAndLinkBody(secondTeam, secondPlayer);
+        }
+
+        GameUIManager? ui = FindFirstObjectByType<GameUIManager>();
+        if (ui != null)
+        {
+            ui.RefreshGameManager();
+            ui.EnterGameHud();
         }
     }
 
@@ -99,5 +107,11 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
         var player = new Skeleton(team);
         team.AddSkeleton(player);
         return player;
+    }
+
+    private void EnsureTestAiTurnAdapter()
+    {
+        if (GetComponent<TestAiTurnAdapter>() == null)
+            gameObject.AddComponent<TestAiTurnAdapter>();
     }
 }

@@ -167,10 +167,18 @@ public abstract class LobbyScreenBase : GameUIScreen
     private void StartGame()
     {
         UI.RefreshGameManager();
-        if (UI.GameManager != null)
-            UI.GameManager.StartGame();
+        if (UI.GameManager == null)
+            return;
 
-        UI.EnterGameHud();
+        try
+        {
+            UI.GameManager.StartGame();
+            UI.EnterGameHud();
+        }
+        catch (InvalidOperationException exception)
+        {
+            statusText.text = exception.Message;
+        }
     }
 
     private static string Initials(string name)

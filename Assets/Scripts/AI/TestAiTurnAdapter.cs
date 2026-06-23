@@ -62,7 +62,7 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
 
         foreach (Skeleton player in gameManager.Players)
         {
-            if (!gameManager.IsAiPlayer(player))
+            if (gameManager.LocalPlayer == player)
                 continue;
 
             if (subscribedGame.TurnStartedByPlayer.TryGetValue(player, out CardGameModel.PlayerTurnEvent turnStarted))
@@ -90,7 +90,7 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
 
     private void HandleTurnStarted(Skeleton player)
     {
-        if (gameManager == null || !gameManager.IsAiPlayer(player))
+        if (gameManager == null || player == gameManager.LocalPlayer)
             return;
 
         StopPendingTurn();
@@ -111,25 +111,64 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
     private void ExecuteAiTurn(Skeleton player)
     {
         CardGameRound? round = subscribedGame?.round;
-        if (round == null || round.CurrentPlayer != player || gameManager == null || !gameManager.IsAiPlayer(player))
+        if (round == null || round.CurrentPlayer != player || gameManager == null || player == gameManager.LocalPlayer)
             return;
 
         try
         {
             if (round.CanTakeCard(player))
+            {
                 round.TakeCard(player);
+                if (gameManager.IsCardDealInProgress)
+                {
+                    pendingTurn = StartCoroutine(CompleteTurnAfterCardDeal(player));
+                    return;
+                }
+            }
 
-            if (!round.HasMatchedBet(player))
-                MatchCurrentPrice(round, player);
-
-            if (round.CurrentPlayer == player && round.HasMatchedBet(player))
-                round.EndTurn(player);
+            CompleteTurn(player);
         }
         catch (Exception exception)
         {
             Debug.LogWarning($"[Test AI] {PlayerLabel(player)} could not complete a turn: {exception.Message}", this);
             TryFold(round, player);
         }
+    }
+
+    private IEnumerator CompleteTurnAfterCardDeal(Skeleton player)
+    {
+        while (gameManager != null && gameManager.IsCardDealInProgress)
+        {
+            yield return null;
+        }
+
+        pendingTurn = null;
+        CardGameRound? round = subscribedGame?.round;
+        if (round == null || round.CurrentPlayer != player || gameManager == null || player == gameManager.LocalPlayer)
+            yield break;
+
+        try
+        {
+            CompleteTurn(player);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"[Test AI] {PlayerLabel(player)} could not complete a turn after taking a card: {exception.Message}", this);
+            TryFold(round, player);
+        }
+    }
+
+    private void CompleteTurn(Skeleton player)
+    {
+        CardGameRound? round = subscribedGame?.round;
+        if (round == null || round.CurrentPlayer != player)
+            return;
+
+        if (!round.HasMatchedBet(player))
+            MatchCurrentPrice(round, player);
+
+        if (round.CurrentPlayer == player && round.HasMatchedBet(player))
+            round.EndTurn(player);
     }
 
     private void MatchCurrentPrice(CardGameRound round, Skeleton player)

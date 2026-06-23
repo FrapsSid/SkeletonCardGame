@@ -120,19 +120,19 @@ public sealed class TestConsoleLogger : MonoBehaviour
 
     private void HandleRoundStarted(CardGameRound round)
     {
-        Debug.Log($"[Test] Round started. Table: {FormatCards(round.tableCards)}", this);
-        Debug.Log($"[Test] Round combinations: {FormatCombinationSet(round.combinations)}", this);
+        Debug.Log($"[Test] Round started. Table: {FormatCards(round.TableCards)}", this);
+        Debug.Log($"[Test] Round combinations: {FormatCombinationSet(round.Combinations)}", this);
         LogTeamOwnership("Team ownership at round start");
     }
 
     private void HandleBettingRoundStarted(CardGameRound round)
     {
-        Debug.Log($"[Test] Betting started. Current price: {round.currentParticipationPrice}. Table: {FormatCards(round.tableCards)}", this);
+        Debug.Log($"[Test] Betting started. Current price: {round.currentParticipationPrice}. Table: {FormatCards(round.TableCards)}", this);
     }
 
     private void HandleBettingRoundEnded(CardGameRound round)
     {
-        Debug.Log($"[Test] Betting ended. Betting round: {round.bettingRound + 1}. Table: {FormatCards(round.tableCards)}", this);
+        Debug.Log($"[Test] Betting ended. Betting round: {round.BettingRound + 1}. Table: {FormatCards(round.TableCards)}", this);
     }
 
     private void HandleTurnStarted(Skeleton player)
@@ -172,14 +172,14 @@ public sealed class TestConsoleLogger : MonoBehaviour
 
     private void HandleCardTaken(Skeleton player, CardData card)
     {
-        string cardText = gameManager != null && gameManager.IsAiPlayer(player) ? $" Card: {FormatCard(card)}." : string.Empty;
+        string cardText = gameManager != null && IsAiControlled(player) ? $" Card: {FormatCard(card)}." : string.Empty;
         Debug.Log($"[Test] {PlayerLabel(player)} took a card.{cardText}", this);
         LogNonHumanHands("Debug non-human hands after card draw");
     }
 
     private void HandleTableCardsDealt(IReadOnlyList<CardData> cards)
     {
-        Debug.Log($"[Test] Table cards dealt: {FormatCards(cards)}. Full table: {FormatCards(subscribedGame?.round?.tableCards)}", this);
+        Debug.Log($"[Test] Table cards dealt: {FormatCards(cards)}. Full table: {FormatCards(subscribedGame?.round?.TableCards)}", this);
     }
 
     private void HandlePotResolved(IReadOnlyList<Team> winners, IReadOnlyList<StakeAsset> assets)
@@ -199,7 +199,7 @@ public sealed class TestConsoleLogger : MonoBehaviour
             return;
 
         IEnumerable<string> hands = gameManager.Players
-            .Where(gameManager.IsAiPlayer)
+            .Where(IsAiControlled)
             .Select(player => $"{PlayerLabel(player)}: {FormatCards(player.Hand.GetCards())}");
 
         Debug.Log($"[Test] {title}: {JoinOrNone(hands)}", this);
@@ -236,7 +236,12 @@ public sealed class TestConsoleLogger : MonoBehaviour
 
     private string ControlLabel(Skeleton player)
     {
-        return gameManager != null && gameManager.IsHumanPlayer(player) ? "human UI" : "AI";
+        return gameManager != null && ReferenceEquals(gameManager.LocalPlayer, player) ? "human UI" : "AI";
+    }
+
+    private bool IsAiControlled(Skeleton player)
+    {
+        return gameManager != null && !ReferenceEquals(gameManager.LocalPlayer, player);
     }
 
     private string FormatTeams(IReadOnlyList<Team>? teams)

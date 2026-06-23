@@ -1,8 +1,6 @@
-using Multiplayer;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem.UI;
 #endif
@@ -10,33 +8,37 @@ using UnityEngine.InputSystem.UI;
 [DefaultExecutionOrder(-1000)]
 public sealed class SkeletonGameUIBootstrap : MonoBehaviour
 {
-    private static GameUIManager instance;
-
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     public static void EnsureRuntimeUI()
     {
-        if (instance != null)
-            return;
-
-        EnsureEventSystem();
-        DisableLegacyConnectionUi();
-
-        GameObject root = new GameObject("Skeleton Game UI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        DontDestroyOnLoad(root);
-
-        Canvas canvas = root.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 1000;
-
-        CanvasScaler scaler = root.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(GameUITheme.ReferenceWidth, GameUITheme.ReferenceHeight);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0.5f;
-
-        instance = root.AddComponent<GameUIManager>();
-        instance.Initialize();
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
         SceneManager.sceneLoaded += HandleSceneLoaded;
+        OnSceneLoaded(SceneManager.GetActiveScene());
+    }
+
+    private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        OnSceneLoaded(scene);
+    }
+
+    private static void OnSceneLoaded(Scene scene)
+    {
+        EnsureEventSystem();
+        RefreshUIManagers(scene);
+    }
+
+    private static void RefreshUIManagers(Scene scene)
+    {
+        if (!scene.IsValid())
+            return;
+        GameUIManager[] managers =
+            FindObjectsByType<GameUIManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (GameUIManager manager in managers)
+        {
+            if (manager == null || manager.gameObject.scene != scene)
+                continue;
+            manager.RefreshGameManager();
+        }
     }
 
     private static void EnsureEventSystem()
@@ -51,20 +53,5 @@ public sealed class SkeletonGameUIBootstrap : MonoBehaviour
 #else
         eventSystem.AddComponent<StandaloneInputModule>();
 #endif
-    }
-
-    private static void DisableLegacyConnectionUi()
-    {
-        ConnectionUI[] legacyUis = FindObjectsByType<ConnectionUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        foreach (ConnectionUI legacyUi in legacyUis)
-            legacyUi.gameObject.SetActive(false);
-    }
-
-    private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        EnsureEventSystem();
-        DisableLegacyConnectionUi();
-        if (instance != null)
-            instance.RefreshGameManager();
     }
 }
