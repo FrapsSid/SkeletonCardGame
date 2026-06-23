@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class HeuristicDecisionStrategy : BaseAIDecisionStrategy
 {
+    new BaseStakeCalculator stakeCalculator => new SimpleStakeCalculator();
     // --- Пороги риска для защиты от Антикомбинации ---
     private const float ANTIRISK_THRESHOLD_EASY_MET = 0.25f;
     private const float ANTIRISK_THRESHOLD_MEDIUM_MET = 0.15f;
