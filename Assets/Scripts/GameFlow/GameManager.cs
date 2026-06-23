@@ -8,27 +8,40 @@ using static CardGame;
 [RequireComponent(typeof(BettingDiscussionGate))]
 public sealed class GameManager : MonoBehaviour
 {
+    [SerializeField] private CardDealer? cardDealer;
+
     private readonly List<Team> _teams = new();
     private readonly List<Skeleton> _players = new();
     private BettingDiscussionGate _bettingDiscussionGate = null!;
+    private Coroutine? _roundFlowCoroutine;
+    private Coroutine? _tableDealCoroutine;
+    private Coroutine? _takenCardDealCoroutine;
     private Coroutine? _restartRoundCoroutine;
+    private int _activeCardDealerWaits;
     private bool _roundResolved;
+    private bool _waitingForTableDealAnimation;
 
     public CardGame? CardGame { get; private set; }
     public Skeleton? LocalPlayer { get; private set; }
     public IReadOnlyList<Team> Teams => _teams;
     public IReadOnlyList<Skeleton> Players => _players;
+    public bool IsCardDealInProgress => _activeCardDealerWaits > 0;
     public event Action<CardGame>? OnGameCreated;
+    public event Action? OnCardDealCompleted;
 
     private void Awake()
     {
         _bettingDiscussionGate = GetComponent<BettingDiscussionGate>() ?? throw new NullReferenceException(nameof(BettingDiscussionGate));
+        cardDealer ??= GetComponent<CardDealer>();
     }
 
     private void OnDestroy()
     {
         Unsubscribe();
         UnsubscribeFromDiscussionGate();
+        StopRoundFlow();
+        StopTableDeal();
+        StopTakenCardDeal();
         StopRestartRound();
         _bettingDiscussionGate.StopDiscussion();
     }
@@ -58,10 +71,14 @@ public sealed class GameManager : MonoBehaviour
 
         Unsubscribe();
         UnsubscribeFromDiscussionGate();
+        StopRoundFlow();
+        StopTableDeal();
+        StopTakenCardDeal();
         StopRestartRound();
 
         SubscribeToDiscussionGate();
         _roundResolved = false;
+        _waitingForTableDealAnimation = false;
 
         CardGame = new CardGame(_teams, _players);
         Subscribe(CardGame);
@@ -71,15 +88,34 @@ public sealed class GameManager : MonoBehaviour
 
     private void StartRoundFlow(CardGame game)
     {
+        StopRoundFlow();
+        _roundFlowCoroutine = StartCoroutine(StartRoundFlowRoutine(game));
+    }
+
+    private IEnumerator StartRoundFlowRoutine(CardGame game)
+    {
+        PrepareCardDealerForRound();
+
         game.DealPlayersCards();
+        yield return DealInitialPlayerCards();
+
+        if (CardGame != game || game.phase != GamePhase.ShowingCombinations)
+        {
+            _roundFlowCoroutine = null;
+            yield break;
+        }
+
         game.ShowCombinations();
         game.StartRound();
+        _roundFlowCoroutine = null;
     }
 
     private void Subscribe(CardGame game)
     {
         game.OnPhaseChanged += HandlePhaseChanged;
         game.OnRoundEnded += HandleRoundEnded;
+        game.OnTableCardsDealt += HandleTableCardsDealt;
+        game.OnCardTaken += HandleCardTaken;
     }
 
     private void Unsubscribe()
@@ -89,6 +125,8 @@ public sealed class GameManager : MonoBehaviour
 
         CardGame.OnPhaseChanged -= HandlePhaseChanged;
         CardGame.OnRoundEnded -= HandleRoundEnded;
+        CardGame.OnTableCardsDealt -= HandleTableCardsDealt;
+        CardGame.OnCardTaken -= HandleCardTaken;
     }
 
     private void HandlePhaseChanged(GamePhase phase)
@@ -99,10 +137,14 @@ public sealed class GameManager : MonoBehaviour
 
         if (phase == GamePhase.BettingRoundStart)
         {
+            if (_waitingForTableDealAnimation)
+                return;
+
             StartBettingDiscussion(game.round);
         }
         else if (phase == GamePhase.AddingCards)
         {
+            _waitingForTableDealAnimation = true;
             game.DealTableCards();
         }
         else if (phase == GamePhase.End && !_roundResolved)
@@ -116,6 +158,21 @@ public sealed class GameManager : MonoBehaviour
     {
         StopRestartRound();
         _restartRoundCoroutine = StartCoroutine(RestartRoundAfterRoundEnded());
+    }
+
+    private void HandleTableCardsDealt(IReadOnlyList<CardData> cards)
+    {
+        StopTableDeal(false);
+        _tableDealCoroutine = StartCoroutine(DealTableCardsThenStartDiscussion(cards));
+    }
+
+    private void HandleCardTaken(Skeleton player, CardData card)
+    {
+        if (cardDealer == null)
+            return;
+
+        StopTakenCardDeal();
+        _takenCardDealCoroutine = StartCoroutine(DealTakenCard(player, card));
     }
 
     private IEnumerator RestartRoundAfterRoundEnded()
@@ -164,5 +221,115 @@ public sealed class GameManager : MonoBehaviour
 
         StopCoroutine(_restartRoundCoroutine);
         _restartRoundCoroutine = null;
+    }
+
+    private void PrepareCardDealerForRound()
+    {
+        if (cardDealer == null)
+            return;
+
+        cardDealer.SetPlayers(_players);
+        cardDealer.ClearTable();
+        cardDealer.ClearPlayerCards();
+    }
+
+    private IEnumerator DealInitialPlayerCards()
+    {
+        CardDealer? dealer = cardDealer;
+        if (dealer == null)
+            yield break;
+
+        yield return WaitForDealer(dealer, () => dealer.DealCardsToPlayers(_players, 2));
+    }
+
+    private IEnumerator DealTableCardsThenStartDiscussion(IReadOnlyList<CardData> cards)
+    {
+        CardDealer? dealer = cardDealer;
+        if (dealer != null)
+        {
+            yield return WaitForDealer(dealer, () => dealer.DealCardsToTable(cards));
+        }
+
+        _waitingForTableDealAnimation = false;
+        _tableDealCoroutine = null;
+
+        CardGame? game = CardGame;
+        if (game?.round == null || game.phase != GamePhase.BettingRoundStart)
+            yield break;
+
+        StartBettingDiscussion(game.round);
+    }
+
+    private IEnumerator DealTakenCard(Skeleton player, CardData card)
+    {
+        CardDealer? dealer = cardDealer;
+        if (dealer != null)
+        {
+            yield return WaitForDealer(dealer, () => dealer.DealCardToPlayer(player, card));
+        }
+
+        _takenCardDealCoroutine = null;
+    }
+
+    private IEnumerator WaitForDealer(CardDealer dealer, Action startDeal)
+    {
+        bool completed = false;
+
+        void HandleDealCompleted()
+        {
+            completed = true;
+        }
+
+        _activeCardDealerWaits++;
+        dealer.OnDealCompleted += HandleDealCompleted;
+        try
+        {
+            startDeal();
+            while (!completed)
+            {
+                yield return null;
+            }
+        }
+        finally
+        {
+            dealer.OnDealCompleted -= HandleDealCompleted;
+            _activeCardDealerWaits = Math.Max(0, _activeCardDealerWaits - 1);
+            if (_activeCardDealerWaits == 0)
+                OnCardDealCompleted?.Invoke();
+        }
+    }
+
+    private void StopRoundFlow()
+    {
+        if (_roundFlowCoroutine == null)
+            return;
+
+        StopCoroutine(_roundFlowCoroutine);
+        _roundFlowCoroutine = null;
+    }
+
+    private void StopTableDeal(bool resetWaiting = true)
+    {
+        if (_tableDealCoroutine == null)
+        {
+            if (resetWaiting)
+                _waitingForTableDealAnimation = false;
+
+            return;
+        }
+
+        StopCoroutine(_tableDealCoroutine);
+        _tableDealCoroutine = null;
+        if (resetWaiting)
+            _waitingForTableDealAnimation = false;
+    }
+
+    private void StopTakenCardDeal()
+    {
+        if (_takenCardDealCoroutine == null)
+            return;
+
+        StopCoroutine(_takenCardDealCoroutine);
+        _takenCardDealCoroutine = null;
     }
 }

@@ -186,7 +186,7 @@ public sealed class TablePositions : MonoBehaviour
         {
             Vector3 direction = GetDirectionForPlayer(i, requiredCount);
             ApplyMarkerTransform(playerPositions[i], direction, playerPositionRadius);
-            ApplyMarkerTransform(playerDealCardPositions[i], direction, dealPositionRadius);
+            ApplyDealCardMarkerTransform(playerDealCardPositions[i], direction, dealPositionRadius);
         }
     }
 
@@ -239,6 +239,18 @@ public sealed class TablePositions : MonoBehaviour
     {
         marker.localPosition = direction * radius + Vector3.up * heightOffset;
         marker.localRotation = Quaternion.LookRotation(-direction, Vector3.up);
+    }
+
+    private void ApplyDealCardMarkerTransform(Transform marker, Vector3 direction, float radius)
+    {
+        marker.localPosition = direction * radius + Vector3.up * heightOffset;
+        marker.localRotation = Quaternion.Euler(90f, 0f, GetDealCardRotationZ(direction));
+    }
+
+    private static float GetDealCardRotationZ(Vector3 direction)
+    {
+        float playerAngle = Mathf.Atan2(direction.z, direction.x) * Mathf.Rad2Deg;
+        return playerAngle + 90f;
     }
 
     private static Vector3 GetDirectionForPlayer(int playerIndex, int playerCount)

@@ -111,6 +111,9 @@ public sealed class TurnActionMenu : GameUIScreen
         subscribedManager = manager;
         subscribedGame = game;
         subscribedPlayer = player;
+        if (subscribedManager != null)
+            subscribedManager.OnCardDealCompleted += HandleCardDealCompleted;
+
         if (subscribedGame == null)
             return;
 
@@ -137,8 +140,15 @@ public sealed class TurnActionMenu : GameUIScreen
 
     private void Unsubscribe()
     {
+        if (subscribedManager != null)
+            subscribedManager.OnCardDealCompleted -= HandleCardDealCompleted;
+
         if (subscribedGame == null)
+        {
+            subscribedManager = null;
+            subscribedPlayer = null;
             return;
+        }
 
         if (subscribedPlayer != null)
         {
@@ -183,13 +193,14 @@ public sealed class TurnActionMenu : GameUIScreen
         }
 
         bool isCurrentHumanTurn = IsCurrentHumanTurn(round);
+        bool canUseActions = isCurrentHumanTurn && !IsCardDealInProgress();
         bool betRaised = round.currentParticipationPrice > 0;
         bool hasMatched = round.HasMatchedBet(currentPlayer);
 
-        betButton.interactable = isCurrentHumanTurn && CanOpenBetScreen(round);
-        takeCardButton.interactable = isCurrentHumanTurn && round.CanTakeCard(currentPlayer);
-        passButton.interactable = isCurrentHumanTurn && betRaised;
-        skipButton.interactable = isCurrentHumanTurn && hasMatched;
+        betButton.interactable = canUseActions && CanOpenBetScreen(round);
+        takeCardButton.interactable = canUseActions && round.CanTakeCard(currentPlayer);
+        passButton.interactable = canUseActions && betRaised;
+        skipButton.interactable = canUseActions && hasMatched;
     }
 
     private void HandleTurnStarted(Skeleton player)
@@ -214,6 +225,7 @@ public sealed class TurnActionMenu : GameUIScreen
     private void HandleBettingChanged(Skeleton player, int price) => Refresh();
     private void HandleTargetChanged(Skeleton player, DeclaredCombinationTier tier) => Refresh();
     private void HandlePlayerFolded(Skeleton player) => Refresh();
+    private void HandleCardDealCompleted() => Refresh();
 
     private void HandleBettingRoundEnded(CardGameRound round)
     {
@@ -277,6 +289,13 @@ public sealed class TurnActionMenu : GameUIScreen
         if (!CanUseCurrentTurn(round))
             return;
 
+        if (IsCardDealInProgress())
+        {
+            statusText.text = "Wait for the card deal to finish.";
+            Refresh();
+            return;
+        }
+
         try
         {
             action(round);
@@ -323,6 +342,11 @@ public sealed class TurnActionMenu : GameUIScreen
         }
 
         return false;
+    }
+
+    private bool IsCardDealInProgress()
+    {
+        return subscribedManager != null && subscribedManager.IsCardDealInProgress;
     }
 
     private static List<StakeAsset> GetOwnedAssets(Skeleton player)
