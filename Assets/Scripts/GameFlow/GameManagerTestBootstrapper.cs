@@ -1,7 +1,7 @@
 #nullable enable
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Collections;
 
 [RequireComponent(typeof(GameManager))]
 public sealed class GameManagerTestBootstrapper : MonoBehaviour
@@ -48,12 +48,20 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
         players.Add(firstPlayer);
         players.Add(secondPlayer);
 
+        EnsureTestAiTurnAdapter();
         manager.StartGame(teams, players, players[0]);
 
         if (useRealBodies)
         {
             SpawnAndLinkBody(firstTeam, firstPlayer);
             SpawnAndLinkBody(secondTeam, secondPlayer);
+        }
+
+        GameUIManager? ui = FindFirstObjectByType<GameUIManager>();
+        if (ui != null)
+        {
+            ui.RefreshGameManager();
+            ui.EnterGameHud();
         }
     }
 
@@ -83,15 +91,6 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
         return seat != null
             ? Instantiate(skeletonBodyPrefab, seat.position, seat.rotation)
             : Instantiate(skeletonBodyPrefab);
-        EnsureTestAiTurnAdapter();
-        manager.StartGame(teams, players, players[0]);
-
-        GameUIManager? ui = FindFirstObjectByType<GameUIManager>();
-        if (ui == null)
-            return;
-
-        ui.RefreshGameManager();
-        ui.EnterGameHud();
     }
 
     private static Team CreateTestTeam()
