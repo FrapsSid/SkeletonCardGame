@@ -33,6 +33,12 @@ public sealed class GameManager : MonoBehaviour
     {
         _bettingDiscussionGate = GetComponent<BettingDiscussionGate>() ?? throw new NullReferenceException(nameof(BettingDiscussionGate));
         cardDealer ??= GetComponent<CardDealer>();
+
+// ISSUE 20 DEBUG
+#if UNITY_EDITOR
+        if (GetComponent<ViolationGameBridge>() == null)
+            gameObject.AddComponent<ViolationGameBridge>();
+#endif
     }
 
     private void OnDestroy()
