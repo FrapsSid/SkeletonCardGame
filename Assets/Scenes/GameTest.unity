@@ -212,7 +212,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 131470257}
+  - component: {fileID: 153949733}
   m_Layer: 0
   m_Name: Seats
   m_TagString: Untagged
@@ -279,19 +279,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 476322909}
   m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
---- !u!114 &153949734
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 153949732}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00823e8921a07ab4ab44f1ada93e38de, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Multiplayer.SpawnPoint
---- !u!1 &215166238
+--- !u!1 &215166240
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -307,13 +295,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &215166239
+--- !u!4 &215166241
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 215166238}
+  m_GameObject: {fileID: 215166240}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0.000000021936923, z: -0.000000021936923, w: 0.7071068}
   m_LocalPosition: {x: -0.000000054639237, y: 0, z: -1.25}
