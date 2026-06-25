@@ -35,7 +35,8 @@ public enum ViolationConfirmationStatus {
     SameTeamComplaint,
     CooldownActive,
     NoActiveViolation,
-    OutsideComplaintWindow
+    OutsideComplaintWindow,
+    PhaseNotAllowed
 }
 
 public enum ViolationActorKind {

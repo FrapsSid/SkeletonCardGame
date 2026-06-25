@@ -74,9 +74,12 @@ public sealed class TeamWarningLog {
         RegisterTeam(team);
         warnings[team] = GetWarnings(team) + 1;
 
+        if (warnings[team] >= WarningsToLose) {
+            defeatedTeams.Add(team);
+        }
+
         bool compensationApplied = ApplyAllSidesCheatedCompensation();
         int countAfterCompensation = GetWarnings(team);
-        RebuildDefeatedTeams();
         bool isDefeated = defeatedTeams.Contains(team);
 
         return new TeamWarningResult(
@@ -96,21 +99,20 @@ public sealed class TeamWarningLog {
         if (warnings.Count < 2)
             return false;
 
-        if (warnings.Values.Any(count => count <= 0))
+        if (defeatedTeams.Count > 0) {
             return false;
+        }
 
-        List<Team> teams = warnings.Keys.ToList();
-        foreach (Team team in teams)
-            warnings[team] = Math.Max(0, warnings[team] - 1);
+        if (warnings.Values.Any(count => count != 1)) {
+            return false;
+        }
+
+        var teams = warnings.Keys.ToList();
+        
+        foreach (Team team in teams) {
+            warnings[team] = 0;
+        }
 
         return true;
-    }
-
-    private void RebuildDefeatedTeams() {
-        defeatedTeams.Clear();
-        foreach (var pair in warnings) {
-            if (pair.Value >= WarningsToLose)
-                defeatedTeams.Add(pair.Key);
-        }
     }
 }

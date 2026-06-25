@@ -5,13 +5,8 @@ using System.Linq;
 
 public sealed class ViolationsHandler {
     private readonly Dictionary<ViolationType, ViolationRule> rules;
-
-    private readonly Dictionary<ViolationKey, ViolationCandidate> latestCandidates =
-        new Dictionary<ViolationKey, ViolationCandidate>();
-
-    private readonly Dictionary<ViolationKey, ViolationRecord> latestConfirmed =
-        new Dictionary<ViolationKey, ViolationRecord>();
-
+    private readonly Dictionary<ViolationKey, ViolationCandidate> latestCandidates = new Dictionary<ViolationKey, ViolationCandidate>();
+    private readonly Dictionary<ViolationKey, ViolationRecord> latestConfirmed = new Dictionary<ViolationKey, ViolationRecord>();
     private readonly List<ViolationCandidate> candidateHistory = new List<ViolationCandidate>();
     private readonly List<ViolationRecord> confirmedHistory = new List<ViolationRecord>();
 
@@ -100,27 +95,31 @@ public sealed class ViolationsHandler {
         }
 
         ViolationCandidate? latest = GetLatestActiveCandidate(accusedPlayer, type, now);
-        if (latest == null)
-            return FailComplaint(reportingTeam, accusedPlayer, type, now, rule,
-                ViolationConfirmationStatus.NoActiveViolation);
+        
+        if (latest == null) {
+            return FailComplaint(reportingTeam, accusedPlayer, type, now, rule, ViolationConfirmationStatus.NoActiveViolation);
+        }
 
-        if (!rule.IsActive(latest.OccurredAt, now))
-            return FailComplaint(reportingTeam, accusedPlayer, type, now, rule,
-                ViolationConfirmationStatus.OutsideComplaintWindow);
+        if (!rule.IsActive(latest.OccurredAt, now)) {
+            return FailComplaint(reportingTeam, accusedPlayer, type, now, rule, ViolationConfirmationStatus.OutsideComplaintWindow);
+        }
 
-        if (!latest.CanBeConfirmedByCurrentEvidence)
+        if (!CanConfirmInMoment(rule, latest.Evidence.Moment)) {
+            return FailComplaint(reportingTeam, accusedPlayer, type, now, rule, ViolationConfirmationStatus.PhaseNotAllowed);
+        }
+
+        if (!latest.CanBeConfirmedByCurrentEvidence) {
             return FailComplaint(reportingTeam, accusedPlayer, type, now, rule, ViolationConfirmationStatus.Rejected);
+        }
 
-        ViolationRecord record = ConfirmCandidate(latest, reportingTeam, now);
+        var record = ConfirmCandidate(latest, reportingTeam, now);
         var confirmedResult = new ViolationComplaintResult(
             ViolationConfirmationStatus.Confirmed,
-            type,
-            reportingTeam,
-            accusedPlayer,
-            now,
-            cooldownUntil: null,
-            confirmedViolation: record);
+            type, reportingTeam, accusedPlayer, now,
+            cooldownUntil: null, confirmedViolation: record);
+        
         OnComplaintResolved?.Invoke(confirmedResult);
+        
         return confirmedResult;
     }
 
@@ -174,7 +173,13 @@ public sealed class ViolationsHandler {
 
     private ViolationRecord ConfirmCandidate(ViolationCandidate candidate, Team? reportingTeam, DateTime confirmedAt) {
         ViolationRule rule = EnsureKnownRule(candidate.Type);
+        if (!CanConfirmInMoment(rule, candidate.Evidence.Moment)) {
+            throw new InvalidOperationException(
+                $"Violation '{candidate.Type}' cannot be confirmed during moment '{candidate.Evidence.Moment.Phase}'.");
+        }
+        
         var key = new ViolationKey(candidate.Offender.Player, candidate.Type);
+        
         if (latestConfirmed.TryGetValue(key, out ViolationRecord existingRecord)
             && existingRecord.Id == candidate.Id) {
             return existingRecord;
@@ -220,6 +225,11 @@ public sealed class ViolationsHandler {
             throw new InvalidOperationException($"Violation rule is not registered: {type}");
 
         return rule;
+    }
+
+    private static bool CanConfirmInMoment(ViolationRule rule, ViolationGameMoment? moment) {
+        bool isDuringRound = moment != null && moment.IsRoundActive;
+        return isDuringRound ? rule.CanHappenDuringRound : rule.CanHappenOutsideRound;
     }
 
     private static void RemoveExpired<TValue>(
