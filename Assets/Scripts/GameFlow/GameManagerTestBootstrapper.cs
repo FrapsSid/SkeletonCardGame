@@ -9,6 +9,7 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
     [SerializeField]
     private bool startOnStart = true;
     [SerializeField] private SkeletonBody? skeletonBodyPrefab;
+    [SerializeField] private SkeletonBody? AIskeletonBodyPrefab;
     [SerializeField] private Transform[] seatPositions = new Transform[0];
 
     private GameManager? gameManager;
@@ -53,8 +54,8 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
 
         if (useRealBodies)
         {
-            SpawnAndLinkBody(firstTeam, firstPlayer);
-            SpawnAndLinkBody(secondTeam, secondPlayer);
+            SpawnAndLinkBody(firstTeam, firstPlayer, isAI: false);
+            SpawnAndLinkBody(secondTeam, secondPlayer, isAI: true);
         }
 
         GameUIManager? ui = FindFirstObjectByType<GameUIManager>();
@@ -65,9 +66,9 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
         }
     }
 
-    private void SpawnAndLinkBody(Team team, Skeleton player)
+    private void SpawnAndLinkBody(Team team, Skeleton player, bool isAI)
     {
-        SkeletonBody? body = SpawnSkeletonBody();
+        SkeletonBody? body = SpawnSkeletonBody(isAI);
         if (body == null)
             return;
 
@@ -80,17 +81,18 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
         SkeletonStakeLinker.RegisterBodyAssets(team, player, body);
     }
 
-    private SkeletonBody? SpawnSkeletonBody()
+    private SkeletonBody? SpawnSkeletonBody(bool isAI)
     {
-        if (skeletonBodyPrefab == null)
+        SkeletonBody? prefab = isAI ? AIskeletonBodyPrefab : skeletonBodyPrefab;
+        if (prefab == null)
             return null;
 
         Transform? seat = _nextSeatIndex < seatPositions.Length ? seatPositions[_nextSeatIndex] : null;
         _nextSeatIndex++;
 
         return seat != null
-            ? Instantiate(skeletonBodyPrefab, seat.position, seat.rotation)
-            : Instantiate(skeletonBodyPrefab);
+            ? Instantiate(prefab, seat.position, seat.rotation)
+            : Instantiate(prefab);
     }
 
     private static Team CreateTestTeam()

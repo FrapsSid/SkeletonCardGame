@@ -33,7 +33,6 @@ public class StakeAsset
 
     public void TransferOwnership(Team newOwner)
     {
-        bool ownerChanged = owningTeam != newOwner;
         if (owningTeam == newOwner)
         {
             owningTeam?.RegisterAsset(this);
@@ -44,9 +43,13 @@ public class StakeAsset
         owningTeam = newOwner;
         owningTeam?.RegisterAsset(this);
 
-        if (ownerChanged && bodyPart != null && bodyPart.State == BodyPartState.Attached)
+        if (bodyPart != null && bodyPart.State == BodyPartState.Attached)
         {
-            bodyPart.Detach();
+            SkeletonBody body = bodyPart.CurrentOwner?.GetComponent<SkeletonBody>();
+            if (body != null)
+                body.RemovePart(bodyPart.Type);
+            else
+                bodyPart.Detach();
         }
     }
 }
