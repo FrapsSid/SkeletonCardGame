@@ -49,19 +49,19 @@ public sealed class ViolationGameBridge : MonoBehaviour {
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.F6)) {
+        if (InputKeyUtils.WasPressedThisFrame(KeyCode.F6)) {
             DebugLogViolationState();
         }
         
-        if (Input.GetKeyDown(KeyCode.F7)) {
+        if (InputKeyUtils.WasPressedThisFrame(KeyCode.F7)) {
             DebugSimulateCardPeekingComplaint();
         }
         
-        if (Input.GetKeyDown(KeyCode.F8)) {
+        if (InputKeyUtils.WasPressedThisFrame(KeyCode.F8)) {
             DebugSimulateTheftComplaint();
         }
         
-        if (Input.GetKeyDown(KeyCode.F9)) {
+        if (InputKeyUtils.WasPressedThisFrame(KeyCode.F9)) {
             DebugSimulateAllSidesCheatedCompensation();
         }
     }
