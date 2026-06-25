@@ -4,7 +4,7 @@ using UnityEngine;
 
 [DisallowMultipleComponent]
 public class Inventory : MonoBehaviour {
-    [Header("Capacity")] [Min(1)] public int maxSlots = 16;
+    [Header("Capacity")] [Min(1)] public int maxSlots = 9;
     public List<InventorySlot> slots = new List<InventorySlot>();
 
     [Header("Dropping")] public GameObject pickupPrefab;

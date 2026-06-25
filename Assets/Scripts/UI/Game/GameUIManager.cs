@@ -33,7 +33,8 @@ public sealed class GameUIManager : MonoBehaviour
 
     private void Update()
     {
-        GetScreen<TurnActionMenu>(ScreenId.TurnActionMenu)?.TickAlways();
+        TurnActionMenu turnActionMenu = GetScreen<TurnActionMenu>(ScreenId.TurnActionMenu);
+        turnActionMenu?.TickAlways();
 
         if (InputKeyUtils.WasPressedThisFrame(KeyCode.F10))
             ToggleShowcase();
@@ -47,6 +48,12 @@ public sealed class GameUIManager : MonoBehaviour
         if (modalStack.Count > 0)
         {
             PopModal();
+            ApplyCursorState();
+            return;
+        }
+
+        if (turnActionMenu != null && turnActionMenu.TryHandleEscape())
+        {
             ApplyCursorState();
             return;
         }

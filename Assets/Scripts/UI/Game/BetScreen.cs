@@ -54,10 +54,10 @@ public sealed class BetScreen : GameUIScreen
         CreateCombinationZone(DeclaredCombinationTier.Hard, "СЛОЖНАЯ");
 
         Button cancel = GameUIFactory.Button(panel, "CancelButton", "НАЗАД", () => UI.PopModal(), true);
-        GameUIFactory.Anchor(cancel.GetComponent<RectTransform>(), new Vector2(0.16f, 0.5f), new Vector2(0.16f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(260f, 72f));
+        GameUIFactory.Anchor(cancel.GetComponent<RectTransform>(), new Vector2(0.16f, 0.18f), new Vector2(0.16f, 0.18f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(260f, 72f));
 
         confirmButton = GameUIFactory.Button(panel, "ConfirmButton", "ГОТОВ", Confirm, true);
-        GameUIFactory.Anchor(confirmButton.GetComponent<RectTransform>(), new Vector2(0.84f, 0.5f), new Vector2(0.84f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(260f, 72f));
+        GameUIFactory.Anchor(confirmButton.GetComponent<RectTransform>(), new Vector2(0.84f, 0.18f), new Vector2(0.84f, 0.18f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(260f, 72f));
 
         totalText = GameUIFactory.Text(panel, "Total", string.Empty, 24f, TextAlignmentOptions.Center, GameUITheme.White, FontStyles.Bold);
         GameUIFactory.Anchor(totalText.rectTransform, new Vector2(0.5f, 0.1f), new Vector2(0.5f, 0.1f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(520f, 40f));

@@ -83,6 +83,16 @@ public sealed class TurnActionMenu : GameUIScreen
         Refresh();
     }
 
+    public bool TryHandleEscape()
+    {
+        if (!gameObject.activeSelf || !menuHidden)
+            return false;
+
+        menuHidden = false;
+        Refresh();
+        return true;
+    }
+
     protected override void OnShow()
     {
         Refresh();
