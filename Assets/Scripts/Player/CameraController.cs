@@ -31,6 +31,10 @@ public class CameraController : MonoBehaviour
     [Header("Player Control")]
     public PlayerController playerController;
 
+    [Header("Player Body")]
+    public SkeletonBody _skeletonBody;
+    public Renderer skullRenderer;
+
     private InputReader _input;
     private float _yaw;
     private float _pitch;
@@ -68,7 +72,15 @@ public class CameraController : MonoBehaviour
 
         if (Keyboard.current != null && Keyboard.current.hKey.wasPressedThisFrame)
         {
+            if (!_isFirstPerson && (_skeletonBody == null || !_skeletonBody.HasSkull()))
+            {
+                return;
+            }
             SetFirstPerson(!_isFirstPerson);
+        }
+        if (_isFirstPerson && _skeletonBody != null && !_skeletonBody.HasSkull())
+        {
+            SetFirstPerson(false);
         }
         HandleCursorToggle();
     }

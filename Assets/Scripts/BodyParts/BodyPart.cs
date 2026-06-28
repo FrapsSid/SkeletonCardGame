@@ -25,6 +25,7 @@ public class BodyPart : MonoBehaviour
         State = BodyPartState.Detached;
         CurrentOwner = null;
         transform.SetParent(null);
+        SetColliderEnabled(true);
         EnableWorldPickup();
     }
 
@@ -32,17 +33,26 @@ public class BodyPart : MonoBehaviour
     {
         State = BodyPartState.Attached;
         CurrentOwner = newOwner;
+        SetColliderEnabled(false);
         DisableWorldPickup();
         
         transform.SetParent(boneParent);
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
     }
-
+    private void SetColliderEnabled(bool enabled)
+    {
+        foreach (Collider col in GetComponents<Collider>())
+            col.enabled = enabled;
+    }
     private void EnableWorldPickup()
     {
-        if (GetComponent<Rigidbody>() == null)
-            gameObject.AddComponent<Rigidbody>();
+        if (GetComponent<Rigidbody>() == null) {
+            Rigidbody rb = gameObject.AddComponent<Rigidbody>();
+            rb.maxAngularVelocity = 2f;
+            rb.angularDamping = 5f;
+            rb.mass = 1f;
+        }
 
         Pickupable pickupable = GetComponent<Pickupable>();
         if (pickupable == null)

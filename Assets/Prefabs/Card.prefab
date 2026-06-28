@@ -109,4 +109,4 @@ MonoBehaviour:
   value: 14
   size: {x: 0.7, y: 1}
   thickness: 0.01
-  materialTemplate: {fileID: 0}
+  materialTemplate: {fileID: 2100000, guid: e59e319d0cb2b0d43b6018001ef18d22, type: 2}
