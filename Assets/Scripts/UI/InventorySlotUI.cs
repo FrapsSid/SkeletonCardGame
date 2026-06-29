@@ -7,6 +7,7 @@ public class InventorySlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExit
     public Image iconImage;
     public TMP_Text countText;
     public Button dropButton;
+    public Color fallbackItemColor = new Color(0.82f, 0.86f, 0.92f, 1f);
 
     private InventoryUI _owner;
     private int _slotIndex;
@@ -26,9 +27,9 @@ public class InventorySlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExit
         bool hasIcon = hasItem && slot.itemData && slot.itemData.icon;
 
         if (iconImage is not null) {
-            iconImage.enabled = hasItem;
+            iconImage.enabled = true;
             iconImage.sprite = hasIcon ? slot.itemData.icon : null;
-            iconImage.color = hasIcon ? Color.white : new Color(1f, 1f, 1f, 0.18f);
+            iconImage.color = !hasItem ? new Color(1f, 1f, 1f, 0f) : hasIcon ? Color.white : fallbackItemColor;
         }
 
         if (countText) {
@@ -53,3 +54,6 @@ public class InventorySlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExit
         return dropButton && target && target.transform.IsChildOf(dropButton.transform);
     }
 }
+
+
+

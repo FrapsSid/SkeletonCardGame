@@ -4,22 +4,28 @@ using UnityEngine;
 public class PickupUI : MonoBehaviour {
     [Header("Source")] public PlayerInteractor interactor;
 
-    [Header("UI")] public GameObject hintRoot;
-    public CanvasGroup hintCanvasGroup;
-    public TMP_Text hintText;
-    public string hintFormat = "{0}\n[{1}] Pick up";
-    public string fallbackItemName = "Item";
+    [Header("UI")] public GameObject pickupRoot;
+    public CanvasGroup pickupCanvasGroup;
+    public TMP_Text titleText;
+    public TMP_Text pickupText;
+    public string titleFormat = "{0}";
+    public string pickupFormat = "[ {1} ] Pick up";
+    public string baseItemName = "Item";
 
     private PlayerInteractor _subscribedInteractor;
     private Pickupable _target;
 
     private void Awake() {
-        if (hintRoot == null) {
-            hintRoot = gameObject;
+        if (pickupRoot == null) {
+            pickupRoot = gameObject;
         }
 
-        if (hintCanvasGroup == null && hintRoot != null) {
-            hintCanvasGroup = hintRoot.GetComponent<CanvasGroup>();
+        if (pickupCanvasGroup == null && pickupRoot != null) {
+            pickupCanvasGroup = pickupRoot.GetComponent<CanvasGroup>();
+        }
+
+        if (titleText == null && pickupRoot != null) {
+            titleText = pickupRoot.GetComponentInChildren<TMP_Text>(true);
         }
 
         TryBindInteractor();
@@ -84,7 +90,7 @@ public class PickupUI : MonoBehaviour {
 
     private void ShowHint(Pickupable target) {
         _target = target;
-        
+
         UpdateHintText(target);
         SetHintVisible(target);
     }
@@ -95,30 +101,46 @@ public class PickupUI : MonoBehaviour {
     }
 
     private void SetHintVisible(bool visible) {
-        if (hintCanvasGroup) {
-            hintCanvasGroup.alpha = visible ? 1f : 0f;
-            hintCanvasGroup.interactable = false;
-            hintCanvasGroup.blocksRaycasts = false;
+        if (pickupCanvasGroup) {
+            pickupCanvasGroup.alpha = visible ? 1f : 0f;
+            pickupCanvasGroup.interactable = false;
+            pickupCanvasGroup.blocksRaycasts = false;
         }
 
-        if (hintRoot && hintRoot != gameObject && !hintCanvasGroup) {
-            hintRoot.SetActive(visible);
+        if (pickupRoot && pickupRoot != gameObject && !pickupCanvasGroup) {
+            pickupRoot.SetActive(visible);
         }
 
-        if (hintText) {
-            hintText.enabled = visible;
+        if (titleText) {
+            titleText.enabled = visible;
+            pickupText.enabled = visible;
         }
     }
 
     private void UpdateHintText(Pickupable target) {
-        if (!hintText || target == null) {
+        if (!titleText || !pickupText || !target) {
             return;
         }
 
-        string itemName = target.itemData && !string.IsNullOrWhiteSpace(target.itemData.itemName)
-            ? target.itemData.itemName
-            : fallbackItemName;
+        string itemName = GetTargetDisplayName(target);
         KeyCode pickupKey = interactor ? interactor.pickupKey : KeyCode.E;
-        hintText.text = string.Format(hintFormat, itemName, pickupKey);
+        titleText.text = string.Format(titleFormat + "\n", itemName, pickupKey);
+        pickupText.text = string.Format(pickupFormat, itemName, pickupKey);
+    }
+
+    private string GetTargetDisplayName(Pickupable target) {
+        if (target == null) {
+            return baseItemName;
+        }
+
+        if (target.cardData != null && (target.itemData == null || target.itemData.category == ItemCategory.Card)) {
+            return $"{target.cardData.Value} of {target.cardData.Suit}";
+        }
+
+        if (target.itemData != null && !string.IsNullOrWhiteSpace(target.itemData.itemName)) {
+            return target.itemData.itemName;
+        }
+
+        return baseItemName;
     }
 }

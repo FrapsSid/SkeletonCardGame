@@ -10,12 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c45ea6148bfded14c964e6d9462b75b8, type: 3}
-  m_Name: Test Item
+  m_Name: Cube Item
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemId: card
-  itemName: Card
-  description: 'Test card '
-  icon: {fileID: 21300000, guid: 57e27a48a7196494abc9e681faf2b741, type: 3}
+  itemId: cube
+  itemName: Cube
+  description: Test cube
+  icon: {fileID: 0}
+  dropPrefab: {fileID: 5845702424760632880, guid: fadf215790f929044b7aad43aac57069, type: 3}
   category: 0
   isStackable: 1
   maxStackSize: 64

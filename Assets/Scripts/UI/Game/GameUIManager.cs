@@ -294,7 +294,7 @@ public sealed class GameUIManager : MonoBehaviour
 
     private void ApplyCursorState()
     {
-        bool shouldOwnCursor = AnyManagedScreenVisible() || IsShowcaseOpen();
+        bool shouldOwnCursor = AnyManagedScreenVisible() || IsShowcaseOpen() || InventoryUI.IsAnyInventoryOpen;
         if (shouldOwnCursor)
         {
             Cursor.lockState = CursorLockMode.None;
@@ -363,7 +363,6 @@ public sealed class GameUIManager : MonoBehaviour
         AddShowcaseButton("JOIN", () => PreviewScreen(ScreenId.JoinGame));
         AddShowcaseButton("PAUSE", () => PreviewModal(ScreenId.PauseMenu));
         AddShowcaseButton("TURN HUD", PreviewTurnHud);
-        AddShowcaseButton("INVENTORY", () => PreviewScreen(ScreenId.Inventory));
         AddShowcaseButton("BET", () => PreviewModal(ScreenId.BetScreen));
         AddShowcaseButton("CLOSE", HideShowcase);
 
@@ -440,7 +439,6 @@ public sealed class GameUIManager : MonoBehaviour
         Register(CreateScreen<JoinGameScreen>(screenRoot, "JoinGameScreen"));
         Register(CreateScreen<PauseMenuScreen>(screenRoot, "PauseMenuScreen"));
         Register(CreateScreen<TurnActionMenu>(screenRoot, "TurnActionMenu"));
-        Register(CreateScreen<InventoryScreen>(screenRoot, "InventoryScreen"));
         Register(CreateScreen<BetScreen>(screenRoot, "BetScreen"));
     }
 

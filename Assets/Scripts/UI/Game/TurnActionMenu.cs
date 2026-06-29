@@ -65,7 +65,8 @@ public sealed class TurnActionMenu : GameUIScreen
         SyncCurrentPlayerFromGameManager();
 
         bool shouldShow = IsCurrentHumanTurn()
-            && UI.ActiveScreen == ScreenId.None;
+            && UI.ActiveScreen == ScreenId.None
+            && !InventoryUI.IsAnyInventoryOpen;
         if (shouldShow && !gameObject.activeSelf)
             UI.ShowHud(Id);
         else if (!shouldShow && gameObject.activeSelf)
