@@ -58,12 +58,6 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
             SpawnAndLinkBody(secondTeam, secondPlayer, isAI: true);
         }
 
-        GameUIManager? ui = FindFirstObjectByType<GameUIManager>();
-        if (ui != null)
-        {
-            ui.RefreshGameManager();
-            ui.EnterGameHud();
-        }
     }
 
     private void SpawnAndLinkBody(Team team, Skeleton player, bool isAI)

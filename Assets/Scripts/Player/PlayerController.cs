@@ -46,7 +46,7 @@ public class PlayerController : MonoBehaviour
         bool isGrounded = CheckGround();
 
         HandleGravity(isGrounded);
-        if (_skeletonBody.IsIncapacitated || InventoryUI.IsAnyInventoryOpen)
+        if (_skeletonBody.IsIncapacitated)
         {
             _input.ConsumeJump();
             StopHorizontalMovement();

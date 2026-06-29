@@ -65,11 +65,6 @@ public class CameraController : MonoBehaviour
 
     private void Update()
     {
-        if (InventoryUI.IsAnyInventoryOpen)
-        {
-            return;
-        }
-
         if (Keyboard.current != null && Keyboard.current.hKey.wasPressedThisFrame)
         {
             if (!_isFirstPerson && (_skeletonBody == null || !_skeletonBody.HasSkull()))
@@ -109,7 +104,7 @@ public class CameraController : MonoBehaviour
     private void LateUpdate()
     {
         if (_cursorUnlocked) return;
-        if (InventoryUI.IsAnyInventoryOpen || _input == null)
+        if (_input == null)
         {
             return;
         }

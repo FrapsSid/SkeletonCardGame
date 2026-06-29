@@ -77,6 +77,9 @@ public static class InputKeyUtils {
             case KeyCode.Escape:
                 key = Key.Escape;
                 return true;
+            case KeyCode.Tab:
+                key = Key.Tab;
+                return true;
             default:
                 return Enum.TryParse(keyCode.ToString(), out key);
         }
