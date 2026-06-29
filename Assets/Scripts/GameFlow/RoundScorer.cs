@@ -1,5 +1,7 @@
+using Combinations;
 using System.Collections.Generic;
 using System.Linq;
+using static Multiplayer.NetworkPlayer;
 
 public class RoundScorer
 {
@@ -22,7 +24,7 @@ public class RoundScorer
             return evaluation;
         }
 
-        List<CardData> personalPool = BuildPersonalPool(player, tableCards);
+        List<CardWithPool> personalPool = BuildPersonalPool(player, tableCards);
 
         if (combos.antiCombination != null && combos.antiCombination.IsSatisfied(personalPool))
         {
@@ -152,7 +154,7 @@ public class RoundScorer
         {
             if (!evaluation.declaredTarget.AllowsDifficulty(difficulty)) continue;
 
-            List<CardData> personalPool = BuildPersonalPool(evaluation.player, tableCards);
+            List<CardWithPool> personalPool = BuildPersonalPool(evaluation.player, tableCards);
             if (!combination.IsSatisfied(personalPool)) continue;
 
             AddUnique(evaluation.personalScoredCombinations, combination);
@@ -202,7 +204,7 @@ public class RoundScorer
                 return false;
             }
 
-            List<CardData> sharedPool = BuildSharedPool(currentSubset, tableCards);
+            List<CardWithPool> sharedPool = BuildSharedPool(currentSubset, tableCards);
             return combination.IsSatisfied(sharedPool);
         }
 
@@ -224,38 +226,72 @@ public class RoundScorer
         return false;
     }
 
-    private List<CardData> BuildPersonalPool(Skeleton player, List<CardData> tableCards)
+    private List<CardWithPool> BuildPersonalPool(Skeleton player, List<CardData> tableCards)
     {
-        var pool = new List<CardData>();
+        var pool = new List<CardWithPool>();
 
         if (player?.Hand != null)
         {
-            pool.AddRange(player.Hand.GetCards());
-        }
-
-        if (tableCards != null)
-        {
-            pool.AddRange(tableCards);
-        }
-
-        return pool;
-    }
-
-    private List<CardData> BuildSharedPool(List<PlayerRoundEvaluation> evaluations, List<CardData> tableCards)
-    {
-        var pool = new List<CardData>();
-
-        foreach (PlayerRoundEvaluation evaluation in evaluations)
-        {
-            if (evaluation.player?.Hand != null)
+            foreach (var cardData in player.Hand.GetCards())
             {
-                pool.AddRange(evaluation.player.Hand.GetCards());
+                pool.Add(new CardWithPool(cardData, CardPool.Player1Hand));
             }
         }
 
         if (tableCards != null)
         {
-            pool.AddRange(tableCards);
+            foreach (var cardData in tableCards)
+            {
+                pool.Add(new CardWithPool(cardData, CardPool.Table));
+            }
+        }
+
+        return pool;
+    }
+
+    private List<CardWithPool> BuildSharedPool(List<PlayerRoundEvaluation> evaluations, List<CardData> tableCards)
+    {
+        var pool = new List<CardWithPool>();
+
+        for (int i = 0; i < evaluations.Count; i++)
+        {
+            var hand = evaluations[i].player?.Hand;
+            if (hand == null)
+                continue;
+
+            // Определяем пул в зависимости от индекса игрока
+            CardPool poolType;
+            if (i == 0)
+            {
+                poolType = CardPool.Player1Hand;
+            }
+            else if (i == 1)
+            {
+                poolType = CardPool.Player2Hand;
+            }
+            else
+            {
+                // У нас только 2 пула для игроков
+                continue;
+            }
+
+            // Получаем карты из руки (предполагаем, что GetCards() возвращает List<CardData>)
+            var handCards = hand.GetCards();
+            if (handCards != null)
+            {
+                foreach (var cardData in handCards)
+                {
+                    pool.Add(new CardWithPool(cardData, poolType));
+                }
+            }
+        }
+
+        if (tableCards != null)
+        {
+            foreach (var cardData in tableCards)
+            {
+                pool.Add(new CardWithPool(cardData, CardPool.Table));
+            }
         }
 
         return pool;

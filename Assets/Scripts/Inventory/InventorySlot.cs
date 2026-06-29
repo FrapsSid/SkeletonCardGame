@@ -26,25 +26,26 @@ public class PickupDropVisual {
 [Serializable]
 public class InventorySlot {
     public ItemData itemData;
+    public CardData cardData;
     public int quantity;
     public PickupDropVisual dropVisual;
 
-    public bool IsEmpty => itemData == null;
+    public bool IsEmpty => itemData == null && cardData == null;
+    public bool HasCard => cardData != null;
 
     public void Clear() {
         itemData = null;
+        cardData = null;
         quantity = 0;
         dropVisual = null;
     }
 
-    public void SetItem(ItemData item, int qty, PickupDropVisual visual = null) {
+    public void SetItem(ItemData item, int qty, PickupDropVisual visual = null, CardData card = null) {
         itemData = item;
-        quantity = item == null ? 0 : Math.Max(0, qty);
+        cardData = card;
+        quantity = Math.Max(0, qty);
         dropVisual = visual?.Copy();
-
-        if (quantity <= 0) {
-            Clear();
-        }
+        Normalize();
     }
 
     public void CopyFrom(InventorySlot source) {
@@ -53,6 +54,18 @@ public class InventorySlot {
             return;
         }
 
-        SetItem(source.itemData, source.quantity, source.dropVisual);
+        SetItem(source.itemData, source.quantity, source.dropVisual, source.cardData);
+    }
+
+    public void Normalize() {
+        quantity = Math.Max(0, quantity);
+
+        if (itemData != null && itemData.category != ItemCategory.Card) {
+            cardData = null;
+        }
+
+        if (quantity == 0 || (itemData == null && cardData == null)) {
+            Clear();
+        }
     }
 }

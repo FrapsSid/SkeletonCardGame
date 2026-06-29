@@ -49,6 +49,28 @@ public class InventoryCanvasUI : MonoBehaviour
     private CursorLockMode previousCursorLockMode;
     private bool previousCursorVisible;
 
+    public Inventory Inventory => inventory;
+
+    public static bool IsAnyInventoryOpen
+    {
+        get
+        {
+            InventoryCanvasUI[] inventoryUis = FindObjectsByType<InventoryCanvasUI>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < inventoryUis.Length; i++)
+            {
+                if (inventoryUis[i] != null && inventoryUis[i].IsVisible())
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
     private void Reset()
     {
         ResolveCanvasReferences();
@@ -181,6 +203,48 @@ public class InventoryCanvasUI : MonoBehaviour
         {
             Refresh();
         }
+    }
+
+    public bool TryGetSlotIndex(InventoryCanvasSlot slot, out int slotIndex)
+    {
+        slotIndex = -1;
+        if (slot == null || !slot.BelongsTo(this))
+        {
+            return false;
+        }
+
+        slotIndex = slot.SlotIndex;
+        return slotIndex >= 0 && slotIndex < slotViews.Count;
+    }
+
+    public bool TryPlaceExternalSlot(int slotIndex, InventorySlot incomingSlot, out InventorySlot swappedSlot)
+    {
+        swappedSlot = null;
+        if (inventory == null || incomingSlot == null || incomingSlot.IsEmpty)
+        {
+            return false;
+        }
+
+        InventorySlot targetSlot = inventory.GetSlot(slotIndex);
+        if (targetSlot == null)
+        {
+            return false;
+        }
+
+        swappedSlot = new InventorySlot();
+        swappedSlot.CopyFrom(targetSlot);
+        targetSlot.CopyFrom(incomingSlot);
+        inventory.NotifyInventoryChanged();
+        Refresh();
+        return true;
+    }
+
+    public void ShowTooltip(InventorySlot slot)
+    {
+    }
+
+    public void HideTooltip()
+    {
     }
 
     private bool TryBindInventory()

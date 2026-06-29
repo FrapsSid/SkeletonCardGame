@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Combinations;
 
 public class AIData
 {

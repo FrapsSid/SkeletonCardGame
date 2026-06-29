@@ -4,6 +4,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class Pickupable : MonoBehaviour {
     [Header("Item")] public ItemData itemData;
+    public CardData cardData;
     [Min(1)] public int quantity = 1;
     public bool isPickupable = true;
     [Min(0f)] public float interactionRadius = 2f;
@@ -46,7 +47,7 @@ public class Pickupable : MonoBehaviour {
             return FailPickup(player, "Item is not pickupable");
         }
 
-        if (!itemData) {
+        if (!itemData && cardData == null) {
             return FailPickup(player, "Item data is null");
         }
 
@@ -54,13 +55,8 @@ public class Pickupable : MonoBehaviour {
             return FailPickup(player, "Player is too far");
         }
 
-        Inventory inventory = player.Inventory ? player.Inventory : player.GetComponent<Inventory>();
-        if (inventory == null) {
-            return FailPickup(player, "Player does not has inventory");
-        }
-
-        if (!inventory.TryAddPickup(this)) {
-            return FailPickup(player, "Full inventory");
+        if (!player.TryPickup(this)) {
+            return FailPickup(player, "No room in hand or inventory");
         }
 
         OnPickedUp?.Invoke(player);
@@ -70,7 +66,6 @@ public class Pickupable : MonoBehaviour {
 
     public PickupDropVisual CaptureDropVisual() {
         var prefab = itemData != null && itemData.dropPrefab ? itemData.dropPrefab : null;
-        
         return new PickupDropVisual(prefab, transform.localScale, focusTint, tintRenderersOnFocus);
     }
 
@@ -123,7 +118,6 @@ public class Pickupable : MonoBehaviour {
             itemRenderer.SetPropertyBlock(_propertyBlock);
         }
     }
-
 
     private void EnsureDiscoveryCollider() {
         if (!addTriggerColliderIfMissing || GetComponentInChildren<Collider>() != null) {

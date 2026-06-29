@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 
+using Combinations;
 using CardGameRound = CardGame.Round;
 
 [AddComponentMenu("UI/Round Combination Display UI")]

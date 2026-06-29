@@ -762,6 +762,8 @@ GameObject:
   - component: {fileID: 8504429284160359277}
   - component: {fileID: 8671025497589268506}
   - component: {fileID: 7358728352139533951}
+  - component: {fileID: 1041903339871016607}
+  - component: {fileID: 6175429095370610723}
   m_Layer: 0
   m_Name: PlayerOffline
   m_TagString: Untagged
@@ -981,6 +983,8 @@ MonoBehaviour:
   firstPersonMinPitch: -80
   firstPersonMaxPitch: 80
   playerController: {fileID: 3185503057167038728}
+  _skeletonBody: {fileID: 0}
+  skullRenderer: {fileID: 0}
 --- !u!114 &8504429284160359277
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -996,6 +1000,9 @@ MonoBehaviour:
   maxSlots: 9
   slots:
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1003,6 +1010,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1010,6 +1020,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1017,6 +1030,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1024,6 +1040,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1031,6 +1050,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1038,6 +1060,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1045,6 +1070,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1052,6 +1080,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1059,6 +1090,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1066,6 +1100,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1073,6 +1110,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1080,6 +1120,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1087,6 +1130,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1094,6 +1140,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1101,6 +1150,9 @@ MonoBehaviour:
       focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
       tintRenderersOnFocus: 1
   - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
     quantity: 0
     dropVisual:
       prefab: {fileID: 0}
@@ -1140,6 +1192,121 @@ MonoBehaviour:
   pickupLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &1041903339871016607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2127224602510051848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81a42411efae5be47947b126fc2f4927, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHand
+  maxSlots: 8
+  slots:
+  - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
+    quantity: 0
+    dropVisual:
+      prefab: {fileID: 0}
+      scale: {x: 1, y: 1, z: 1}
+      focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
+      tintRenderersOnFocus: 1
+  - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
+    quantity: 0
+    dropVisual:
+      prefab: {fileID: 0}
+      scale: {x: 1, y: 1, z: 1}
+      focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
+      tintRenderersOnFocus: 1
+  - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
+    quantity: 0
+    dropVisual:
+      prefab: {fileID: 0}
+      scale: {x: 1, y: 1, z: 1}
+      focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
+      tintRenderersOnFocus: 1
+  - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
+    quantity: 0
+    dropVisual:
+      prefab: {fileID: 0}
+      scale: {x: 1, y: 1, z: 1}
+      focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
+      tintRenderersOnFocus: 1
+  - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
+    quantity: 0
+    dropVisual:
+      prefab: {fileID: 0}
+      scale: {x: 1, y: 1, z: 1}
+      focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
+      tintRenderersOnFocus: 1
+  - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
+    quantity: 0
+    dropVisual:
+      prefab: {fileID: 0}
+      scale: {x: 1, y: 1, z: 1}
+      focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
+      tintRenderersOnFocus: 1
+  - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
+    quantity: 0
+    dropVisual:
+      prefab: {fileID: 0}
+      scale: {x: 1, y: 1, z: 1}
+      focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
+      tintRenderersOnFocus: 1
+  - itemData: {fileID: 0}
+    cardData:
+      suit: 0
+      value: 0
+    quantity: 0
+    dropVisual:
+      prefab: {fileID: 0}
+      scale: {x: 1, y: 1, z: 1}
+      focusTint: {r: 1, g: 0.9, b: 0.35, a: 1}
+      tintRenderersOnFocus: 1
+  cardItemData: {fileID: 11400000, guid: 8433499466a696e408624a8cf55986d7, type: 2}
+  pickupPrefab: {fileID: 0}
+  dropOffset: {x: 0, y: 0.4, z: 1.05}
+  giveDroppedItemForwardVelocity: 1
+  droppedItemForwardVelocity: 1.5
+--- !u!114 &6175429095370610723
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2127224602510051848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dafe59e60deb11b49884b8a795b83cd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHandInput
+  selectPreviousKey: 122
+  selectNextKey: 120
+  moveSelectedToInventoryKey: 114
+  dropSelectedKey: 113
 --- !u!1 &2141378295478759342
 GameObject:
   m_ObjectHideFlags: 0
