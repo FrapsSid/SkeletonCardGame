@@ -22,6 +22,7 @@ public class PlayerHandUI : MonoBehaviour {
     private readonly List<HandSlotUI> _slotViews = new List<HandSlotUI>();
     private PlayerHand _subscribedHand;
     private readonly InventorySlot _carriedSlot = new InventorySlot();
+    private int _hoveredSlotIndex = -1;
 
     private bool HasCarriedSlot => !_carriedSlot.IsEmpty && _carriedSlot.quantity > 0;
 
@@ -86,6 +87,7 @@ public class PlayerHandUI : MonoBehaviour {
         }
 
         Vector2 pointerPosition = Mouse.current.position.ReadValue();
+        UpdateTooltip(pointerPosition);
 
         if (InputKeyUtils.WasPressedThisFrame(KeyCode.Q) && TryGetHandSlotUnderPointer(pointerPosition, out int hoveredHandSlot)) {
             hand.TryDropSlot(hoveredHandSlot);
@@ -172,32 +174,35 @@ public class PlayerHandUI : MonoBehaviour {
     }
 
     private void EnsureDragIcon() {
-        if (dragIcon != null && !dragIcon.transform.IsChildOf(transform)) {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        Transform dragParent = canvas != null ? canvas.transform : transform;
+
+        if (dragIcon != null && !dragIcon.transform.IsChildOf(dragParent)) {
             dragIcon = null;
         }
 
-        if (dragCountText != null && !dragCountText.transform.IsChildOf(transform)) {
+        if (dragCountText != null && !dragCountText.transform.IsChildOf(dragParent)) {
             dragCountText = null;
         }
 
         if (dragIcon == null) {
             GameObject dragObject = new GameObject("HandDragIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            dragObject.transform.SetParent(transform, false);
+            dragObject.transform.SetParent(dragParent, false);
             dragIcon = dragObject.GetComponent<Image>();
             dragIcon.raycastTarget = false;
-            dragIcon.rectTransform.sizeDelta = new Vector2(64f, 64f);
         }
+
+        dragIcon.rectTransform.sizeDelta = new Vector2(72f, 72f);
 
         if (dragCountText == null) {
             GameObject countObject = new GameObject("HandDragCount", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-            countObject.transform.SetParent(transform, false);
+            countObject.transform.SetParent(dragParent, false);
             dragCountText = countObject.GetComponent<TextMeshProUGUI>();
             dragCountText.raycastTarget = false;
             dragCountText.fontSize = 24f;
             dragCountText.alignment = TextAlignmentOptions.BottomRight;
             dragCountText.color = Color.white;
         }
-
     }
 
     private void UpdateCarriedIcon() {
@@ -337,6 +342,55 @@ public class PlayerHandUI : MonoBehaviour {
         }
     }
 
+    public bool TryGetSlotIndex(HandSlotUI slotView, out int slotIndex) {
+        slotIndex = -1;
+        if (slotView == null) {
+            return false;
+        }
+
+        for (int i = 0; i < _slotViews.Count; i++) {
+            if (_slotViews[i] == slotView) {
+                slotIndex = i;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool TryPlaceExternalSlot(int slotIndex, InventorySlot incomingSlot, out InventorySlot swappedSlot) {
+        swappedSlot = null;
+        if (hand == null || incomingSlot == null || incomingSlot.IsEmpty) {
+            return false;
+        }
+
+        if (!hand.TryPlaceSlot(slotIndex, incomingSlot, out swappedSlot)) {
+            return false;
+        }
+
+        Refresh();
+        return true;
+    }
+
+    private void UpdateTooltip(Vector2 pointerPosition) {
+        if (HasCarriedSlot || inventoryUi == null) {
+            return;
+        }
+
+        if (TryGetHandSlotUnderPointer(pointerPosition, out int slotIndex)) {
+            InventorySlot slot = hand != null ? hand.GetSlot(slotIndex) : null;
+            if (slot != null && !slot.IsEmpty) {
+                _hoveredSlotIndex = slotIndex;
+                inventoryUi.ShowTooltip(slot);
+                return;
+            }
+        }
+
+        if (_hoveredSlotIndex >= 0) {
+            _hoveredSlotIndex = -1;
+            inventoryUi.HideTooltip();
+        }
+    }
     private bool TryGetHandSlotUnderPointer(Vector2 pointerPosition, out int slotIndex) {
         slotIndex = -1;
         if (EventSystem.current == null) {
@@ -468,5 +522,6 @@ public class PlayerHandUI : MonoBehaviour {
             : Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
     }
 }
+
 
 

@@ -201,6 +201,30 @@ public class InventoryUI : MonoBehaviour {
         }
     }
 
+    public void ShowTooltip(InventorySlot slot) {
+        if (tooltipPanel is null || slot == null || slot.IsEmpty || slot.itemData == null || HasCarriedItem) {
+            HideTooltip();
+            return;
+        }
+
+        if (tooltipNameText != null) {
+            if (slot.cardData != null) {
+                tooltipNameText.text = $"{slot.cardData.Value} of {slot.cardData.Suit}";
+            }
+            else {
+                tooltipNameText.text = string.IsNullOrWhiteSpace(slot.itemData.itemName)
+                    ? "Item"
+                    : slot.itemData.itemName;
+            }
+        }
+
+        if (tooltipDescriptionText) {
+            tooltipDescriptionText.text = slot.itemData.description ?? string.Empty;
+        }
+
+        tooltipPanel.SetActive(true);
+    }
+
     public void ShowTooltip(int slotIndex) {
         _hoveredSlotIndex = slotIndex;
 
@@ -215,17 +239,7 @@ public class InventoryUI : MonoBehaviour {
             return;
         }
 
-        if (tooltipNameText != null) {
-            tooltipNameText.text = string.IsNullOrWhiteSpace(slot.itemData.itemName)
-                ? "Item"
-                : slot.itemData.itemName;
-        }
-
-        if (tooltipDescriptionText) {
-            tooltipDescriptionText.text = slot.itemData.description ?? string.Empty;
-        }
-
-        tooltipPanel.SetActive(true);
+        ShowTooltip(slot);
     }
 
     public void HideTooltip() {
@@ -368,6 +382,12 @@ public class InventoryUI : MonoBehaviour {
                     TakeFromSlot(slotIndex, int.MaxValue);
                 }
             }
+            else if (HasCarriedItem && TryPlaceCarriedIntoHand(pointerPosition)) {
+                return;
+            }
+            else if (HasCarriedItem && TryGetHandSlotUnderPointer(pointerPosition, out _, out _)) {
+                return;
+            }
             else if (HasCarriedItem && !IsPointerInsideInventoryPanel(pointerPosition)) {
                 DropCarriedOutsideInventory(1);
             }
@@ -384,6 +404,68 @@ public class InventoryUI : MonoBehaviour {
         }
     }
 
+    private bool TryPlaceCarriedIntoHand(Vector2 pointerPosition) {
+        if (!HasCarriedItem) {
+            return false;
+        }
+
+        if (_handUi == null) {
+            _handUi = FindFirstObjectByType<PlayerHandUI>();
+        }
+
+        if (_handUi == null || !TryGetHandSlotUnderPointer(pointerPosition, out PlayerHandUI targetHandUi, out int handSlotIndex)) {
+            return false;
+        }
+
+        InventorySlot incomingSlot = new InventorySlot();
+        incomingSlot.SetItem(_carriedItem, _carriedQuantity, _carriedVisual, _carriedCardData);
+        if (!targetHandUi.TryPlaceExternalSlot(handSlotIndex, incomingSlot, out InventorySlot swappedSlot)) {
+            return false;
+        }
+
+        if (swappedSlot == null || swappedSlot.IsEmpty) {
+            ClearCarriedItem();
+        }
+        else {
+            _carriedItem = swappedSlot.itemData;
+            _carriedQuantity = swappedSlot.quantity;
+            _carriedVisual = swappedSlot.dropVisual?.Copy();
+            _carriedCardData = swappedSlot.cardData;
+            UpdateCarriedIcon();
+        }
+
+        Refresh();
+        return true;
+    }
+
+    private bool TryGetHandSlotUnderPointer(Vector2 pointerPosition, out PlayerHandUI targetHandUi, out int slotIndex) {
+        targetHandUi = null;
+        slotIndex = -1;
+        if (EventSystem.current == null) {
+            return false;
+        }
+
+        PointerEventData pointerData = new PointerEventData(EventSystem.current) {
+            position = pointerPosition
+        };
+
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
+        for (int i = 0; i < results.Count; i++) {
+            HandSlotUI slot = results[i].gameObject.GetComponentInParent<HandSlotUI>();
+            if (slot == null) {
+                continue;
+            }
+
+            PlayerHandUI owner = slot.GetComponentInParent<PlayerHandUI>();
+            if (owner != null && owner.TryGetSlotIndex(slot, out slotIndex)) {
+                targetHandUi = owner;
+                return true;
+            }
+        }
+
+        return false;
+    }
     private void TakeFromSlot(int slotIndex, int requestedQuantity) {
         InventorySlot slot = inventory.GetSlot(slotIndex);
         if (slot == null || slot.IsEmpty || slot.quantity <= 0) {
@@ -500,8 +582,10 @@ public class InventoryUI : MonoBehaviour {
         }
 
         bool hasCarried = HasCarriedItem;
-        dragIcon.enabled = hasCarried && _carriedItem != null && _carriedItem.icon != null;
+        dragIcon.enabled = hasCarried;
         dragIcon.sprite = hasCarried && _carriedItem != null ? _carriedItem.icon : null;
+        dragIcon.color = !hasCarried ? Color.clear : dragIcon.sprite != null ? Color.white : new Color(0.82f, 0.86f, 0.92f, 0.9f);
+        dragIcon.rectTransform.sizeDelta = new Vector2(64f, 64f);
 
         if (dragCountText != null) {
             dragCountText.text = hasCarried && _carriedQuantity > 1 ? _carriedQuantity.ToString() : string.Empty;
@@ -751,4 +835,6 @@ public class InventoryUI : MonoBehaviour {
         return RectTransformUtility.RectangleContainsScreenPoint(rectTransform, pointerPosition, null);
     }
 }
+
+
 
