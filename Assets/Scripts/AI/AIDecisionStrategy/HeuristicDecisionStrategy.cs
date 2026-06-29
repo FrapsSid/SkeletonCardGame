@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Combinations;
 
 public class HeuristicDecisionStrategy : BaseAIDecisionStrategy
 {
@@ -149,34 +150,32 @@ public class HeuristicDecisionStrategy : BaseAIDecisionStrategy
     {
         if (roundCombinations == null) return null;
 
-        List<CardData> fullCardPool = new List<CardData>(hand.Count + table.Count);
-        fullCardPool.AddRange(hand);
-        fullCardPool.AddRange(table);
+        List<CardWithPool> fullCardPool = CardPoolBuilder.BuildCardPool(table, hand);
 
         // 0. ПРИОРИТЕТ №0: Проверяем Антикомбинацию (0)
         Combination anti = roundCombinations.GetCombination(CombinationDifficulty.Anti);
-        if (anti != null && anti.FindMatch(fullCardPool) != null)
+        if (anti != null && anti.IsSatisfied(fullCardPool))
         {
             return CombinationDifficulty.Anti;
         }
 
         // 1. ПРИОРИТЕТ №1: Проверяем Сложную комбинацию (3)
         Combination hard = roundCombinations.GetCombination(CombinationDifficulty.Hard);
-        if (hard != null && hard.FindMatch(fullCardPool) != null)
+        if (hard != null && hard.IsSatisfied(fullCardPool))
         {
             return CombinationDifficulty.Hard;
         }
 
         // 2. ПРИОРИТЕТ №2: Проверяем Среднюю комбинацию (2)
         Combination medium = roundCombinations.GetCombination(CombinationDifficulty.Medium);
-        if (medium != null && medium.FindMatch(fullCardPool) != null)
+        if (medium != null && medium.IsSatisfied(fullCardPool))
         {
             return CombinationDifficulty.Medium;
         }
 
         // 3. ПРИОРИТЕТ №3: Проверяем Простую/Легкую комбинацию (1)
         Combination easy = roundCombinations.GetCombination(CombinationDifficulty.Easy);
-        if (easy != null && easy.FindMatch(fullCardPool) != null)
+        if (easy != null && easy.IsSatisfied(fullCardPool))
         {
             return CombinationDifficulty.Easy;
         }
@@ -215,9 +214,11 @@ public class HeuristicDecisionStrategy : BaseAIDecisionStrategy
             temporaryHand.AddRange(currentHand);
             temporaryHand.Add(sampledCards[i]);
 
+            List<CardWithPool> cardPool = CardPoolBuilder.BuildCardPool(tableCards, temporaryHand);
+
             Combination anti = snapshot.RoundCombinations.GetCombination(CombinationDifficulty.Anti);
 
-            if (anti.FindMatch(temporaryHand) != null)
+            if (anti.IsSatisfied(cardPool))
             {
                 antiOutsCount++;
             }
