@@ -46,27 +46,33 @@ public class Inventory : MonoBehaviour {
             return false;
         }
 
-        return TryAddItem(pickup.itemData, pickup.quantity, pickup.CaptureDropVisual());
+        CardData pickupCardData = pickup.itemData != null && pickup.itemData.category == ItemCategory.Card ? pickup.cardData : null;
+        return TryAddItem(pickup.itemData, pickup.quantity, pickup.CaptureDropVisual(), pickupCardData);
     }
 
     public bool TryAddItem(ItemData item, int quantity = 1) {
-        return TryAddItem(item, quantity, CreateDefaultDropVisual(item));
+        return TryAddItem(item, quantity, CreateDefaultDropVisual(item), null);
     }
 
-    private bool TryAddItem(ItemData item, int quantity, PickupDropVisual visual) {
-        if (item == null || quantity <= 0 || !CanFitItem(item, quantity)) {
+    public bool TryAddItem(ItemData item, int quantity, CardData cardData) {
+        return TryAddItem(item, quantity, CreateDefaultDropVisual(item), cardData);
+    }
+
+    public bool TryAddItem(ItemData item, int quantity, PickupDropVisual visual, CardData cardData = null) {
+        if (item == null || quantity <= 0 || item.category == ItemCategory.Card || cardData != null || !CanFitItem(item, quantity, cardData)) {
             return false;
         }
 
         int remaining = quantity;
+        bool canStack = item.isStackable && cardData == null;
 
-        if (item.isStackable) {
+        if (canStack) {
             foreach (InventorySlot slot in slots) {
                 if (remaining <= 0) {
                     break;
                 }
 
-                if (slot == null || slot.itemData != item) {
+                if (slot == null || slot.itemData != item || slot.cardData != null) {
                     continue;
                 }
 
@@ -92,8 +98,8 @@ public class Inventory : MonoBehaviour {
                 return false;
             }
 
-            int toAdd = item.isStackable ? Mathf.Min(GetStackLimit(item), remaining) : 1;
-            emptySlot.SetItem(item, toAdd, visual);
+            int toAdd = canStack ? Mathf.Min(GetStackLimit(item), remaining) : 1;
+            emptySlot.SetItem(item, toAdd, visual, cardData);
             remaining -= toAdd;
         }
 
@@ -197,10 +203,11 @@ public class Inventory : MonoBehaviour {
         }
 
         ItemData item = slot.itemData;
+        CardData cardData = slot.cardData;
         PickupDropVisual visual = slot.dropVisual?.Copy() ?? CreateDefaultDropVisual(item);
         int dropQuantity = Mathf.Clamp(quantity, 1, slot.quantity);
 
-        Pickupable pickup = CreateDroppedPickup(item, dropQuantity, visual);
+        Pickupable pickup = CreateDroppedPickup(item, dropQuantity, visual, cardData);
         if (pickup == null) {
             return false;
         }
@@ -215,12 +222,12 @@ public class Inventory : MonoBehaviour {
         return true;
     }
 
-    public bool DropLooseItem(ItemData item, int quantity, PickupDropVisual visual) {
+    public bool DropLooseItem(ItemData item, int quantity, PickupDropVisual visual, CardData cardData = null) {
         if (item == null || quantity <= 0) {
             return false;
         }
 
-        Pickupable pickup = CreateDroppedPickup(item, quantity, visual ?? CreateDefaultDropVisual(item));
+        Pickupable pickup = CreateDroppedPickup(item, quantity, visual ?? CreateDefaultDropVisual(item), cardData);
         if (pickup == null) {
             return false;
         }
@@ -273,12 +280,17 @@ public class Inventory : MonoBehaviour {
         return true;
     }
 
-    private bool CanFitItem(ItemData item, int quantity) {
-        int remaining = quantity;
+    private bool CanFitItem(ItemData item, int quantity, CardData cardData) {
+        if (item == null) {
+            return false;
+        }
 
-        if (item.isStackable) {
+        int remaining = quantity;
+        bool canStack = item.isStackable && cardData == null;
+
+        if (canStack) {
             foreach (InventorySlot slot in slots) {
-                if (slot == null || slot.itemData != item) {
+                if (slot == null || slot.itemData != item || slot.cardData != null) {
                     continue;
                 }
 
@@ -294,7 +306,7 @@ public class Inventory : MonoBehaviour {
                 continue;
             }
 
-            remaining -= item.isStackable ? GetStackLimit(item) : 1;
+            remaining -= canStack ? GetStackLimit(item) : 1;
             if (remaining <= 0) {
                 return true;
             }
@@ -303,7 +315,7 @@ public class Inventory : MonoBehaviour {
         return false;
     }
 
-    private Pickupable CreateDroppedPickup(ItemData item, int quantity, PickupDropVisual visual) {
+    private Pickupable CreateDroppedPickup(ItemData item, int quantity, PickupDropVisual visual, CardData cardData) {
         Vector3 dropPosition = transform.position + transform.TransformDirection(dropOffset);
         Quaternion dropRotation = Quaternion.identity;
         GameObject droppedObject;
@@ -335,6 +347,7 @@ public class Inventory : MonoBehaviour {
         }
 
         pickup.itemData = item;
+        pickup.cardData = cardData;
         pickup.quantity = quantity;
         if (visual != null) {
             pickup.focusTint = visual.focusTint;
@@ -347,6 +360,11 @@ public class Inventory : MonoBehaviour {
         if (body == null) {
             body = droppedObject.AddComponent<Rigidbody>();
         }
+
+        body.isKinematic = false;
+        body.useGravity = true;
+        body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        EnsureSolidDropCollider(droppedObject);
 
         if (giveDroppedItemForwardVelocity) {
             body.linearVelocity = transform.forward * droppedItemForwardVelocity;
@@ -368,6 +386,8 @@ public class Inventory : MonoBehaviour {
 
     private bool CanMergeSlots(InventorySlot fromSlot, InventorySlot toSlot) {
         return fromSlot.itemData != null
+               && fromSlot.cardData == null
+               && toSlot.cardData == null
                && fromSlot.itemData == toSlot.itemData
                && fromSlot.itemData.isStackable
                && toSlot.quantity < GetStackLimit(toSlot.itemData);
@@ -381,6 +401,52 @@ public class Inventory : MonoBehaviour {
         return Mathf.Max(1, item.maxStackSize);
     }
 
+
+    private static void EnsureSolidDropCollider(GameObject droppedObject) {
+        if (droppedObject == null) {
+            return;
+        }
+
+        Collider[] colliders = droppedObject.GetComponentsInChildren<Collider>();
+        for (int i = 0; i < colliders.Length; i++) {
+            if (colliders[i] != null && !colliders[i].isTrigger) {
+                return;
+            }
+        }
+
+        Bounds bounds = CalculateRendererBounds(droppedObject);
+        BoxCollider solidCollider = droppedObject.AddComponent<BoxCollider>();
+        solidCollider.isTrigger = false;
+
+        if (bounds.size.sqrMagnitude <= 0.0001f) {
+            solidCollider.size = Vector3.one;
+            solidCollider.center = Vector3.zero;
+            return;
+        }
+
+        solidCollider.center = droppedObject.transform.InverseTransformPoint(bounds.center);
+        Vector3 localSize = droppedObject.transform.InverseTransformVector(bounds.size);
+        solidCollider.size = new Vector3(
+            Mathf.Max(0.05f, Mathf.Abs(localSize.x)),
+            Mathf.Max(0.05f, Mathf.Abs(localSize.y)),
+            Mathf.Max(0.05f, Mathf.Abs(localSize.z)));
+    }
+
+    private static Bounds CalculateRendererBounds(GameObject target) {
+        Renderer[] renderers = target.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0) {
+            return new Bounds(target.transform.position, Vector3.one);
+        }
+
+        Bounds bounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++) {
+            if (renderers[i] != null) {
+                bounds.Encapsulate(renderers[i].bounds);
+            }
+        }
+
+        return bounds;
+    }
     private void EnsureSlotListSize() {
         if (slots == null) {
             slots = new List<InventorySlot>();
@@ -398,6 +464,9 @@ public class Inventory : MonoBehaviour {
             if (slots[i] == null) {
                 slots[i] = new InventorySlot();
             }
+
+            slots[i].Normalize();
         }
     }
 }
+

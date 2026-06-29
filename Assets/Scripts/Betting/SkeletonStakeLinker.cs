@@ -7,6 +7,14 @@ public static class SkeletonStakeLinker
         var assets = new List<StakeAsset>();
         if (team == null || body == null) return assets;
 
+        owner?.SetBody(body);
+
+        PlayerInventoryOwner inventoryOwner = body.GetComponent<PlayerInventoryOwner>();
+        if (inventoryOwner != null && owner != null)
+        {
+            inventoryOwner.AssignSkeleton(owner);
+        }
+
         foreach (BodyPart part in body.GetAttachedParts())
         {
             StakeAssetType type = part.Type == BodyPartType.Soul

@@ -78,6 +78,12 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
     private IEnumerator LinkBodyNextFrame(Team team, Skeleton player, SkeletonBody body)
     {
         yield return null;
+        player.SetBody(body);
+
+        PlayerInventoryOwner inventoryOwner = body.GetComponent<PlayerInventoryOwner>();
+        if (inventoryOwner != null)
+            inventoryOwner.AssignSkeleton(player);
+
         SkeletonStakeLinker.RegisterBodyAssets(team, player, body);
     }
 
