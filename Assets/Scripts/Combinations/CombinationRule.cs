@@ -3,19 +3,26 @@ using System.Collections.Generic;
 namespace Combinations
 {
     /// <summary>
-    /// Базовый класс для правила комбинации
+    /// Р‘Р°Р·РѕРІС‹Р№ РєР»Р°СЃСЃ РґР»СЏ РїСЂР°РІРёР»Р° РєРѕРјР±РёРЅР°С†РёРё
     /// </summary>
     public abstract class CombinationRule
     {
+        protected int _requiredCardCount;
+
         public abstract string Name { get; }
 
         /// <summary>
-        /// Проверяет, образуют ли карты данную комбинацию
+        /// РљРѕР»РёС‡РµСЃС‚РІРѕ РєР°СЂС‚, РЅРµРѕР±С…РѕРґРёРјРѕРµ РґР»СЏ СЌС‚РѕР№ РєРѕРјР±РёРЅР°С†РёРё
+        /// </summary>
+        public int RequiredCardCount => _requiredCardCount;
+
+        /// <summary>
+        /// РџСЂРѕРІРµСЂСЏРµС‚, РѕР±СЂР°Р·СѓСЋС‚ Р»Рё РєР°СЂС‚С‹ РґР°РЅРЅСѓСЋ РєРѕРјР±РёРЅР°С†РёСЋ
         /// </summary>
         public abstract bool Check(List<CardWithPool> cards);
 
         /// <summary>
-        /// Проверяет форму комбинации (без учета источников)
+        /// РџСЂРѕРІРµСЂСЏРµС‚ С„РѕСЂРјСѓ РєРѕРјР±РёРЅР°С†РёРё (Р±РµР· СѓС‡РµС‚Р° РёСЃС‚РѕС‡РЅРёРєРѕРІ)
         /// </summary>
         protected abstract bool CheckForm(List<CardData> cards);
     }
