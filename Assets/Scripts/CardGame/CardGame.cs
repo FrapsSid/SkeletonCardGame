@@ -86,7 +86,9 @@ public class CardGame
         public bool CanTakeCard(Player player)
         {
             return IsBettingPhase()
-                && playerTurnStates[player] != PlayerTurnState.Raised;
+                && !_game.deck.IsEmpty
+                && playerTurnStates[player] != PlayerTurnState.Raised
+                && playerTurnStates[player] != PlayerTurnState.TakenACard;
         }
         public int CalculateOverbet(Team team)
         {
@@ -228,6 +230,9 @@ public class CardGame
         {
             EnsureBettingPhase();
             CheckPlayersTurn(player);
+            if (!CanTakeCard(player))
+                throw new InvalidOperationException("Player cannot take a card");
+
             CardData card = _game.deck.DrawCard();
             player.Hand.AddCard(card);
             playerTurnStates[player] = PlayerTurnState.TakenACard;

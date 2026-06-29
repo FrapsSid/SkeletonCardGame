@@ -7,7 +7,7 @@ namespace Combinations
         private readonly CombinationRule _rule;
 
         public string DisplayName => _rule.Name;
-        //public string Description => _rule.Description;
+        public string Description => string.Empty;
         public CombinationRule Rule => _rule;
         public int RequiredCardCount => _rule.RequiredCardCount;
 

@@ -24,7 +24,7 @@ public class PlayerHandInput : MonoBehaviour {
             return;
         }
 
-        bool inventoryOpen = InventoryUI.IsAnyInventoryOpen;
+        bool inventoryOpen = InventoryCanvasUI.IsAnyInventoryOpen;
 
         if (InputKeyUtils.WasPressedThisFrame(selectPreviousKey)) {
             _hand.SelectPrevious();
@@ -61,7 +61,7 @@ public class PlayerHandInput : MonoBehaviour {
         List<RaycastResult> results = new List<RaycastResult>();
         EventSystem.current.RaycastAll(pointerData, results);
         for (int i = 0; i < results.Count; i++) {
-            if (results[i].gameObject.GetComponentInParent<InventorySlotUI>() != null) {
+            if (results[i].gameObject.GetComponentInParent<InventoryCanvasSlot>() != null) {
                 return true;
             }
         }

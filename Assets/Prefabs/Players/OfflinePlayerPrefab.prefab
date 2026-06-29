@@ -402,7 +402,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 260bde8f18d522743b08731600874633, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Inventory
-  maxSlots: 16
+  maxSlots: 9
   slots:
   - itemData: {fileID: 0}
     cardData:

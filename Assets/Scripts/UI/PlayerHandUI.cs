@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 public class PlayerHandUI : MonoBehaviour {
     public PlayerHand hand;
-    public InventoryUI inventoryUi;
+    public InventoryCanvasUI inventoryUi;
     public Transform slotsContainer;
     public HandSlotUI slotPrefab;
     public CardAtlas cardAtlas;
@@ -102,7 +102,7 @@ public class PlayerHandUI : MonoBehaviour {
         if (TryGetHandSlotUnderPointer(pointerPosition, out int handSlotIndex)) {
             if (IsShiftPressed() && !HasCarriedSlot) {
                 if (inventoryUi != null) {
-                    hand.TryMoveSlotToInventory(handSlotIndex, inventoryUi.inventory);
+                    hand.TryMoveSlotToInventory(handSlotIndex, inventoryUi.Inventory);
                 }
 
                 Refresh();
@@ -120,7 +120,7 @@ public class PlayerHandUI : MonoBehaviour {
             return;
         }
 
-        if (HasCarriedSlot && TryGetInventorySlotUnderPointer(pointerPosition, out InventoryUI targetInventoryUi, out int inventorySlotIndex)) {
+        if (HasCarriedSlot && TryGetInventorySlotUnderPointer(pointerPosition, out InventoryCanvasUI targetInventoryUi, out int inventorySlotIndex)) {
             if (targetInventoryUi.TryPlaceExternalSlot(inventorySlotIndex, _carriedSlot, out InventorySlot swappedSlot)) {
                 if (swappedSlot == null || swappedSlot.IsEmpty) {
                     ClearCarriedSlot();
@@ -420,7 +420,7 @@ public class PlayerHandUI : MonoBehaviour {
         return false;
     }
 
-    private bool TryGetInventorySlotUnderPointer(Vector2 pointerPosition, out InventoryUI targetInventoryUi, out int slotIndex) {
+    private bool TryGetInventorySlotUnderPointer(Vector2 pointerPosition, out InventoryCanvasUI targetInventoryUi, out int slotIndex) {
         targetInventoryUi = null;
         slotIndex = -1;
         if (EventSystem.current == null) {
@@ -434,12 +434,12 @@ public class PlayerHandUI : MonoBehaviour {
         List<RaycastResult> results = new List<RaycastResult>();
         EventSystem.current.RaycastAll(pointerData, results);
         for (int i = 0; i < results.Count; i++) {
-            InventorySlotUI slot = results[i].gameObject.GetComponentInParent<InventorySlotUI>();
+            InventoryCanvasSlot slot = results[i].gameObject.GetComponentInParent<InventoryCanvasSlot>();
             if (slot == null) {
                 continue;
             }
 
-            InventoryUI owner = slot.GetComponentInParent<InventoryUI>();
+            InventoryCanvasUI owner = slot.GetComponentInParent<InventoryCanvasUI>();
             if (owner != null && owner.TryGetSlotIndex(slot, out slotIndex)) {
                 targetInventoryUi = owner;
                 return true;
@@ -474,7 +474,7 @@ public class PlayerHandUI : MonoBehaviour {
             return true;
         }
 
-        inventoryUi = FindFirstObjectByType<InventoryUI>();
+        inventoryUi = FindFirstObjectByType<InventoryCanvasUI>();
         return inventoryUi != null;
     }
 

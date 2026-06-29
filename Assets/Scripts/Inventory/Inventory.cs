@@ -4,7 +4,7 @@ using UnityEngine;
 
 [DisallowMultipleComponent]
 public class Inventory : MonoBehaviour {
-    [Header("Capacity")] [Min(1)] public int maxSlots = 16;
+    [Header("Capacity")] [Min(1)] public int maxSlots = 9;
     public List<InventorySlot> slots = new List<InventorySlot>();
 
     [Header("Dropping")] public GameObject pickupPrefab;
@@ -59,7 +59,12 @@ public class Inventory : MonoBehaviour {
     }
 
     public bool TryAddItem(ItemData item, int quantity, PickupDropVisual visual, CardData cardData = null) {
-        if (item == null || quantity <= 0 || item.category == ItemCategory.Card || cardData != null || !CanFitItem(item, quantity, cardData)) {
+        bool isCardItem = item != null && item.category == ItemCategory.Card;
+        if (item == null
+            || quantity <= 0
+            || (isCardItem && cardData == null)
+            || (!isCardItem && cardData != null)
+            || !CanFitItem(item, quantity, cardData)) {
             return false;
         }
 
@@ -447,6 +452,7 @@ public class Inventory : MonoBehaviour {
 
         return bounds;
     }
+
     private void EnsureSlotListSize() {
         if (slots == null) {
             slots = new List<InventorySlot>();
@@ -469,4 +475,3 @@ public class Inventory : MonoBehaviour {
         }
     }
 }
-
