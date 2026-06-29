@@ -1,9 +1,9 @@
-using System;
+п»їusing System;
 
 namespace Combinations
 {
     /// <summary>
-    /// Карта с информацией об источнике (пуле)
+    /// РљР°СЂС‚Р° СЃ РёРЅС„РѕСЂРјР°С†РёРµР№ РѕР± РёСЃС‚РѕС‡РЅРёРєРµ (РїСѓР»Рµ)
     /// </summary>
     public struct CardWithPool : IEquatable<CardWithPool>
     {
@@ -22,7 +22,7 @@ namespace Combinations
             Pool = pool;
         }
 
-        // Shortcuts для удобства
+        // Shortcuts РґР»СЏ СѓРґРѕР±СЃС‚РІР°
         public CardSuit Suit => Card.Suit;
         public CardValue Value => Card.Value;
         public bool IsRed => Card.IsRed;

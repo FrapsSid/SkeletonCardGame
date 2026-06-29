@@ -1,15 +1,15 @@
-using System.Collections.Generic;
+п»їusing System.Collections.Generic;
 using System.Linq;
 
 namespace Combinations
 {
     /// <summary>
-    /// Шаблон разбиения карт на блоки с условиями на каждый блок
+    /// РЁР°Р±Р»РѕРЅ СЂР°Р·Р±РёРµРЅРёСЏ РєР°СЂС‚ РЅР° Р±Р»РѕРєРё СЃ СѓСЃР»РѕРІРёСЏРјРё РЅР° РєР°Р¶РґС‹Р№ Р±Р»РѕРє
     /// </summary>
     public class PartitionTemplate
     {
         /// <summary>
-        /// Описание одного блока в шаблоне
+        /// РћРїРёСЃР°РЅРёРµ РѕРґРЅРѕРіРѕ Р±Р»РѕРєР° РІ С€Р°Р±Р»РѕРЅРµ
         /// </summary>
         public class BlockRequirement
         {
@@ -19,7 +19,7 @@ namespace Combinations
             public BlockRequirement(int size, BlockPredicate predicate = null)
             {
                 Size = size;
-                Predicate = predicate ?? (_ => true); // по умолчанию - любые карты
+                Predicate = predicate ?? (_ => true); // РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ - Р»СЋР±С‹Рµ РєР°СЂС‚С‹
             }
         }
 
@@ -31,13 +31,13 @@ namespace Combinations
         }
 
         /// <summary>
-        /// Пытается разбить карты на блоки согласно шаблону
+        /// РџС‹С‚Р°РµС‚СЃСЏ СЂР°Р·Р±РёС‚СЊ РєР°СЂС‚С‹ РЅР° Р±Р»РѕРєРё СЃРѕРіР»Р°СЃРЅРѕ С€Р°Р±Р»РѕРЅСѓ
         /// </summary>
         public bool TryMatch(List<CardWithPool> cards, out List<CardBlock> resultBlocks)
         {
             resultBlocks = new List<CardBlock>();
 
-            // Группируем карты по пулам
+            // Р“СЂСѓРїРїРёСЂСѓРµРј РєР°СЂС‚С‹ РїРѕ РїСѓР»Р°Рј
             var cardsByPool = new Dictionary<CardPool, List<CardWithPool>>();
             foreach (var card in cards)
             {
@@ -46,7 +46,7 @@ namespace Combinations
                 cardsByPool[card.Pool].Add(card);
             }
 
-            // Пытаемся найти разбиение на блоки
+            // РџС‹С‚Р°РµРјСЃСЏ РЅР°Р№С‚Рё СЂР°Р·Р±РёРµРЅРёРµ РЅР° Р±Р»РѕРєРё
             return TryPartitionRecursive(cards, cardsByPool, 0, new List<CardBlock>(), resultBlocks);
         }
 
@@ -57,7 +57,7 @@ namespace Combinations
             List<CardBlock> currentBlocks,
             List<CardBlock> resultBlocks)
         {
-            // Если все блоки найдены
+            // Р•СЃР»Рё РІСЃРµ Р±Р»РѕРєРё РЅР°Р№РґРµРЅС‹
             if (blockIndex >= Blocks.Count)
             {
                 if (remainingCards.Count == 0)
@@ -71,28 +71,28 @@ namespace Combinations
 
             var requirement = Blocks[blockIndex];
 
-            // Пытаемся собрать блок из каждого пула
+            // РџС‹С‚Р°РµРјСЃСЏ СЃРѕР±СЂР°С‚СЊ Р±Р»РѕРє РёР· РєР°Р¶РґРѕРіРѕ РїСѓР»Р°
             foreach (var pool in cardsByPool.Keys)
             {
                 var poolCards = cardsByPool[pool];
 
-                // Пытаемся выбрать нужное количество карт из этого пула
+                // РџС‹С‚Р°РµРјСЃСЏ РІС‹Р±СЂР°С‚СЊ РЅСѓР¶РЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ РєР°СЂС‚ РёР· СЌС‚РѕРіРѕ РїСѓР»Р°
                 if (TrySelectCardsFromPool(poolCards, remainingCards, requirement, out var selectedCards))
                 {
-                    // Создаем блок
+                    // РЎРѕР·РґР°РµРј Р±Р»РѕРє
                     var block = new CardBlock(selectedCards, pool);
                     currentBlocks.Add(block);
 
-                    // Убираем выбранные карты из оставшихся
+                    // РЈР±РёСЂР°РµРј РІС‹Р±СЂР°РЅРЅС‹Рµ РєР°СЂС‚С‹ РёР· РѕСЃС‚Р°РІС€РёС…СЃСЏ
                     var newRemaining = new List<CardWithPool>(remainingCards);
                     foreach (var card in selectedCards)
                         newRemaining.Remove(card);
 
-                    // Рекурсивно ищем следующий блок
+                    // Р РµРєСѓСЂСЃРёРІРЅРѕ РёС‰РµРј СЃР»РµРґСѓСЋС‰РёР№ Р±Р»РѕРє
                     if (TryPartitionRecursive(newRemaining, cardsByPool, blockIndex + 1, currentBlocks, resultBlocks))
                         return true;
 
-                    // Откатываем
+                    // РћС‚РєР°С‚С‹РІР°РµРј
                     currentBlocks.RemoveAt(currentBlocks.Count - 1);
                 }
             }
@@ -108,7 +108,7 @@ namespace Combinations
         {
             selectedCards = new List<CardWithPool>();
 
-            // Находим карты из этого пула среди доступных
+            // РќР°С…РѕРґРёРј РєР°СЂС‚С‹ РёР· СЌС‚РѕРіРѕ РїСѓР»Р° СЃСЂРµРґРё РґРѕСЃС‚СѓРїРЅС‹С…
             var candidates = new List<CardWithPool>();
             foreach (var card in poolCards)
             {
@@ -119,7 +119,7 @@ namespace Combinations
             if (candidates.Count < requirement.Size)
                 return false;
 
-            // Перебираем комбинации
+            // РџРµСЂРµР±РёСЂР°РµРј РєРѕРјР±РёРЅР°С†РёРё
             return TrySelectCombination(candidates, requirement.Size, requirement.Predicate, selectedCards);
         }
 
@@ -142,7 +142,7 @@ namespace Combinations
         {
             if (current.Count == size)
             {
-                // Конвертируем CardWithPool в CardData для предиката
+                // РљРѕРЅРІРµСЂС‚РёСЂСѓРµРј CardWithPool РІ CardData РґР»СЏ РїСЂРµРґРёРєР°С‚Р°
                 var cardDataList = current.Select(c => c.Card).ToList();
                 if (predicate(cardDataList))
                 {

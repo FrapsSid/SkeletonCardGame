@@ -1,9 +1,9 @@
-using System.Collections.Generic;
+п»їusing System.Collections.Generic;
 
 namespace Combinations
 {
     /// <summary>
-    /// Блок карт из одного источника (пула)
+    /// Р‘Р»РѕРє РєР°СЂС‚ РёР· РѕРґРЅРѕРіРѕ РёСЃС‚РѕС‡РЅРёРєР° (РїСѓР»Р°)
     /// </summary>
     public class CardBlock
     {

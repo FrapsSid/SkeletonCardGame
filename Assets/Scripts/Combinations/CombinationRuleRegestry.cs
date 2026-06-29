@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+п»їusing System.Collections.Generic;
 using System.Linq;
 using Combinations.Rules;
 
@@ -6,7 +6,7 @@ namespace Combinations
 {
 
     /// <summary>
-    /// Статический реестр всех комбинаций, разделенных по уровням сложности
+    /// РЎС‚Р°С‚РёС‡РµСЃРєРёР№ СЂРµРµСЃС‚СЂ РІСЃРµС… РєРѕРјР±РёРЅР°С†РёР№, СЂР°Р·РґРµР»РµРЅРЅС‹С… РїРѕ СѓСЂРѕРІРЅСЏРј СЃР»РѕР¶РЅРѕСЃС‚Рё
     /// </summary>
     public static class CombinationRuleRegistry
     {
@@ -22,60 +22,60 @@ namespace Combinations
 
         static CombinationRuleRegistry()
         {
-            // === ЛЕГКИЙ УРОВЕНЬ ===
+            // === Р›Р•Р“РљРР™ РЈР РћР’Р•РќР¬ ===
             var easy = new List<CombinationRule>
             {
-                // Последовательности
-                new ThreeInARow(),      // Три Подряд
-                new FourInARow(),       // Четыре Подряд
-                new FiveInARow(),       // Пять Подряд
+                // РџРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚Рё
+                new ThreeInARow(),      // РўСЂРё РџРѕРґСЂСЏРґ
+                new FourInARow(),       // Р§РµС‚С‹СЂРµ РџРѕРґСЂСЏРґ
+                new FiveInARow(),       // РџСЏС‚СЊ РџРѕРґСЂСЏРґ
 
-                // Мастные последовательности
-                new SuitedLadder3(),    // Мастная Лестница-3
-                new SuitedLadder4(),    // Мастная Лестница-4
-                new StraightFlush(),    // Стрит-Флеш
+                // РњР°СЃС‚РЅС‹Рµ РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚Рё
+                new SuitedLadder3(),    // РњР°СЃС‚РЅР°СЏ Р›РµСЃС‚РЅРёС†Р°-3
+                new SuitedLadder4(),    // РњР°СЃС‚РЅР°СЏ Р›РµСЃС‚РЅРёС†Р°-4
+                new StraightFlush(),    // РЎС‚СЂРёС‚-Р¤Р»РµС€
 
-                // Простые группы рангов
-                new ThreeOfAKind(),     // Тройка
-                new TwoPair(),          // Две Пары
-                new FullHouse()         // Фулл
+                // РџСЂРѕСЃС‚С‹Рµ РіСЂСѓРїРїС‹ СЂР°РЅРіРѕРІ
+                new ThreeOfAKind(),     // РўСЂРѕР№РєР°
+                new TwoPair(),          // Р”РІРµ РџР°СЂС‹
+                new FullHouse()         // Р¤СѓР»Р»
             };
             EasyRules = easy.AsReadOnly();
 
-            // === СРЕДНИЙ УРОВЕНЬ ===
+            // === РЎР Р•Р”РќРР™ РЈР РћР’Р•РќР¬ ===
             var medium = new List<CombinationRule>
             {
-                // Ступенчатые пары
-                new DoubleStep(),       // Двойная Ступень
-                new TripleStep(),       // Тройная Ступень
+                // РЎС‚СѓРїРµРЅС‡Р°С‚С‹Рµ РїР°СЂС‹
+                new DoubleStep(),       // Р”РІРѕР№РЅР°СЏ РЎС‚СѓРїРµРЅСЊ
+                new TripleStep(),       // РўСЂРѕР№РЅР°СЏ РЎС‚СѓРїРµРЅСЊ
 
-                // Сложные формы с последовательностями
-                new DrawBridge(),       // Разводной Мост
-                new BrokenSeal(),       // Сломанная Печать
-                new SkewTower(),        // Косая Башня
-                new DoubleFork(),       // Двойная Вилка
+                // РЎР»РѕР¶РЅС‹Рµ С„РѕСЂРјС‹ СЃ РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚СЏРјРё
+                new DrawBridge(),       // Р Р°Р·РІРѕРґРЅРѕР№ РњРѕСЃС‚
+                new BrokenSeal(),       // РЎР»РѕРјР°РЅРЅР°СЏ РџРµС‡Р°С‚СЊ
+                new SkewTower(),        // РљРѕСЃР°СЏ Р‘Р°С€РЅСЏ
+                new DoubleFork(),       // Р”РІРѕР№РЅР°СЏ Р’РёР»РєР°
 
-                // Цветовые комбинации
-                new RedBlackCastle(),   // Красно-Черный Замок
-                new TwoMasks()          // Две Маски
+                // Р¦РІРµС‚РѕРІС‹Рµ РєРѕРјР±РёРЅР°С†РёРё
+                new RedBlackCastle(),   // РљСЂР°СЃРЅРѕ-Р§РµСЂРЅС‹Р№ Р—Р°РјРѕРє
+                new TwoMasks()          // Р”РІРµ РњР°СЃРєРё
             };
             MediumRules = medium.AsReadOnly();
 
-            // === ТЯЖЕЛЫЙ УРОВЕНЬ ===
+            // === РўРЇР–Р•Р›Р«Р™ РЈР РћР’Р•РќР¬ ===
             var hard = new List<CombinationRule>
             {
-                new Hinge(),            // Шарнир
-                new Pincers(),          // Клещи
-                new TwoPairSplit(),     // Две Пары С Расколом
-                new SuitCross(),        // Перекрест Мастей
-                new Reflection()        // Отражение
+                new Hinge(),            // РЁР°СЂРЅРёСЂ
+                new Pincers(),          // РљР»РµС‰Рё
+                new TwoPairSplit(),     // Р”РІРµ РџР°СЂС‹ РЎ Р Р°СЃРєРѕР»РѕРј
+                new SuitCross(),        // РџРµСЂРµРєСЂРµСЃС‚ РњР°СЃС‚РµР№
+                new Reflection()        // РћС‚СЂР°Р¶РµРЅРёРµ
             };
             HardRules = hard.AsReadOnly();
 
-            // === АНТИ-КОМБИНАЦИИ ===
+            // === РђРќРўР-РљРћРњР‘РРќРђР¦РР ===
             AntiRules = MediumRules;
 
-            // === ВСЕ КОМБИНАЦИИ ===
+            // === Р’РЎР• РљРћРњР‘РРќРђР¦РР ===
             var all = new List<CombinationRule>();
             all.AddRange(EasyRules);
             all.AddRange(MediumRules);
@@ -84,7 +84,7 @@ namespace Combinations
         }
 
         /// <summary>
-        /// Получить правила по уровню сложности
+        /// РџРѕР»СѓС‡РёС‚СЊ РїСЂР°РІРёР»Р° РїРѕ СѓСЂРѕРІРЅСЋ СЃР»РѕР¶РЅРѕСЃС‚Рё
         /// </summary>
         public static IReadOnlyList<CombinationRule> GetRules(CombinationDifficulty difficulty)
         {

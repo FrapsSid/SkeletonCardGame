@@ -1,4 +1,4 @@
-namespace Combinations
+﻿namespace Combinations
 {
     public enum CardPool
     {

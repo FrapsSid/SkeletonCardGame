@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+п»їusing System.Collections.Generic;
 
 namespace Combinations
 {
@@ -24,10 +24,10 @@ namespace Combinations
         }
 
         /// <summary>
-        /// Ищет первую подходящую комбинацию карт в списке
+        /// РС‰РµС‚ РїРµСЂРІСѓСЋ РїРѕРґС…РѕРґСЏС‰СѓСЋ РєРѕРјР±РёРЅР°С†РёСЋ РєР°СЂС‚ РІ СЃРїРёСЃРєРµ
         /// </summary>
-        /// <param name="cards">Полный список карт</param>
-        /// <returns>Первое найденное подмножество карт, удовлетворяющее правилу, или null</returns>
+        /// <param name="cards">РџРѕР»РЅС‹Р№ СЃРїРёСЃРѕРє РєР°СЂС‚</param>
+        /// <returns>РџРµСЂРІРѕРµ РЅР°Р№РґРµРЅРЅРѕРµ РїРѕРґРјРЅРѕР¶РµСЃС‚РІРѕ РєР°СЂС‚, СѓРґРѕРІР»РµС‚РІРѕСЂСЏСЋС‰РµРµ РїСЂР°РІРёР»Сѓ, РёР»Рё null</returns>
         public List<CardWithPool> FindMatch(List<CardWithPool> cards)
         {
             if (cards == null || cards.Count < RequireCardCount)
@@ -41,7 +41,7 @@ namespace Combinations
         }
 
         /// <summary>
-        /// Рекурсивно собирает подсписки карт длиной RequiredCardCount и проверяет правило
+        /// Р РµРєСѓСЂСЃРёРІРЅРѕ СЃРѕР±РёСЂР°РµС‚ РїРѕРґСЃРїРёСЃРєРё РєР°СЂС‚ РґР»РёРЅРѕР№ RequiredCardCount Рё РїСЂРѕРІРµСЂСЏРµС‚ РїСЂР°РІРёР»Рѕ
         /// </summary>
         private bool FindMatchRecursive(
             List<CardWithPool> allCards,
@@ -49,7 +49,7 @@ namespace Combinations
             List<CardWithPool> currentSubset,
             List<CardWithPool> result)
         {
-            // Если набрали нужное количество - проверяем правило
+            // Р•СЃР»Рё РЅР°Р±СЂР°Р»Рё РЅСѓР¶РЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ - РїСЂРѕРІРµСЂСЏРµРј РїСЂР°РІРёР»Рѕ
             if (currentSubset.Count == RequireCardCount)
             {
                 if (_rule.Check(currentSubset))
@@ -61,7 +61,7 @@ namespace Combinations
                 return false;
             }
 
-            // Перебираем карты начиная с startIndex
+            // РџРµСЂРµР±РёСЂР°РµРј РєР°СЂС‚С‹ РЅР°С‡РёРЅР°СЏ СЃ startIndex
             for (int i = startIndex; i < allCards.Count; i++)
             {
                 currentSubset.Add(allCards[i]);
