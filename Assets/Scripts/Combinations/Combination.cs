@@ -9,7 +9,7 @@ namespace Combinations
         public string DisplayName => _rule.Name;
         //public string Description => _rule.Description;
         public CombinationRule Rule => _rule;
-        public int RequireCardCount => _rule.RequiredCardCount;
+        public int RequiredCardCount => _rule.RequiredCardCount;
 
         public Combination(CombinationRule combinationRule)
         {
@@ -18,7 +18,7 @@ namespace Combinations
 
         public bool IsSatisfied(List<CardWithPool> cards)
         {
-            if (cards == null || cards.Count < RequireCardCount) return false;
+            if (cards == null || cards.Count < RequiredCardCount) return false;
 
             return FindMatch(cards) != null;
         }
@@ -30,7 +30,7 @@ namespace Combinations
         /// <returns>Первое найденное подмножество карт, удовлетворяющее правилу, или null</returns>
         public List<CardWithPool> FindMatch(List<CardWithPool> cards)
         {
-            if (cards == null || cards.Count < RequireCardCount)
+            if (cards == null || cards.Count < RequiredCardCount)
                 return null;
 
             var result = new List<CardWithPool>();
@@ -50,7 +50,7 @@ namespace Combinations
             List<CardWithPool> result)
         {
             // Если набрали нужное количество - проверяем правило
-            if (currentSubset.Count == RequireCardCount)
+            if (currentSubset.Count == RequiredCardCount)
             {
                 if (_rule.Check(currentSubset))
                 {
