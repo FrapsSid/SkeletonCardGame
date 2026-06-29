@@ -1,3 +1,5 @@
+using Combinations;
+
 public enum DeclaredCombinationTier
 {
     Easy = 1,
@@ -22,7 +24,7 @@ public static class DeclaredCombinationTierExtensions
         }
     }
 
-    public static bool AllowsDifficulty(this DeclaredCombinationTier tier, CombinationDifficulty difficulty)
+    public static bool AllowsDifficulty(this DeclaredCombinationTier tier, Combinations.CombinationDifficulty difficulty)
     {
         return difficulty.IsScoringDifficulty() && (int)tier >= (int)difficulty;
     }

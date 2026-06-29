@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Combinations;
 
 using CardGameModel = CardGame;
 using CardGameRound = CardGame.Round;
@@ -270,16 +271,7 @@ public sealed class TestConsoleLogger : MonoBehaviour
     {
         return combination == null
             ? "none"
-            : string.Join(" + ", combination.Rules.Select(FormatCombinationRule));
-    }
-
-    private static string FormatCombinationRule(CombinationRule rule)
-    {
-        if (rule == null)
-            return "null";
-
-        string value = rule.ParamValue != 0 ? $", value={rule.ParamValue}" : string.Empty;
-        return $"{rule.Type}(n={rule.ParamN}{value})";
+            : combination.DisplayName;
     }
 
     private static string FormatAssets(IReadOnlyList<StakeAsset>? assets)
