@@ -116,4 +116,4 @@ jobs:
           WEB_DEPLOY_USER: ${{ vars.WEB_DEPLOY_USER }}
         run: |
           WEB_DEPLOY_USER="${WEB_DEPLOY_USER:-skeleton-web-deploy}"
-          rsync -az --delete -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts" build/WebGL/ "${WEB_DEPLOY_USER}@${WEB_DEPLOY_HOST}:/"
+          rsync -az --delete -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts" build/WebGL/SkeletonCardGame/ "${WEB_DEPLOY_USER}@${WEB_DEPLOY_HOST}:/"
