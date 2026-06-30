@@ -1,0 +1,28 @@
+{
+  "testCases": [
+    {
+      "testCaseId": "smoke_three_in_row",
+      "combinationType": "ThreeInARow",
+      "description": "Quick smoke test: 7-8-9",
+      "shouldPass": true,
+      "cards": [
+        { "suit": "Hearts", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Eight", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Nine", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "smoke_full_house",
+      "combinationType": "FullHouse",
+      "description": "Quick smoke test: 7-7-7 + Q-Q",
+      "shouldPass": true,
+      "cards": [
+        { "suit": "Hearts", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Hearts", "value": "Queen", "pool": "Table" },
+        { "suit": "Spades", "value": "Queen", "pool": "Table" }
+      ]
+    }
+  ]
+}

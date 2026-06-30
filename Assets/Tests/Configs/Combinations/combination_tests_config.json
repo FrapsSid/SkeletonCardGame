@@ -1,0 +1,210 @@
+{
+  "testCases": [
+    {
+      "testCaseId": "three_in_row_valid",
+      "combinationType": "ThreeInARow",
+      "description": "7-8-9 (схема 2+1)",
+      "shouldPass": true,
+      "cards": [
+        { "suit": "Hearts", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Eight", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Nine", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "three_in_row_invalid",
+      "combinationType": "ThreeInARow",
+      "description": "7-8-10 (пропущена 9)",
+      "shouldPass": false,
+      "cards": [
+        { "suit": "Hearts", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Eight", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Ten", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "four_in_row_valid",
+      "combinationType": "FourInARow",
+      "description": "5-6-7-8 (схема 2+2)",
+      "shouldPass": true,
+      "cards": [
+        { "suit": "Hearts", "value": "Five", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Six", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Seven", "pool": "Table" },
+        { "suit": "Spades", "value": "Eight", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "four_in_row_invalid_sources",
+      "combinationType": "FourInARow",
+      "description": "5-6-7-8 (невалидная схема источников)",
+      "shouldPass": false,
+      "cards": [
+        { "suit": "Hearts", "value": "Five", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Six", "pool": "Table" },
+        { "suit": "Diamonds", "value": "Seven", "pool": "Player2Hand" },
+        { "suit": "Spades", "value": "Eight", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "five_in_row_valid",
+      "combinationType": "FiveInARow",
+      "description": "6-7-8-9-10 (схема 3+2)",
+      "shouldPass": true,
+      "cards": [
+        { "suit": "Hearts", "value": "Six", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Eight", "pool": "Player1Hand" },
+        { "suit": "Hearts", "value": "Nine", "pool": "Table" },
+        { "suit": "Spades", "value": "Ten", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "five_in_row_invalid",
+      "combinationType": "FiveInARow",
+      "description": "6-7-8-9-J (пропущена 10)",
+      "shouldPass": false,
+      "cards": [
+        { "suit": "Hearts", "value": "Six", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Eight", "pool": "Player1Hand" },
+        { "suit": "Hearts", "value": "Nine", "pool": "Table" },
+        { "suit": "Spades", "value": "Jack", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "suited_ladder3_valid",
+      "combinationType": "SuitedLadder3",
+      "description": "7♥-8♥-9♥ (одна масть)",
+      "shouldPass": true,
+      "cards": [
+        { "suit": "Hearts", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Hearts", "value": "Eight", "pool": "Player1Hand" },
+        { "suit": "Hearts", "value": "Nine", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "suited_ladder3_invalid",
+      "combinationType": "SuitedLadder3",
+      "description": "7♥-8♣-9♥ (разные масти)",
+      "shouldPass": false,
+      "cards": [
+        { "suit": "Hearts", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Eight", "pool": "Player1Hand" },
+        { "suit": "Hearts", "value": "Nine", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "three_of_kind_valid",
+      "combinationType": "ThreeOfAKind",
+      "description": "7-7-7 (тройка)",
+      "shouldPass": true,
+      "cards": [
+        { "suit": "Hearts", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Seven", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "three_of_kind_invalid",
+      "combinationType": "ThreeOfAKind",
+      "description": "7-8-9 (не тройка)",
+      "shouldPass": false,
+      "cards": [
+        { "suit": "Hearts", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Eight", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Nine", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "two_pair_valid",
+      "combinationType": "TwoPair",
+      "description": "7-7 + Q-Q (две пары)",
+      "shouldPass": true,
+      "cards": [
+        { "suit": "Hearts", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Queen", "pool": "Table" },
+        { "suit": "Spades", "value": "Queen", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "two_pair_invalid",
+      "combinationType": "TwoPair",
+      "description": "7-7-7-7 (каре, не две пары)",
+      "shouldPass": false,
+      "cards": [
+        { "suit": "Hearts", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Seven", "pool": "Table" },
+        { "suit": "Spades", "value": "Seven", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "full_house_valid",
+      "combinationType": "FullHouse",
+      "description": "7-7-7 + Q-Q (фулл)",
+      "shouldPass": true,
+      "cards": [
+        { "suit": "Hearts", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Hearts", "value": "Queen", "pool": "Table" },
+        { "suit": "Spades", "value": "Queen", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "full_house_invalid",
+      "combinationType": "FullHouse",
+      "description": "7-7-7 + Q + K (нет пары)",
+      "shouldPass": false,
+      "cards": [
+        { "suit": "Hearts", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Hearts", "value": "Queen", "pool": "Table" },
+        { "suit": "Spades", "value": "King", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "red_black_castle_valid",
+      "combinationType": "RedBlackCastle",
+      "description": "7♥ 7♦ + 7♣ 7♠ (красно-черный замок)",
+      "shouldPass": true,
+      "cards": [
+        { "suit": "Hearts", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Seven", "pool": "Table" },
+        { "suit": "Spades", "value": "Seven", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "reflection_valid",
+      "combinationType": "Reflection",
+      "description": "(5-7-9) + (5-7-9) (отражение)",
+      "shouldPass": true,
+      "cards": [
+        { "suit": "Hearts", "value": "Five", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Nine", "pool": "Player1Hand" },
+        { "suit": "Spades", "value": "Five", "pool": "Table" },
+        { "suit": "Hearts", "value": "Seven", "pool": "Table" },
+        { "suit": "Clubs", "value": "Nine", "pool": "Table" }
+      ]
+    },
+    {
+      "testCaseId": "reflection_invalid",
+      "combinationType": "Reflection",
+      "description": "(5-6-7) + (5-6-7) (шаг 1, не 2)",
+      "shouldPass": false,
+      "cards": [
+        { "suit": "Hearts", "value": "Five", "pool": "Player1Hand" },
+        { "suit": "Clubs", "value": "Six", "pool": "Player1Hand" },
+        { "suit": "Diamonds", "value": "Seven", "pool": "Player1Hand" },
+        { "suit": "Spades", "value": "Five", "pool": "Table" },
+        { "suit": "Hearts", "value": "Six", "pool": "Table" },
+        { "suit": "Clubs", "value": "Seven", "pool": "Table" }
+      ]
+    }
+  ]
+}
