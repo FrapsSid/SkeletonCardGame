@@ -84,3 +84,36 @@ jobs:
         with:
           name: WebGL-Build
           path: build/WebGL/
+
+  deploy-webgl:
+    name: Deploy WebGL
+    runs-on: ubuntu-latest
+    needs: build-webgl
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Download WebGL build
+        uses: actions/download-artifact@v4
+        with:
+          name: WebGL-Build
+          path: build/WebGL
+
+      - name: Configure SSH
+        env:
+          WEB_DEPLOY_KEY: ${{ secrets.WEB_DEPLOY_KEY }}
+          WEB_DEPLOY_KNOWN_HOSTS: ${{ secrets.WEB_DEPLOY_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s' "$WEB_DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$WEB_DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy WebGL
+        env:
+          WEB_DEPLOY_HOST: ${{ secrets.WEB_DEPLOY_HOST }}
+          WEB_DEPLOY_USER: ${{ vars.WEB_DEPLOY_USER }}
+        run: |
+          WEB_DEPLOY_USER="${WEB_DEPLOY_USER:-skeleton-web-deploy}"
+          rsync -az --delete -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts" build/WebGL/ "${WEB_DEPLOY_USER}@${WEB_DEPLOY_HOST}:/"
