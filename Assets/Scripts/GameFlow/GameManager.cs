@@ -29,6 +29,9 @@ public sealed class GameManager : MonoBehaviour
     public event Action<CardGame>? OnGameCreated;
     public event Action? OnCardDealCompleted;
 
+    [SerializeField] private Multiplayer.NetworkGameState networkGameState;
+    private bool _isNetworkMode;
+
     private void Awake()
     {
         _bettingDiscussionGate = GetComponent<BettingDiscussionGate>() ?? throw new NullReferenceException(nameof(BettingDiscussionGate));
@@ -50,6 +53,10 @@ public sealed class GameManager : MonoBehaviour
         StopTakenCardDeal();
         StopRestartRound();
         _bettingDiscussionGate.StopDiscussion();
+        if (networkGameState != null)
+        {
+            networkGameState.OnPhaseChanged -= HandleNetworkPhaseChanged;
+        }
     }
 
     public void StartGame(IEnumerable<Team> gameTeams, IEnumerable<Skeleton> gamePlayers, Skeleton localPlayer)
@@ -89,6 +96,11 @@ public sealed class GameManager : MonoBehaviour
         CardGame = new CardGame(_teams, _players);
         Subscribe(CardGame);
         OnGameCreated?.Invoke(CardGame);
+        if (_isNetworkMode && !IsServer())
+        {
+            PrepareCardDealerForRound();
+            return;
+        }
         StartRoundFlow(CardGame);
     }
 
@@ -137,6 +149,15 @@ public sealed class GameManager : MonoBehaviour
 
     private void HandlePhaseChanged(GamePhase phase)
     {
+        if (_isNetworkMode && !IsServer())
+        {
+            return;
+        }
+        if (_isNetworkMode && networkGameState != null)
+        {
+            networkGameState.SetPhase(phase);
+        }
+
         CardGame? game = CardGame;
         if (game?.round == null)
             return;
@@ -338,4 +359,37 @@ public sealed class GameManager : MonoBehaviour
         StopCoroutine(_takenCardDealCoroutine);
         _takenCardDealCoroutine = null;
     }
+
+// <Сетевая часть
+    public void EnableNetworkMode(Multiplayer.NetworkGameState gameState)
+    {
+        _isNetworkMode = true;
+        networkGameState = gameState;
+        
+        if (IsNetworkClient())
+        {
+            networkGameState.OnPhaseChanged += HandleNetworkPhaseChanged;
+        }
+    }
+
+    private bool IsNetworkClient()
+    {
+        return networkGameState != null && networkGameState.IsSpawned;
+    }
+
+    private void HandleNetworkPhaseChanged(CardGame.GamePhase newPhase)
+    {
+        if (CardGame == null) return;
+        
+        if (!IsServer())
+        {
+            Debug.Log($"[GameManager] Network phase changed to {newPhase}");
+        }
+    }
+
+    private bool IsServer()
+    {
+        return networkGameState != null && networkGameState.IsServer;
+    }
+// Сетевая часть>
 }
