@@ -6,6 +6,7 @@
 # See: https://github.com/github/gitignore/tree/main/Global
 #
 .utmp/
+/[Tt]estResults/
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
@@ -105,3 +106,5 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+!TestsRunner/TestsRunner.csproj

@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "testId": "combination_smoke_test",
+      "testerId": "combination_system_tester",
+      "configPath": "TestsRunner/Tests/Configs/Combinations/combination_tests_smoke.json",
+      "parameters": {
+      },
+      "tags": ["smoke", "critical"],
+      "enabled": true
+    },
+    {
+      "testId": "combination_full_test",
+      "testerId": "combination_system_tester",
+      "configPath": "TestsRunner/Tests/Configs/Combinations/combination_tests_config.json",
+      "parameters": {
+      },
+      "tags": ["full", "nightly"],
+      "enabled": true
+    }
+  ]
+}
