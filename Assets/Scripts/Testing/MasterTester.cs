@@ -1,20 +1,26 @@
-using System;
+п»їusing System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using UnityEngine;
+using Newtonsoft.Json;
 
 public class MasterTester
 {
-    private string _registrationFilePath;
-    private string _outputDirectory;
-    private List<string> _tagsFilter;
+    private readonly string _registrationFilePath;
+    private readonly string _outputDirectory;
+    private readonly List<string> _tagsFilter;
 
-    // Поддиректории для организации результатов
-    private string _passedTestsDir;
-    private string _failedTestsDir;
-    private string _summaryDir;
+    private readonly string _passedDir;
+    private readonly string _failedDir;
+    private readonly string _summaryDir;
+
+    private static readonly JsonSerializerSettings JsonSettings =
+        new JsonSerializerSettings
+        {
+            Formatting = Formatting.Indented,
+            NullValueHandling = NullValueHandling.Ignore
+        };
 
     public MasterTester(string registrationFilePath, string outputDirectory, List<string> tagsFilter = null)
     {
@@ -22,163 +28,130 @@ public class MasterTester
         _outputDirectory = outputDirectory;
         _tagsFilter = tagsFilter ?? new List<string>();
 
-        // Инициализация путей к поддиректориям
-        _passedTestsDir = Path.Combine(_outputDirectory, "passed");
-        _failedTestsDir = Path.Combine(_outputDirectory, "failed");
+        _passedDir = Path.Combine(_outputDirectory, "passed");
+        _failedDir = Path.Combine(_outputDirectory, "failed");
         _summaryDir = Path.Combine(_outputDirectory, "summary");
+    }
+
+    // вњ… РЈРЅРёРІРµСЂСЃР°Р»СЊРЅС‹Р№ Р»РѕРіРіРµСЂ
+    private void Log(string message)
+    {
+        Console.WriteLine(message);
+    }
+
+    private void LogError(string message)
+    {
+        Console.Error.WriteLine(message);
     }
 
     public async Task<bool> RunAllTests()
     {
         try
         {
+            Log("======================================");
+            Log("Starting MasterTester...");
+            Log("======================================");
+
+            CreateDirectories();
+
             TesterFactory.AutoRegisterTesters();
+
             var registrations = LoadTestRegistrations();
             var testsToRun = FilterTests(registrations);
 
-            Debug.Log($"Running {testsToRun.Count} tests...");
+            Log($"Tests to run: {testsToRun.Count}");
 
-            // Создание директорий
-            CreateOutputDirectories();
-
-            bool allTestsPassed = true;
+            bool allPassed = true;
             var allResults = new List<TestResult>();
 
             foreach (var registration in testsToRun)
             {
-                try
+                Log($"Running: {registration.testId}");
+
+                var start = DateTime.UtcNow;
+
+                var tester = TesterFactory.CreateTester(registration.testerId);
+                tester.Initialize(registration);
+
+                var result = await tester.RunTests();
+
+                result.executionTimeMs =
+                    (long)(DateTime.UtcNow - start).TotalMilliseconds;
+
+                allResults.Add(result);
+
+                SaveTestResult(result);
+
+                if (!result.success)
                 {
-                    Debug.Log($"Running test: {registration.testId}");
-
-                    var result = await RunSingleTest(registration);
-                    allResults.Add(result);
-
-                    // Сохранение в соответствующую папку
-                    SaveTestResult(registration.testId, result);
-
-                    if (!result.success)
-                    {
-                        allTestsPassed = false;
-                        Debug.LogError($"Test {registration.testId} FAILED: {result.message}");
-                    }
-                    else
-                    {
-                        Debug.Log($"Test {registration.testId} PASSED");
-                    }
+                    allPassed = false;
+                    Log($"вќЊ FAILED: {registration.testId}");
                 }
-                catch (Exception ex)
+                else
                 {
-                    allTestsPassed = false;
-                    Debug.LogError($"Error running test {registration.testId}: {ex.Message}");
-
-                    var errorResult = new TestResult
-                    {
-                        testId = registration.testId,
-                        testerId = registration.testerId,
-                        success = false,
-                        message = $"Exception: {ex.Message}",
-                        executionTimeMs = 0
-                    };
-
-                    allResults.Add(errorResult);
-                    SaveTestResult(registration.testId, errorResult);
+                    Log($"вњ… PASSED: {registration.testId}");
                 }
             }
 
-            SaveSummaryReport(allResults);
+            SaveSummary(allResults);
 
-            return allTestsPassed;
+            Log("======================================");
+            Log(allPassed ? "ALL TESTS PASSED" : "SOME TESTS FAILED");
+            Log("======================================");
+
+            return allPassed;
         }
         catch (Exception ex)
         {
-            Debug.LogError($"Master tester error: {ex.Message}\n{ex.StackTrace}");
+            LogError("CRITICAL ERROR:");
+            LogError(ex.ToString());
             return false;
         }
     }
 
-    private void CreateOutputDirectories()
+    private void CreateDirectories()
     {
-        if (!Directory.Exists(_passedTestsDir))
-        {
-            Directory.CreateDirectory(_passedTestsDir);
-        }
-
-        if (!Directory.Exists(_failedTestsDir))
-        {
-            Directory.CreateDirectory(_failedTestsDir);
-        }
-
-        if (!Directory.Exists(_summaryDir))
-        {
-            Directory.CreateDirectory(_summaryDir);
-        }
+        Directory.CreateDirectory(_passedDir);
+        Directory.CreateDirectory(_failedDir);
+        Directory.CreateDirectory(_summaryDir);
     }
 
     private List<TestRegistration> LoadTestRegistrations()
     {
         if (!File.Exists(_registrationFilePath))
-        {
-            throw new FileNotFoundException($"Test registration file not found: {_registrationFilePath}");
-        }
+            throw new FileNotFoundException(_registrationFilePath);
 
-        string json = File.ReadAllText(_registrationFilePath);
-        var registrationList = JsonUtility.FromJson<TestRegistrationList>(json);
+        var json = File.ReadAllText(_registrationFilePath);
 
-        return registrationList.tests ?? new List<TestRegistration>();
+        var registrationList =
+            JsonConvert.DeserializeObject<TestRegistrationList>(json);
+
+        return registrationList?.tests ?? new List<TestRegistration>();
     }
 
     private List<TestRegistration> FilterTests(List<TestRegistration> registrations)
     {
         return registrations.Where(r =>
-        {
-            if (!r.enabled)
-                return false;
-
-            if (_tagsFilter == null || _tagsFilter.Count == 0)
-                return true;
-
-            return r.tags != null && r.tags.Any(tag => _tagsFilter.Contains(tag));
-        }).ToList();
+            r.enabled &&
+            (_tagsFilter.Count == 0 ||
+             (r.tags != null && r.tags.Any(t => _tagsFilter.Contains(t))))
+        ).ToList();
     }
 
-    private async Task<TestResult> RunSingleTest(TestRegistration registration)
+    private void SaveTestResult(TestResult result)
     {
-        var startTime = DateTime.Now;
+        string dir = result.success ? _passedDir : _failedDir;
 
-        var tester = TesterFactory.CreateTester(registration.testerId);
-        tester.Initialize(registration);
+        string fileName = $"{result.testId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.json";
+        string path = Path.Combine(dir, fileName);
 
-        var result = await tester.RunTests();
-        result.executionTimeMs = (long)(DateTime.Now - startTime).TotalMilliseconds;
-
-        return result;
+        var json = JsonConvert.SerializeObject(result, JsonSettings);
+        File.WriteAllText(path, json);
     }
 
-    /// <summary>
-    /// Сохранение результата теста в соответствующую папку (passed/failed)
-    /// </summary>
-    private void SaveTestResult(string testId, TestResult result)
+    private void SaveSummary(List<TestResult> results)
     {
-        // Определяем директорию в зависимости от результата
-        string targetDir = result.success ? _passedTestsDir : _failedTestsDir;
-
-        string fileName = $"{testId}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
-        string filePath = Path.Combine(targetDir, fileName);
-
-        string json = JsonUtility.ToJson(result, true);
-        File.WriteAllText(filePath, json);
-
-        string status = result.success ? "PASSED" : "FAILED";
-        Debug.Log($"Test result ({status}) saved to: {filePath}");
-    }
-
-    /// <summary>
-    /// Сохранение summary отчета (только failed тесты, без testCases)
-    /// </summary>
-    private void SaveSummaryReport(List<TestResult> results)
-    {
-        // Создаем копии failed результатов БЕЗ testCases
-        var failedResultsForSummary = results
+        var failedResults = results
             .Where(r => !r.success)
             .Select(r => new TestResult
             {
@@ -188,48 +161,34 @@ public class MasterTester
                 message = r.message,
                 executionTimeMs = r.executionTimeMs,
                 additionalData = r.additionalData,
-                testCases = new List<TestCaseResult>() // Пустой список вместо всех test cases
+                testCases = new List<TestCaseResult>()
             })
             .ToList();
 
         var summary = new TestSummary
         {
-            timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+            timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
             totalTests = results.Count,
             passedTests = results.Count(r => r.success),
             failedTests = results.Count(r => !r.success),
             totalExecutionTimeMs = results.Sum(r => r.executionTimeMs),
-            results = failedResultsForSummary // Только failed тесты, без testCases
+            results = failedResults
         };
 
-        string fileName = $"summary_{DateTime.Now:yyyyMMdd_HHmmss}.json";
-        string filePath = Path.Combine(_summaryDir, fileName);
+        string fileName = $"summary_{DateTime.UtcNow:yyyyMMdd_HHmmss}.json";
+        string path = Path.Combine(_summaryDir, fileName);
 
-        string json = JsonUtility.ToJson(summary, true);
-        File.WriteAllText(filePath, json);
-
-        Debug.Log($"Summary report saved to: {filePath}");
-        Debug.Log($"Summary: {summary.passedTests}/{summary.totalTests} tests passed");
-
-        if (summary.failedTests > 0)
-        {
-            Debug.LogWarning($"Failed tests included in summary: {summary.failedTests}");
-        }
+        var json = JsonConvert.SerializeObject(summary, JsonSettings);
+        File.WriteAllText(path, json);
     }
 }
 
-/// <summary>
-/// Сериализуемый класс для summary отчета
-/// </summary>
-[Serializable]
 public class TestSummary
 {
-    public string timestamp;
-    public int totalTests;
-    public int passedTests;
-    public int failedTests;
-    public long totalExecutionTimeMs;
-
-    // Только failed тесты (success == false), без testCases
-    public List<TestResult> results;
+    public string timestamp { get; set; }
+    public int totalTests { get; set; }
+    public int passedTests { get; set; }
+    public int failedTests { get; set; }
+    public long totalExecutionTimeMs { get; set; }
+    public List<TestResult> results { get; set; }
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 [Serializable]
 public class TestRegistration
@@ -16,5 +15,5 @@ public class TestRegistration
 [Serializable]
 public class TestRegistrationList
 {
-    public List<TestRegistration> tests;
+    public List<TestRegistration> tests { get; set; }
 }
