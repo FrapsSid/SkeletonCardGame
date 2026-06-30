@@ -334,7 +334,6 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 252842979}
   - {fileID: 1288515302}
   - {fileID: 1283047984}
   - {fileID: 639616871}
@@ -483,6 +482,7 @@ GameObject:
   - component: {fileID: 40180292}
   - component: {fileID: 40180291}
   - component: {fileID: 40180295}
+  - component: {fileID: 40180296}
   m_Layer: 5
   m_Name: TurnMenu
   m_TagString: Untagged
@@ -569,6 +569,7 @@ RectTransform:
   - {fileID: 938892799}
   - {fileID: 471999725}
   - {fileID: 149114987}
+  - {fileID: 252842979}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -715,6 +716,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 40556016}
   m_CullTransparentMesh: 1
+--- !u!114 &40180296
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 40180290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aba54b9a742f4877b932bfc65526e0fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CanvasKeyToggle
+  targetRoot: {fileID: 40180290}
+  targetCanvas: {fileID: 40180293}
+  targetGraphicRaycaster: {fileID: 40180291}
+  targetCanvasGroup: {fileID: 0}
+  toggleKey: 13
+  openOnStart: 0
+  addCanvasGroupWhenMissing: 1
+  controlTargetGameObjectActive: 0
+  blockOpenWhenBettingCanvasIsOpen: 1
+  closeOtherKeyTogglesWhenOpened: 1
 --- !u!1 &49484786
 GameObject:
   m_ObjectHideFlags: 0
@@ -1916,7 +1939,7 @@ RectTransform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 462030602}
-  m_Father: {fileID: 25011737}
+  m_Father: {fileID: 40180294}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -9773,6 +9796,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Pickupable
   itemData: {fileID: 11400000, guid: b88bbcf9dc3ee1644a2e7d9e84deefcc, type: 2}
+  cardData:
+    suit: 0
+    value: 0
   quantity: 1
   isPickupable: 1
   interactionRadius: 2
@@ -11544,11 +11570,11 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7661122711353042328, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
+      propertyPath: m_Materials.Array.data[0]
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7661122711353042328, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: 'm_Materials.Array.data[1]'
+      propertyPath: m_Materials.Array.data[1]
       value: 
       objectReference: {fileID: 0}
     m_RemovedComponents: []
