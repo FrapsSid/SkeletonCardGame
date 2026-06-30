@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using UnityEngine;
+using Newtonsoft.Json;
 using Combinations.Rules;
 
 namespace Combinations.Tests
@@ -12,6 +12,12 @@ namespace Combinations.Tests
     {
         private TestRegistration _registration;
         private CombinationTestConfig _config;
+
+        private static readonly JsonSerializerSettings JsonSettings =
+            new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            };
 
         public string GetTesterId()
         {
@@ -25,14 +31,22 @@ namespace Combinations.Tests
             if (!string.IsNullOrEmpty(registration.configPath) && File.Exists(registration.configPath))
             {
                 string configJson = File.ReadAllText(registration.configPath);
-                _config = JsonUtility.FromJson<CombinationTestConfig>(configJson);
+
+                _config = JsonConvert.DeserializeObject<CombinationTestConfig>(
+                    configJson,
+                    JsonSettings
+                );
             }
             else
             {
-                throw new FileNotFoundException($"Config file not found: {registration.configPath}");
+                throw new FileNotFoundException(
+                    $"Config file not found: {registration.configPath}"
+                );
             }
 
-            Debug.Log($"[CombinationSystemTester] Initialized with {_config.testCases?.Count ?? 0} test cases");
+            Console.WriteLine(
+                $"[CombinationSystemTester] Initialized with {_config?.testCases?.Count ?? 0} test cases"
+            );
         }
 
         public async Task<TestResult> RunTests()
@@ -68,9 +82,7 @@ namespace Combinations.Tests
                     result.testCases.Add(testCaseResult);
 
                     if (testCaseResult.passed)
-                    {
                         passedTests++;
-                    }
                     else
                     {
                         failedTests++;
@@ -80,18 +92,24 @@ namespace Combinations.Tests
                     await Task.Yield();
                 }
 
-                // Используем новый метод AddAdditionalData
                 result.AddAdditionalData("totalTests", totalTests);
                 result.AddAdditionalData("passedTests", passedTests);
                 result.AddAdditionalData("failedTests", failedTests);
-                result.AddAdditionalData("passRate", totalTests > 0 ? $"{passedTests * 100.0 / totalTests:F2}%" : "0%");
+                result.AddAdditionalData(
+                    "passRate",
+                    totalTests > 0
+                        ? $"{passedTests * 100.0 / totalTests:F2}%"
+                        : "0%"
+                );
                 result.AddAdditionalData("configPath", _registration.configPath);
 
                 result.message = result.success
                     ? $"All {totalTests} tests passed"
                     : $"{failedTests} of {totalTests} tests failed";
 
-                Debug.Log($"[CombinationSystemTester] Completed: {passedTests}/{totalTests} tests passed");
+                Console.WriteLine(
+                    $"[CombinationSystemTester] Completed: {passedTests}/{totalTests} tests passed"
+                );
             }
             catch (Exception ex)
             {
@@ -108,7 +126,9 @@ namespace Combinations.Tests
 
                 result.testCases.Add(errorCase);
 
-                Debug.LogError($"[CombinationSystemTester] Error: {ex.Message}\n{ex.StackTrace}");
+                Console.Error.WriteLine(
+                    $"[CombinationSystemTester] Error: {ex.Message}\n{ex.StackTrace}"
+                );
             }
 
             return result;
@@ -130,11 +150,15 @@ namespace Combinations.Tests
 
                 if (combination == null)
                 {
-                    testCaseResult.error = $"Unknown combination type: {testCase.combinationType}";
+                    testCaseResult.error =
+                        $"Unknown combination type: {testCase.combinationType}";
                     return Task.FromResult(testCaseResult);
                 }
 
-                var cards = testCase.cards.Select(tc => tc.ToCardWithPool()).ToList();
+                var cards = testCase.cards
+                    .Select(tc => tc.ToCardWithPool())
+                    .ToList();
+
                 bool actualResult = combination.IsSatisfied(cards);
                 bool testPassed = (actualResult == testCase.shouldPass);
 
@@ -144,14 +168,22 @@ namespace Combinations.Tests
                 {
                     string expected = testCase.shouldPass ? "PASS" : "FAIL";
                     string actual = actualResult ? "PASS" : "FAIL";
-                    testCaseResult.error = $"Expected: {expected}, Actual: {actual}";
 
-                    Debug.LogWarning($"[TEST FAILED] {testCase.testCaseId}: {testCase.description}");
-                    Debug.LogWarning($"  Expected: {expected}, Got: {actual}");
+                    testCaseResult.error =
+                        $"Expected: {expected}, Actual: {actual}";
+
+                    Console.WriteLine(
+                        $"[TEST FAILED] {testCase.testCaseId}: {testCase.description}"
+                    );
+                    Console.WriteLine(
+                        $"  Expected: {expected}, Got: {actual}"
+                    );
                 }
                 else
                 {
-                    Debug.Log($"[TEST PASSED] {testCase.testCaseId}: {testCase.description}");
+                    Console.WriteLine(
+                        $"[TEST PASSED] {testCase.testCaseId}: {testCase.description}"
+                    );
                 }
             }
             catch (Exception ex)
@@ -160,7 +192,9 @@ namespace Combinations.Tests
                 testCaseResult.error = ex.Message;
                 testCaseResult.stackTrace = ex.StackTrace;
 
-                Debug.LogError($"[TEST ERROR] {testCase.testCaseId}: {ex.Message}");
+                Console.Error.WriteLine(
+                    $"[TEST ERROR] {testCase.testCaseId}: {ex.Message}"
+                );
             }
 
             return Task.FromResult(testCaseResult);
@@ -195,11 +229,12 @@ namespace Combinations.Tests
             };
 
             if (typeMap.TryGetValue(combinationType, out var factory))
-            {
                 return factory();
-            }
 
-            Debug.LogError($"Unknown combination type: {combinationType}");
+            Console.Error.WriteLine(
+                $"Unknown combination type: {combinationType}"
+            );
+
             return null;
         }
     }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 public class TestRunnerWindow : EditorWindow
 {
-    private string registrationPath = "Assets/Tests/test_registration.json";
+    private string registrationPath = "TestRunner/Tests/test_registration.json";
     private string outputDir = "TestResults";
 
     [MenuItem("Tests/Test Runner")]

@@ -1,0 +1,49 @@
+name: Game Logic Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - tests-framework
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore TestsRunner/TestsRunner.csproj
+
+      - name: Build
+        run: dotnet build TestsRunner/TestsRunner.csproj --configuration Release --no-restore
+
+      - name: Run smoke tests
+        run: >
+          dotnet run
+          --project TestsRunner/TestsRunner.csproj
+          --configuration Release
+          --no-build
+          --
+          --registration Assets/Tests/test_registration.json
+          --output TestResults
+          --tags smoke
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TestResults
+          path: TestResults/
