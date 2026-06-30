@@ -1,0 +1,391 @@
+#nullable enable
+
+using System;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+[ExecuteAlways]
+[DisallowMultipleComponent]
+[RequireComponent(typeof(MeshFilter))]
+[RequireComponent(typeof(MeshRenderer))]
+public sealed class WorldCardView : MonoBehaviour
+{
+    private const float MinimumSize = 0.01f;
+
+    private static readonly int MainTextureId = Shader.PropertyToID("_MainTex");
+    private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
+    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorId = Shader.PropertyToID("_Color");
+    private static readonly int SurfaceId = Shader.PropertyToID("_Surface");
+    private static readonly int BlendId = Shader.PropertyToID("_Blend");
+    private static readonly int CullId = Shader.PropertyToID("_Cull");
+    private static readonly int SrcBlendId = Shader.PropertyToID("_SrcBlend");
+    private static readonly int DstBlendId = Shader.PropertyToID("_DstBlend");
+    private static readonly int ZWriteId = Shader.PropertyToID("_ZWrite");
+
+    private static readonly int[] FrontTriangles = { 0, 1, 2, 0, 2, 3 };
+    private static readonly int[] BackTriangles = { 4, 5, 6, 4, 6, 7 };
+
+    [Header("Card")]
+    [SerializeField] private CardAtlas? cardAtlas;
+    [SerializeField] private CardSuit suit = CardSuit.Hearts;
+    [SerializeField] private CardValue value = CardValue.Ace;
+
+    [Header("World Render")]
+    [SerializeField] private Vector2 size = new Vector2(0.7f, 1f);
+    [SerializeField, Min(0f)] private float thickness = 0.01f;
+    [SerializeField] private Material? materialTemplate;
+
+    private MeshFilter? _meshFilter;
+    private MeshRenderer? _meshRenderer;
+    private Mesh? _mesh;
+    private Material? _frontMaterial;
+    private Material? _backMaterial;
+
+    public CardAtlas? CardAtlas => cardAtlas;
+    public CardSuit Suit => suit;
+    public CardValue Value => value;
+    public Vector2 Size => size;
+    public float Thickness => thickness;
+
+    private void Reset()
+    {
+        Refresh();
+    }
+
+    private void OnEnable()
+    {
+        Refresh();
+    }
+
+    private void OnValidate()
+    {
+        size = new Vector2(Mathf.Max(MinimumSize, size.x), Mathf.Max(MinimumSize, size.y));
+        thickness = Mathf.Max(0f, thickness);
+        Refresh();
+    }
+
+    private void OnDestroy()
+    {
+        DestroyGeneratedObject(_frontMaterial);
+        DestroyGeneratedObject(_backMaterial);
+        DestroyGeneratedObject(_mesh);
+    }
+
+    public void Initialize(CardAtlas atlas, CardData card)
+    {
+        if (atlas == null)
+        {
+            throw new ArgumentNullException(nameof(atlas));
+        }
+
+        if (card == null)
+        {
+            throw new ArgumentNullException(nameof(card));
+        }
+
+        cardAtlas = atlas;
+        SetCard(card);
+    }
+
+    public void SetAtlas(CardAtlas atlas)
+    {
+        if (atlas == null)
+        {
+            throw new ArgumentNullException(nameof(atlas));
+        }
+
+        cardAtlas = atlas;
+        Refresh();
+    }
+
+    public void SetCard(CardData card)
+    {
+        if (card == null)
+        {
+            throw new ArgumentNullException(nameof(card));
+        }
+
+        SetCard(card.Suit, card.Value);
+    }
+
+    public void SetCard(CardSuit cardSuit, CardValue cardValue)
+    {
+        suit = cardSuit;
+        value = cardValue;
+        Refresh();
+    }
+
+    public void Refresh()
+    {
+        MeshRenderer meshRenderer = GetRequiredMeshRenderer();
+
+        if (cardAtlas == null)
+        {
+            meshRenderer.enabled = false;
+            return;
+        }
+
+        Sprite faceSprite = cardAtlas.GetFaceSprite(suit, value);
+        Sprite backSprite = cardAtlas.GetBackSprite();
+
+        if (faceSprite == null || backSprite == null)
+        {
+            meshRenderer.enabled = false;
+            return;
+        }
+
+        MeshFilter meshFilter = GetRequiredMeshFilter();
+        EnsureMesh(meshFilter);
+        RebuildMesh(faceSprite, backSprite);
+        ApplyMaterials(meshRenderer, faceSprite, backSprite);
+
+        meshRenderer.enabled = true;
+    }
+
+    private MeshFilter GetRequiredMeshFilter()
+    {
+        if (_meshFilter == null)
+        {
+            _meshFilter = GetComponent<MeshFilter>();
+        }
+
+        return _meshFilter;
+    }
+
+    private MeshRenderer GetRequiredMeshRenderer()
+    {
+        if (_meshRenderer == null)
+        {
+            _meshRenderer = GetComponent<MeshRenderer>();
+        }
+
+        return _meshRenderer;
+    }
+
+    private void EnsureMesh(MeshFilter meshFilter)
+    {
+        if (_mesh == null)
+        {
+            _mesh = new Mesh
+            {
+                name = "Generated World Card Mesh",
+                hideFlags = HideFlags.DontSave
+            };
+            _mesh.MarkDynamic();
+        }
+
+        if (meshFilter.sharedMesh != _mesh)
+        {
+            meshFilter.sharedMesh = _mesh;
+        }
+    }
+
+    private void RebuildMesh(Sprite faceSprite, Sprite backSprite)
+    {
+        if (_mesh == null)
+        {
+            return;
+        }
+
+        float halfWidth = size.x * 0.5f;
+        float halfHeight = size.y * 0.5f;
+        float halfThickness = thickness * 0.5f;
+
+        Vector3[] vertices =
+        {
+            new Vector3(-halfWidth, -halfHeight, -halfThickness),
+            new Vector3(-halfWidth, halfHeight, -halfThickness),
+            new Vector3(halfWidth, halfHeight, -halfThickness),
+            new Vector3(halfWidth, -halfHeight, -halfThickness),
+            new Vector3(-halfWidth, -halfHeight, halfThickness),
+            new Vector3(halfWidth, -halfHeight, halfThickness),
+            new Vector3(halfWidth, halfHeight, halfThickness),
+            new Vector3(-halfWidth, halfHeight, halfThickness)
+        };
+
+        Vector3[] normals =
+        {
+            Vector3.back,
+            Vector3.back,
+            Vector3.back,
+            Vector3.back,
+            Vector3.forward,
+            Vector3.forward,
+            Vector3.forward,
+            Vector3.forward
+        };
+
+        Vector2[] uvs = new Vector2[8];
+        SpriteUvRect faceUv = GetSpriteUvRect(faceSprite);
+        SpriteUvRect backUv = GetSpriteUvRect(backSprite);
+
+        uvs[0] = faceUv.BottomLeft;
+        uvs[1] = faceUv.TopLeft;
+        uvs[2] = faceUv.TopRight;
+        uvs[3] = faceUv.BottomRight;
+        uvs[4] = backUv.BottomRight;
+        uvs[5] = backUv.BottomLeft;
+        uvs[6] = backUv.TopLeft;
+        uvs[7] = backUv.TopRight;
+
+        _mesh.Clear();
+        _mesh.vertices = vertices;
+        _mesh.normals = normals;
+        _mesh.uv = uvs;
+        _mesh.subMeshCount = 2;
+        _mesh.SetTriangles(FrontTriangles, 0);
+        _mesh.SetTriangles(BackTriangles, 1);
+        _mesh.RecalculateBounds();
+    }
+
+    private void ApplyMaterials(MeshRenderer meshRenderer, Sprite faceSprite, Sprite backSprite)
+    {
+        _frontMaterial = CreateOrUpdateMaterial(_frontMaterial, faceSprite, "Generated Card Face Material");
+        _backMaterial = CreateOrUpdateMaterial(_backMaterial, backSprite, "Generated Card Back Material");
+
+        if (_frontMaterial == null || _backMaterial == null)
+        {
+            meshRenderer.enabled = false;
+            return;
+        }
+
+        meshRenderer.sharedMaterials = new[] { _frontMaterial, _backMaterial };
+    }
+
+    private Material? CreateOrUpdateMaterial(Material? currentMaterial, Sprite sprite, string materialName)
+    {
+        Shader shader = materialTemplate != null ? materialTemplate.shader : FindDefaultShader();
+        if (shader == null)
+        {
+            Debug.LogError("WorldCardView could not find a compatible shader for card rendering.", this);
+            return currentMaterial;
+        }
+
+        if (currentMaterial == null || currentMaterial.shader != shader)
+        {
+            DestroyGeneratedObject(currentMaterial);
+            currentMaterial = materialTemplate != null ? new Material(materialTemplate) : new Material(shader);
+            currentMaterial.hideFlags = HideFlags.DontSave;
+        }
+
+        currentMaterial.name = materialName;
+        ConfigureMaterial(currentMaterial, sprite.texture);
+        return currentMaterial;
+    }
+
+    private static Shader FindDefaultShader()
+    {
+        return Shader.Find("Universal Render Pipeline/Unlit")
+            ?? Shader.Find("Unlit/Transparent")
+            ?? Shader.Find("Unlit/Texture")
+            ?? Shader.Find("Standard");
+    }
+
+    private static void ConfigureMaterial(Material material, Texture texture)
+    {
+        if (material.HasProperty(MainTextureId))
+        {
+            material.SetTexture(MainTextureId, texture);
+        }
+
+        if (material.HasProperty(BaseMapId))
+        {
+            material.SetTexture(BaseMapId, texture);
+        }
+
+        if (material.HasProperty(BaseColorId))
+        {
+            material.SetColor(BaseColorId, Color.white);
+        }
+
+        if (material.HasProperty(ColorId))
+        {
+            material.SetColor(ColorId, Color.white);
+        }
+
+        if (material.HasProperty(SurfaceId))
+        {
+            material.SetFloat(SurfaceId, 1f);
+        }
+
+        if (material.HasProperty(BlendId))
+        {
+            material.SetFloat(BlendId, 0f);
+        }
+
+        if (material.HasProperty(CullId))
+        {
+            material.SetFloat(CullId, 2f);
+        }
+
+        if (material.HasProperty(SrcBlendId))
+        {
+            material.SetFloat(SrcBlendId, (float)BlendMode.SrcAlpha);
+        }
+
+        if (material.HasProperty(DstBlendId))
+        {
+            material.SetFloat(DstBlendId, (float)BlendMode.OneMinusSrcAlpha);
+        }
+
+        if (material.HasProperty(ZWriteId))
+        {
+            material.SetFloat(ZWriteId, 0f);
+        }
+
+        material.SetOverrideTag("RenderType", "Transparent");
+        material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        material.renderQueue = (int)RenderQueue.Transparent;
+    }
+
+    private static SpriteUvRect GetSpriteUvRect(Sprite sprite)
+    {
+        Rect rect = sprite.textureRect;
+        Texture texture = sprite.texture;
+
+        float xMin = rect.xMin / texture.width;
+        float xMax = rect.xMax / texture.width;
+        float yMin = rect.yMin / texture.height;
+        float yMax = rect.yMax / texture.height;
+
+        return new SpriteUvRect(
+            new Vector2(xMin, yMin),
+            new Vector2(xMin, yMax),
+            new Vector2(xMax, yMax),
+            new Vector2(xMax, yMin));
+    }
+
+    private static void DestroyGeneratedObject(UnityEngine.Object? target)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        if (Application.isPlaying)
+        {
+            Destroy(target);
+        }
+        else
+        {
+            DestroyImmediate(target);
+        }
+    }
+
+    private readonly struct SpriteUvRect
+    {
+        public SpriteUvRect(Vector2 bottomLeft, Vector2 topLeft, Vector2 topRight, Vector2 bottomRight)
+        {
+            BottomLeft = bottomLeft;
+            TopLeft = topLeft;
+            TopRight = topRight;
+            BottomRight = bottomRight;
+        }
+
+        public Vector2 BottomLeft { get; }
+        public Vector2 TopLeft { get; }
+        public Vector2 TopRight { get; }
+        public Vector2 BottomRight { get; }
+    }
+}

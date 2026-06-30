@@ -1,0 +1,18 @@
+//Skeleton Class Placeholder
+public class Skeleton
+{
+    public Hand Hand { get; private set; }
+    public readonly Team team;
+    public SkeletonBody Body { get; private set; }
+
+    public Skeleton(Team team)
+    {
+        Hand = new Hand();
+        this.team = team;
+    }
+
+    public void SetBody(SkeletonBody body)
+    {
+        Body = body;
+    }
+}
