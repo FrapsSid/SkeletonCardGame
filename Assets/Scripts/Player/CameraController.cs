@@ -31,6 +31,9 @@ public class CameraController : MonoBehaviour
     [Header("Player Control")]
     public PlayerController playerController;
 
+    [Header("UI State")]
+    [SerializeField] private UIStateController uiStateController;
+
     [Header("Player Body")]
     public SkeletonBody _skeletonBody;
     public Renderer skullRenderer;
@@ -52,6 +55,11 @@ public class CameraController : MonoBehaviour
 
     private void Awake()
     {
+        if (uiStateController == null)
+        {
+            uiStateController = FindFirstObjectByType<UIStateController>();
+        }
+
         _input = GetComponentInParent<InputReader>();
 
         if (thirdPersonPivot != null)
@@ -77,33 +85,15 @@ public class CameraController : MonoBehaviour
         {
             SetFirstPerson(false);
         }
-        HandleCursorToggle();
     }
-    private bool _cursorUnlocked;
-    private void HandleCursorToggle()
-    {
-        if (Keyboard.current == null) return;
 
-        bool altHeld = Keyboard.current.leftAltKey.isPressed || Keyboard.current.rightAltKey.isPressed;
-
-        if (altHeld && !_cursorUnlocked)
-        {
-            SetCursorLocked(false);
-        }
-        else if (!altHeld && _cursorUnlocked)
-        {
-            SetCursorLocked(true);
-        }
-    }
-    private void SetCursorLocked(bool locked)
-    {
-        _cursorUnlocked = !locked;
-        Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
-        Cursor.visible = !locked;
-    }
     private void LateUpdate()
     {
-        if (_cursorUnlocked) return;
+        if (IsAnyUiOpen())
+        {
+            return;
+        }
+
         if (_input == null)
         {
             return;
@@ -206,5 +196,10 @@ public class CameraController : MonoBehaviour
             _fpYawVelocity = 0f;
             _fpPitchVelocity = 0f;
         }
+    }
+
+    private bool IsAnyUiOpen()
+    {
+        return uiStateController.AnyUiOpen;
     }
 }

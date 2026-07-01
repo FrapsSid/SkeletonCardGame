@@ -25,10 +25,10 @@ public class BettingCanvasUI : MonoBehaviour
     [Header("Game")]
     [SerializeField] private GameManager gameManager = null;
 
+    [Header("UI State")]
+    [SerializeField] private UIStateController uiStateController = null;
+
     [Header("Canvases")]
-    [SerializeField] private GameObject turnUiRoot = null;
-    [SerializeField] private GameObject[] hiddenWhileOpenRoots = new GameObject[0];
-    [SerializeField] private CanvasKeyToggle[] closeTogglesWhenOpened = new CanvasKeyToggle[0];
     [SerializeField] private Canvas bettingCanvas = null;
     [SerializeField] private GraphicRaycaster bettingRaycaster = null;
     [SerializeField] private CanvasGroup bettingCanvasGroup = null;
@@ -38,7 +38,6 @@ public class BettingCanvasUI : MonoBehaviour
 
     [Header("State")]
     [SerializeField] private bool closeOnStart = true;
-    [SerializeField] private bool restoreTurnUiOnClose = true;
 
     [Header("Colors")]
     [SerializeField] private Color normalColor = Color.white;
@@ -51,7 +50,6 @@ public class BettingCanvasUI : MonoBehaviour
     private readonly List<PartButtonBinding> partButtons = new List<PartButtonBinding>();
     private readonly List<TierButtonBinding> tierButtons = new List<TierButtonBinding>();
     private readonly HashSet<BodyPartType> selectedParts = new HashSet<BodyPartType>();
-    private readonly Dictionary<GameObject, bool> hiddenRootActiveStates = new Dictionary<GameObject, bool>();
     private readonly Dictionary<string, BodyPartType> bodyPartNameMap = new Dictionary<string, BodyPartType>(StringComparer.OrdinalIgnoreCase)
     {
         { "skull", BodyPartType.Head },
@@ -100,14 +98,12 @@ public class BettingCanvasUI : MonoBehaviour
 
     public void Open()
     {
-        LoadExistingBetSelection();
-        SetOpen(true);
-        RefreshControls();
+        uiStateController.OpenBetting();
     }
 
     public void Close()
     {
-        SetOpen(false);
+        uiStateController.CloseBetting();
     }
 
     public void Toggle()
@@ -116,6 +112,18 @@ public class BettingCanvasUI : MonoBehaviour
             Close();
         else
             Open();
+    }
+
+    public void Show()
+    {
+        LoadExistingBetSelection();
+        SetOpen(true);
+        RefreshControls();
+    }
+
+    public void Hide()
+    {
+        SetOpen(false);
     }
 
     public void SelectTier(DeclaredCombinationTier tier)
@@ -197,16 +205,6 @@ public class BettingCanvasUI : MonoBehaviour
         isOpen = open;
         ResolveCanvasReferences(true);
 
-        if (open)
-        {
-            CloseBlockingToggles();
-            SetHiddenRootsVisible(false);
-        }
-        else
-        {
-            SetHiddenRootsVisible(true);
-        }
-
         if (bettingCanvas != null)
             bettingCanvas.enabled = open;
 
@@ -218,14 +216,6 @@ public class BettingCanvasUI : MonoBehaviour
             bettingCanvasGroup.alpha = open ? 1f : 0f;
             bettingCanvasGroup.interactable = open;
             bettingCanvasGroup.blocksRaycasts = open;
-        }
-
-        if (turnUiRoot != null)
-        {
-            if (open)
-                turnUiRoot.SetActive(false);
-            else if (restoreTurnUiOnClose)
-                turnUiRoot.SetActive(true);
         }
     }
 
@@ -489,68 +479,8 @@ public class BettingCanvasUI : MonoBehaviour
         if (gameManager == null)
             gameManager = FindFirstObjectByType<GameManager>();
 
-        if (turnUiRoot == null)
-            turnUiRoot = GameObject.Find("TurnMenu");
-
-        if (hiddenWhileOpenRoots == null || hiddenWhileOpenRoots.Length == 0)
-        {
-            GameObject constantOverlay = GameObject.Find("Constant overlay");
-            if (constantOverlay != null)
-                hiddenWhileOpenRoots = new[] { constantOverlay };
-        }
-
-        if (closeTogglesWhenOpened == null || closeTogglesWhenOpened.Length == 0)
-        {
-            List<CanvasKeyToggle> toggles = new List<CanvasKeyToggle>();
-            AddToggleIfFound(toggles, "Inventory");
-            AddToggleIfFound(toggles, "EscMenu");
-            closeTogglesWhenOpened = toggles.ToArray();
-        }
-
-        if (openButton == null && turnUiRoot != null)
-            openButton = FindChildButton(turnUiRoot.transform, "B1");
-
         ResolveCanvasReferences(true);
         ResolveButtons();
-    }
-
-    private void CloseBlockingToggles()
-    {
-        if (closeTogglesWhenOpened == null)
-            return;
-
-        foreach (CanvasKeyToggle toggle in closeTogglesWhenOpened)
-        {
-            if (toggle != null && toggle.IsOpen)
-                toggle.Close();
-        }
-    }
-
-    private void SetHiddenRootsVisible(bool visible)
-    {
-        if (hiddenWhileOpenRoots == null)
-            return;
-
-        foreach (GameObject root in hiddenWhileOpenRoots)
-        {
-            if (root == null)
-                continue;
-
-            if (!visible)
-            {
-                if (!hiddenRootActiveStates.ContainsKey(root))
-                    hiddenRootActiveStates.Add(root, root.activeSelf);
-
-                root.SetActive(false);
-                continue;
-            }
-
-            if (hiddenRootActiveStates.TryGetValue(root, out bool wasActive))
-                root.SetActive(wasActive);
-        }
-
-        if (visible)
-            hiddenRootActiveStates.Clear();
     }
 
     private void ResolveCanvasReferences(bool addMissingCanvasGroup)
@@ -649,45 +579,10 @@ public class BettingCanvasUI : MonoBehaviour
         return value != null && value.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
-    private static Button FindChildButton(Transform root, string childName)
-    {
-        if (root == null)
-            return null;
-
-        Transform child = FindChildRecursive(root, childName);
-        return child != null ? child.GetComponent<Button>() : null;
-    }
-
-    private static Transform FindChildRecursive(Transform root, string childName)
-    {
-        if (root == null)
-            return null;
-
-        if (string.Equals(root.name, childName, StringComparison.OrdinalIgnoreCase))
-            return root;
-
-        foreach (Transform child in root)
-        {
-            Transform found = FindChildRecursive(child, childName);
-            if (found != null)
-                return found;
-        }
-
-        return null;
-    }
-
     private static void AddUnique(List<Button> buttons, Button button)
     {
         if (button != null && !buttons.Contains(button))
             buttons.Add(button);
-    }
-
-    private static void AddToggleIfFound(List<CanvasKeyToggle> toggles, string rootName)
-    {
-        GameObject root = GameObject.Find(rootName);
-        CanvasKeyToggle toggle = root != null ? root.GetComponent<CanvasKeyToggle>() : null;
-        if (toggle != null && !toggles.Contains(toggle))
-            toggles.Add(toggle);
     }
 
     private void SubscribeToManager(GameManager manager)
@@ -831,19 +726,6 @@ public class BettingCanvasUI : MonoBehaviour
     {
         if (gameManager == null)
             gameManager = FindFirstObjectByType<GameManager>();
-
-        if (turnUiRoot == null)
-            turnUiRoot = GameObject.Find("TurnMenu");
-
-        if (hiddenWhileOpenRoots == null || hiddenWhileOpenRoots.Length == 0)
-        {
-            GameObject constantOverlay = GameObject.Find("Constant overlay");
-            if (constantOverlay != null)
-                hiddenWhileOpenRoots = new[] { constantOverlay };
-        }
-
-        if (openButton == null && turnUiRoot != null)
-            openButton = FindChildButton(turnUiRoot.transform, "B1");
 
         ResolveCanvasReferences(false);
     }

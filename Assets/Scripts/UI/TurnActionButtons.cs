@@ -18,9 +18,22 @@ public class TurnActionButtons : MonoBehaviour
     [SerializeField] private Button takeButton = null;
     [SerializeField] private Button passButton = null;
     [SerializeField] private bool registerButtonClicks = true;
+    [SerializeField] private Canvas rootCanvas = null;
+    [SerializeField] private GraphicRaycaster graphicRaycaster = null;
+    [SerializeField] private CanvasGroup canvasGroup = null;
 
     private GameManager subscribedManager = null;
     private CardGame subscribedGame = null;
+
+    public bool IsVisible
+    {
+        get
+        {
+            bool canvasVisible = rootCanvas == null || rootCanvas.enabled;
+            bool groupVisible = canvasGroup == null || canvasGroup.alpha > 0.001f;
+            return isActiveAndEnabled && canvasVisible && groupVisible;
+        }
+    }
 
     private void Reset()
     {
@@ -60,6 +73,46 @@ public class TurnActionButtons : MonoBehaviour
         bool canPass = CanPass(round, localPlayer);
 
         SetButtonsInteractable(canSkip, canTake, canPass);
+    }
+
+    public void Show()
+    {
+        ResolveCanvasReferences();
+
+        if (rootCanvas != null)
+            rootCanvas.enabled = true;
+
+        if (graphicRaycaster != null)
+            graphicRaycaster.enabled = true;
+
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 1f;
+            canvasGroup.interactable = true;
+            canvasGroup.blocksRaycasts = true;
+        }
+
+        RefreshButtons();
+    }
+
+    public void Hide()
+    {
+        ResolveCanvasReferences();
+
+        if (rootCanvas != null)
+            rootCanvas.enabled = false;
+
+        if (graphicRaycaster != null)
+            graphicRaycaster.enabled = false;
+
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+        }
+
+        SetButtonsInteractable(false, false, false);
     }
 
     public void SkipTurn()
@@ -320,6 +373,8 @@ public class TurnActionButtons : MonoBehaviour
 
     private void ResolveSceneReferences()
     {
+        ResolveCanvasReferences();
+
         if (gameManager == null)
             gameManager = FindFirstObjectByType<GameManager>();
         if (skipButton == null)
@@ -328,6 +383,18 @@ public class TurnActionButtons : MonoBehaviour
             takeButton = FindChildButton("B2");
         if (passButton == null)
             passButton = FindChildButton("B4");
+    }
+
+    private void ResolveCanvasReferences()
+    {
+        if (rootCanvas == null)
+            rootCanvas = GetComponent<Canvas>();
+
+        if (graphicRaycaster == null)
+            graphicRaycaster = GetComponent<GraphicRaycaster>();
+
+        if (canvasGroup == null)
+            canvasGroup = GetComponent<CanvasGroup>();
     }
 
     private Button FindChildButton(string childName)

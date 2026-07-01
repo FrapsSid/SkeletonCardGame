@@ -1,11 +1,10 @@
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(PlayerHand))]
 public class PlayerHandInput : MonoBehaviour {
+    [SerializeField] private UIStateController uiStateController;
+
     public KeyCode selectPreviousKey = KeyCode.Z;
     public KeyCode selectNextKey = KeyCode.X;
     public KeyCode moveSelectedToInventoryKey = KeyCode.R;
@@ -15,6 +14,10 @@ public class PlayerHandInput : MonoBehaviour {
     private PlayerInventoryOwner _owner;
 
     private void Awake() {
+        if (uiStateController == null) {
+            uiStateController = FindFirstObjectByType<UIStateController>();
+        }
+
         _hand = GetComponent<PlayerHand>();
         _owner = GetComponent<PlayerInventoryOwner>();
     }
@@ -24,7 +27,7 @@ public class PlayerHandInput : MonoBehaviour {
             return;
         }
 
-        bool inventoryOpen = InventoryCanvasUI.IsAnyInventoryOpen;
+        bool inventoryOpen = uiStateController.IsInventoryOpen;
 
         if (InputKeyUtils.WasPressedThisFrame(selectPreviousKey)) {
             _hand.SelectPrevious();
@@ -47,26 +50,6 @@ public class PlayerHandInput : MonoBehaviour {
         if (InputKeyUtils.WasPressedThisFrame(dropSelectedKey) && !inventoryOpen) {
             _hand.DropSelected();
         }
-    }
-
-    private static bool IsPointerOverInventorySlot() {
-        if (EventSystem.current == null || Mouse.current == null) {
-            return false;
-        }
-
-        PointerEventData pointerData = new PointerEventData(EventSystem.current) {
-            position = Mouse.current.position.ReadValue()
-        };
-
-        List<RaycastResult> results = new List<RaycastResult>();
-        EventSystem.current.RaycastAll(pointerData, results);
-        for (int i = 0; i < results.Count; i++) {
-            if (results[i].gameObject.GetComponentInParent<InventoryCanvasSlot>() != null) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
 

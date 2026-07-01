@@ -28,9 +28,6 @@ public class InventoryCanvasUI : MonoBehaviour
     [SerializeField, Min(1)] private int dropQuantity = 1;
     [SerializeField] private bool dropOutsideSlotsWhenPanelIsRootCanvas = true;
 
-    [Header("Cursor")]
-    [SerializeField] private bool unlockCursorWhenVisible = true;
-
     [Header("Presentation")]
     [SerializeField, Min(0f)] private float iconInset = 18f;
     [SerializeField] private Color iconTint = Color.white;
@@ -45,29 +42,15 @@ public class InventoryCanvasUI : MonoBehaviour
     private RectTransform dragIconRect;
     private int draggingSlotIndex = -1;
     private bool isDraggingSlot;
-    private bool cursorStateCaptured;
-    private CursorLockMode previousCursorLockMode;
-    private bool previousCursorVisible;
 
     public Inventory Inventory => inventory;
-
-    public static bool IsAnyInventoryOpen
+    public bool IsVisible
     {
         get
         {
-            InventoryCanvasUI[] inventoryUis = FindObjectsByType<InventoryCanvasUI>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
-
-            for (int i = 0; i < inventoryUis.Length; i++)
-            {
-                if (inventoryUis[i] != null && inventoryUis[i].IsVisible())
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            bool canvasVisible = rootCanvas == null || rootCanvas.enabled;
+            bool groupVisible = canvasGroup == null || canvasGroup.alpha > 0.001f;
+            return isActiveAndEnabled && canvasVisible && groupVisible;
         }
     }
 
@@ -95,7 +78,6 @@ public class InventoryCanvasUI : MonoBehaviour
     private void OnDisable()
     {
         SubscribeToInventory(null);
-        EndCursorOverride();
         HideDragIcon();
         isDraggingSlot = false;
         draggingSlotIndex = -1;
@@ -107,8 +89,49 @@ public class InventoryCanvasUI : MonoBehaviour
         {
             TryBindInventory();
         }
+    }
 
-        ApplyCursorState(IsVisible());
+    public void Show()
+    {
+        ResolveCanvasReferences();
+
+        if (rootCanvas != null)
+            rootCanvas.enabled = true;
+
+        GraphicRaycaster raycaster = GetGraphicRaycaster();
+        if (raycaster != null)
+            raycaster.enabled = true;
+
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 1f;
+            canvasGroup.interactable = true;
+            canvasGroup.blocksRaycasts = true;
+        }
+
+        Refresh();
+    }
+
+    public void Hide()
+    {
+        ResolveCanvasReferences();
+        HideDragIcon();
+        isDraggingSlot = false;
+        draggingSlotIndex = -1;
+
+        if (rootCanvas != null)
+            rootCanvas.enabled = false;
+
+        GraphicRaycaster raycaster = GetGraphicRaycaster();
+        if (raycaster != null)
+            raycaster.enabled = false;
+
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+        }
     }
 
     public void Refresh()
@@ -614,49 +637,6 @@ public class InventoryCanvasUI : MonoBehaviour
         return null;
     }
 
-    private bool IsVisible()
-    {
-        bool canvasVisible = rootCanvas == null || rootCanvas.enabled;
-        bool groupVisible = canvasGroup == null || (canvasGroup.alpha > 0.001f && canvasGroup.blocksRaycasts);
-        return isActiveAndEnabled && canvasVisible && groupVisible;
-    }
-
-    private void ApplyCursorState(bool visible)
-    {
-        if (!unlockCursorWhenVisible)
-        {
-            return;
-        }
-
-        if (visible)
-        {
-            if (!cursorStateCaptured)
-            {
-                previousCursorLockMode = Cursor.lockState;
-                previousCursorVisible = Cursor.visible;
-                cursorStateCaptured = true;
-            }
-
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            return;
-        }
-
-        EndCursorOverride();
-    }
-
-    private void EndCursorOverride()
-    {
-        if (!cursorStateCaptured)
-        {
-            return;
-        }
-
-        Cursor.lockState = previousCursorLockMode;
-        Cursor.visible = previousCursorVisible;
-        cursorStateCaptured = false;
-    }
-
     private void ResolveCanvasReferences()
     {
         if (inventoryPanel == null)
@@ -677,6 +657,14 @@ public class InventoryCanvasUI : MonoBehaviour
         {
             canvasGroup = GetComponent<CanvasGroup>();
         }
+    }
+
+    private GraphicRaycaster GetGraphicRaycaster()
+    {
+        if (rootCanvas != null)
+            return rootCanvas.GetComponent<GraphicRaycaster>();
+
+        return GetComponent<GraphicRaycaster>();
     }
 
     private void ResolveSlotRoots()

@@ -594,6 +594,9 @@ MonoBehaviour:
   takeButton: {fileID: 938892800}
   passButton: {fileID: 149114988}
   registerButtonClicks: 1
+  rootCanvas: {fileID: 40180293}
+  graphicRaycaster: {fileID: 40180291}
+  canvasGroup: {fileID: 0}
 --- !u!1 &40556016
 GameObject:
   m_ObjectHideFlags: 0
@@ -732,12 +735,9 @@ MonoBehaviour:
   targetCanvas: {fileID: 40180293}
   targetGraphicRaycaster: {fileID: 40180291}
   targetCanvasGroup: {fileID: 0}
-  toggleKey: 13
   openOnStart: 0
   addCanvasGroupWhenMissing: 1
   controlTargetGameObjectActive: 0
-  blockOpenWhenBettingCanvasIsOpen: 1
-  closeOtherKeyTogglesWhenOpened: 1
 --- !u!1 &49484786
 GameObject:
   m_ObjectHideFlags: 0
@@ -1080,6 +1080,55 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 143830132}
   m_CullTransparentMesh: 1
+--- !u!1 &148064935
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 148064937}
+  - component: {fileID: 148064936}
+  m_Layer: 0
+  m_Name: UIInputReader
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &148064936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 148064935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6d203b08127445d8ad688c3663a3434, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIStateInputReader
+  uiStateController: {fileID: 905378261}
+  inventoryKey: 9
+  turnUiKey: 98
+  escapeKey: 27
+  bettingKey: 0
+--- !u!4 &148064937
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 148064935}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 831.0195, y: -0.00001, z: 1848.1921}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &149114986
 GameObject:
   m_ObjectHideFlags: 0
@@ -2176,7 +2225,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 1
+  m_overflowMode: 3
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
@@ -5335,6 +5384,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 862178623}
   m_CullTransparentMesh: 1
+--- !u!1 &905378260
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 905378262}
+  - component: {fileID: 905378261}
+  m_Layer: 0
+  m_Name: UIStateController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &905378261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905378260}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9cd44b60872144b49a31eba4c180cd48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIStateController
+  inventorySurface: {fileID: 1248267604}
+  turnSurface: {fileID: 40180295}
+  bettingSurface: {fileID: 2065689312}
+  escapeMenuSurface: {fileID: 1766946885}
+--- !u!4 &905378262
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905378260}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 831.0192, y: -0.00001, z: 1848.1921}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &938892798
 GameObject:
   m_ObjectHideFlags: 0
@@ -5816,7 +5913,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 1
+  m_overflowMode: 3
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
@@ -6759,7 +6856,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1140348125}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0.000000021936923, z: -0.000000021936923, w: 0.7071068}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: -0.000000054639237, y: 0, z: -1.25}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -7134,12 +7231,9 @@ MonoBehaviour:
   targetCanvas: {fileID: 1248267601}
   targetGraphicRaycaster: {fileID: 1248267599}
   targetCanvasGroup: {fileID: 0}
-  toggleKey: 9
   openOnStart: 0
   addCanvasGroupWhenMissing: 1
   controlTargetGameObjectActive: 0
-  blockOpenWhenBettingCanvasIsOpen: 1
-  closeOtherKeyTogglesWhenOpened: 1
 --- !u!114 &1248267604
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7171,7 +7265,6 @@ MonoBehaviour:
   dropEntireStackWhenDraggedOutside: 0
   dropQuantity: 1
   dropOutsideSlotsWhenPanelIsRootCanvas: 1
-  unlockCursorWhenVisible: 1
   iconInset: 18
   iconTint: {r: 1, g: 1, b: 1, a: 1}
   fallbackIconTint: {r: 1, g: 1, b: 1, a: 0.28}
@@ -7244,7 +7337,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1282533228}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.50000006, y: 0.49999997, z: -0.49999997, w: 0.50000006}
+  m_LocalRotation: {x: 0.5, y: 0.5, z: -0.5, w: 0.5}
   m_LocalPosition: {x: -1.25, y: 0, z: -0.000000109278474}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -9493,12 +9586,9 @@ MonoBehaviour:
   targetCanvas: {fileID: 1766946883}
   targetGraphicRaycaster: {fileID: 1766946881}
   targetCanvasGroup: {fileID: 0}
-  toggleKey: 27
   openOnStart: 0
   addCanvasGroupWhenMissing: 1
   controlTargetGameObjectActive: 0
-  blockOpenWhenBettingCanvasIsOpen: 1
-  closeOtherKeyTogglesWhenOpened: 1
 --- !u!1 &1768424313
 GameObject:
   m_ObjectHideFlags: 0
@@ -9796,9 +9886,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Pickupable
   itemData: {fileID: 11400000, guid: b88bbcf9dc3ee1644a2e7d9e84deefcc, type: 2}
-  cardData:
-    suit: 0
-    value: 0
   quantity: 1
   isPickupable: 1
   interactionRadius: 2
@@ -10184,7 +10271,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 1
+  m_overflowMode: 3
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
@@ -10323,7 +10410,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 1
+  m_overflowMode: 3
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
@@ -11032,18 +11119,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BettingCanvasUI
   gameManager: {fileID: 1158992798}
-  turnUiRoot: {fileID: 40180290}
-  hiddenWhileOpenRoots:
-  - {fileID: 25011733}
-  closeTogglesWhenOpened:
-  - {fileID: 1248267603}
-  - {fileID: 1766946885}
+  uiStateController: {fileID: 905378261}
   bettingCanvas: {fileID: 2065689310}
   bettingRaycaster: {fileID: 2065689308}
   bettingCanvasGroup: {fileID: 0}
   openButton: {fileID: 1023534713}
   closeOnStart: 1
-  restoreTurnUiOnClose: 1
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   selectedColor: {r: 0, g: 1, b: 0.651, a: 1}
   disabledColor: {r: 1, g: 1, b: 1, a: 0.28}
@@ -11513,75 +11594,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 06499c09ecfce8341bf4c77bcb5b22b6, type: 3}
---- !u!1001 &1143365102703144554
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 64427337088310170, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -1.114
-      objectReference: {fileID: 0}
-    - target: {fileID: 64427337088310170, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 2.1
-      objectReference: {fileID: 0}
-    - target: {fileID: 64427337088310170, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -0.59382
-      objectReference: {fileID: 0}
-    - target: {fileID: 64427337088310170, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 64427337088310170, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 64427337088310170, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 64427337088310170, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 64427337088310170, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 64427337088310170, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 64427337088310170, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2785554503567494442, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_Name
-      value: Card
-      objectReference: {fileID: 0}
-    - target: {fileID: 4075123473497750803, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_Mesh
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 7661122711353042328, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_Materials.Array.data[0]
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 7661122711353042328, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
-      propertyPath: m_Materials.Array.data[1]
-      value: 
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -11591,7 +11603,6 @@ SceneRoots:
   - {fileID: 1076991620}
   - {fileID: 1158992796}
   - {fileID: 1831897085}
-  - {fileID: 1143365102703144554}
   - {fileID: 96341545261035336}
   - {fileID: 476322909}
   - {fileID: 49484788}
@@ -11605,3 +11616,5 @@ SceneRoots:
   - {fileID: 25011737}
   - {fileID: 2065689311}
   - {fileID: 33552875}
+  - {fileID: 905378262}
+  - {fileID: 148064937}
