@@ -10,7 +10,8 @@ public sealed class UIStateController : MonoBehaviour
     {
         None,
         Betting,
-        EscapeMenu
+        EscapeMenu,
+        Settings
     }
 
     [Header("Base UI")]
@@ -20,10 +21,12 @@ public sealed class UIStateController : MonoBehaviour
     [Header("Modal UI")]
     [SerializeField] private BettingCanvasUI bettingSurface = null!;
     [SerializeField] private CanvasToggle escapeMenuSurface = null!;
+    [SerializeField] private CanvasToggle settingsSurface = null!;
 
     private bool inventoryOpen;
     private bool turnUiOpen;
     private ModalUi openModal;
+    private bool returnToEscapeMenuAfterSettings;
 
     public bool AnyUiOpen => HasVisibleUiOpen();
     public bool IsInventoryOpen => inventoryOpen;
@@ -94,11 +97,38 @@ public sealed class UIStateController : MonoBehaviour
         ApplyBaseLayer();
     }
 
+    public void OpenSettings()
+    {
+        if (settingsSurface == null)
+        {
+            Debug.LogWarning($"{nameof(UIStateController)} has no settings surface assigned.", this);
+            return;
+        }
+
+        if (openModal == ModalUi.Settings)
+            return;
+
+        bool restoreEscapeMenu = openModal == ModalUi.EscapeMenu;
+        CloseModal();
+        returnToEscapeMenuAfterSettings = restoreEscapeMenu;
+        openModal = ModalUi.Settings;
+        ApplyBaseLayer();
+        settingsSurface.Show();
+    }
+
     public void CloseCurrent()
     {
         if (openModal != ModalUi.None)
         {
+            bool restoreEscapeMenu = openModal == ModalUi.Settings && returnToEscapeMenuAfterSettings;
             CloseModal();
+
+            if (restoreEscapeMenu)
+            {
+                OpenEscapeMenu();
+                return;
+            }
+
             ApplyBaseLayer();
             return;
         }
@@ -155,8 +185,13 @@ public sealed class UIStateController : MonoBehaviour
             case ModalUi.EscapeMenu:
                 escapeMenuSurface.Hide();
                 break;
+            case ModalUi.Settings:
+                if (settingsSurface != null)
+                    settingsSurface.Hide();
+                break;
         }
 
+        returnToEscapeMenuAfterSettings = false;
         openModal = ModalUi.None;
     }
 
@@ -205,6 +240,7 @@ public sealed class UIStateController : MonoBehaviour
         return inventorySurface.IsVisible
             || turnSurface.IsVisible
             || bettingSurface.IsOpen
-            || escapeMenuSurface.IsVisible;
+            || escapeMenuSurface.IsVisible
+            || (settingsSurface != null && settingsSurface.IsVisible);
     }
 }

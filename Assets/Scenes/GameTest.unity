@@ -4110,10 +4110,10 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1543879414}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
+      - m_Target: {fileID: 905378261}
+        m_TargetAssemblyTypeName: UIStateController, Assembly-CSharp
+        m_MethodName: HandleEsc
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -4121,18 +4121,6 @@ MonoBehaviour:
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 1766946880}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
         m_CallState: 2
 --- !u!114 &562272710
 MonoBehaviour:
@@ -5417,6 +5405,7 @@ MonoBehaviour:
   turnSurface: {fileID: 40180295}
   bettingSurface: {fileID: 2065689312}
   escapeMenuSurface: {fileID: 1766946885}
+  settingsSurface: {fileID: 1543879419}
 --- !u!4 &905378262
 Transform:
   m_ObjectHideFlags: 0
@@ -5703,22 +5692,10 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1543879414}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
-      - m_Target: {fileID: 1766946880}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
+      - m_Target: {fileID: 905378261}
+        m_TargetAssemblyTypeName: UIStateController, Assembly-CSharp
+        m_MethodName: OpenSettings
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -8949,13 +8926,14 @@ GameObject:
   - component: {fileID: 1543879418}
   - component: {fileID: 1543879417}
   - component: {fileID: 1543879416}
+  - component: {fileID: 1543879419}
   m_Layer: 5
   m_Name: Options
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1543879415
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9043,6 +9021,25 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &1543879419
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1543879414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aba54b9a742f4877b932bfc65526e0fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CanvasToggle
+  targetRoot: {fileID: 1543879414}
+  targetCanvas: {fileID: 1543879418}
+  targetGraphicRaycaster: {fileID: 1543879416}
+  targetCanvasGroup: {fileID: 0}
+  openOnStart: 0
+  addCanvasGroupWhenMissing: 1
+  controlTargetGameObjectActive: 0
 --- !u!1 &1673711507
 GameObject:
   m_ObjectHideFlags: 0
