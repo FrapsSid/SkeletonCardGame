@@ -1,137 +1,114 @@
-using System;
+#nullable enable
+
+using System.Collections.Generic;
+using Interactions;
 using UnityEngine;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(PlayerInventoryOwner))]
-public class PlayerInteractor : MonoBehaviour {
+public class PlayerInteractor : MonoBehaviour
+{
+    public KeyCode interactionKey = KeyCode.E;
     [Min(0f)] public float interactionRange = 2.5f;
-    public KeyCode pickupKey = KeyCode.E;
-    public LayerMask pickupLayerMask = ~0;
+    public LayerMask interactionLayerMask = ~0;
 
-    public event Action<Pickupable> OnInteractionAvailable;
-    public event Action OnInteractionUnavailable;
-
-    public Pickupable CurrentTarget => _currentTarget;
-
-    private PlayerInventoryOwner _player;
-    private SkeletonBody _skeletonBody;
-    private Pickupable _currentTarget;
     private readonly Collider[] _overlapResults = new Collider[32];
+    private PlayerInventoryOwner _inventoryOwner = null!;
+    private CameraController? _cameraController;
+    private UIStateController? _uiStateController;
+    private List<Interaction> _interactions = new();
 
-    private void Awake() {
-        _player = GetComponent<PlayerInventoryOwner>();
-        _skeletonBody = GetComponent<SkeletonBody>();
+    public IReadOnlyList<Interaction> Interactions => _interactions.AsReadOnly();
+
+    private void Awake()
+    {
+        _inventoryOwner = GetComponent<PlayerInventoryOwner>();
+        _cameraController = GetComponent<CameraController>();
+        _uiStateController = FindAnyObjectByType<UIStateController>();
     }
 
-    private void Update() {
-        if (!CanInteract()) {
-            SetCurrentTarget(null);
-            return;
-        }
-        UpdateCurrentTarget();
+    private void Update()
+    {
+        Skeleton? skeleton = _inventoryOwner.OwnerSkeleton;
+        _interactions = skeleton == null
+            ? new List<Interaction>()
+            : GatherInteractions(skeleton, _cameraController != null && _cameraController.IsFirstPerson);
 
-        if (InputKeyUtils.WasPressedThisFrame(pickupKey)) {
-            TryPickup();
+        if (InputKeyUtils.WasPressedThisFrame(interactionKey))
+        {
+            OpenInteractions();
         }
     }
 
-    public Pickupable FindNearestPickupable() {
+    private List<Interaction> GatherInteractions(Skeleton player, bool firstPerson)
+    {
+        List<Interaction> interactions = new();
+        if (firstPerson
+            && TryGetFirstPersonInteractable(out IInteractable? firstPersonInteractable)
+            && firstPersonInteractable != null)
+        {
+            interactions.AddRange(firstPersonInteractable.GetInteractions(player));
+            return interactions;
+        }
+
         int hitCount = Physics.OverlapSphereNonAlloc(
             transform.position,
             interactionRange,
             _overlapResults,
-            pickupLayerMask,
+            interactionLayerMask,
             QueryTriggerInteraction.Collide);
 
-        Pickupable nearest = null;
-        float nearestDistanceSqr = float.MaxValue;
-
-        for (int i = 0; i < hitCount; i++) {
-            Collider candidateCollider = _overlapResults[i];
-            if (candidateCollider == null) {
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider candidate = _overlapResults[i];
+            if (candidate == null)
+            {
                 continue;
             }
 
-            Pickupable candidate = candidateCollider.GetComponentInParent<Pickupable>();
-            if (candidate == null || !candidate.isPickupable || !candidate.IsPlayerInRange(_player)) {
-                continue;
-            }
-
-            float distanceSqr = (candidate.transform.position - transform.position).sqrMagnitude;
-            if (distanceSqr < nearestDistanceSqr) {
-                nearest = candidate;
-                nearestDistanceSqr = distanceSqr;
+            IInteractable interactable = candidate.GetComponentInParent<IInteractable>();
+            if (interactable != null)
+            {
+                interactions.AddRange(interactable.GetInteractions(player));
             }
         }
 
-        Array.Clear(_overlapResults, 0, hitCount);
-        return nearest;
+        System.Array.Clear(_overlapResults, 0, hitCount);
+        return interactions;
     }
 
-    public bool TryPickup() {
-        Pickupable target = FindNearestPickupable();
-        if (target == null) {
-            return false;
-        }
-
-        bool wasPickedUp = target.Pickup(_player);
-        if (wasPickedUp) {
-            SetCurrentTarget(null);
-        }
-
-        return wasPickedUp;
-    }
-
-    private void UpdateCurrentTarget() {
-        SetCurrentTarget(FindNearestPickupable());
-    }
-
-    private void SetCurrentTarget(Pickupable target) {
-        if (_currentTarget == target) {
-            if (_currentTarget != null) {
-                _currentTarget.SetFocused(true, pickupKey);
-            }
-
+    private void OpenInteractions()
+    {
+        if (_interactions.Count == 0)
+        {
             return;
         }
 
-        if (_currentTarget != null) {
-            _currentTarget.SetFocused(false, pickupKey);
+        if (_interactions.Count == 1)
+        {
+            _interactions[0].Callback(InteractionType.Other);
+            return;
         }
 
-        _currentTarget = target;
-
-        if (_currentTarget != null) {
-            _currentTarget.SetFocused(true, pickupKey);
-            OnInteractionAvailable?.Invoke(_currentTarget);
-        }
-        else {
-            OnInteractionUnavailable?.Invoke();
-        }
+        _uiStateController?.OpenInteractionMenu(_interactions);
     }
 
-    private void OnEnable() {
-        if (_skeletonBody != null) {
-            _skeletonBody.OnBodyChanged += HandleBodyChanged;
+    private bool TryGetFirstPersonInteractable(out IInteractable? interactable)
+    {
+        interactable = null;
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            return false;
         }
-    }
-    private void OnDisable() {
-        if (_skeletonBody != null) {
-            _skeletonBody.OnBodyChanged -= HandleBodyChanged;
-        }
-        SetCurrentTarget(null);
-    }
-    private void HandleBodyChanged() {
-        if (!CanInteract()) {
-            SetCurrentTarget(null);
-        }
-    }
-    private bool CanInteract() {
-        return _skeletonBody == null || _skeletonBody.GetArmCount() > 0;
-    }
 
-    private void OnDrawGizmosSelected() {
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, interactionRange);
+        Ray ray = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
+        if (!Physics.Raycast(ray, out RaycastHit hit, interactionRange, interactionLayerMask, QueryTriggerInteraction.Collide))
+        {
+            return false;
+        }
+
+        interactable = hit.collider.GetComponentInParent<IInteractable>();
+        return interactable != null;
     }
 }

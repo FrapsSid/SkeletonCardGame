@@ -53,6 +53,8 @@ public class CameraController : MonoBehaviour
     private float _fpPitchVelocity;
     private bool _isFirstPerson;
 
+    public bool IsFirstPerson => _isFirstPerson;
+
     private void Awake()
     {
         if (uiStateController == null)

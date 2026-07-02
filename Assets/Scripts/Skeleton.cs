@@ -4,6 +4,7 @@ public class Skeleton
     public Hand Hand { get; private set; }
     public readonly Team team;
     public SkeletonBody Body { get; private set; }
+    public PlayerInventoryOwner InventoryOwner { get; private set; }
 
     public Skeleton(Team team)
     {
@@ -14,5 +15,10 @@ public class Skeleton
     public void SetBody(SkeletonBody body)
     {
         Body = body;
+    }
+
+    public void SetInventoryOwner(PlayerInventoryOwner inventoryOwner)
+    {
+        InventoryOwner = inventoryOwner;
     }
 }

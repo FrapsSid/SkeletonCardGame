@@ -45,9 +45,9 @@ public class StakeAsset
 
         if (bodyPart != null && bodyPart.State == BodyPartState.Attached)
         {
-            SkeletonBody body = bodyPart.CurrentOwner?.GetComponent<SkeletonBody>();
+            SkeletonBody body = bodyPart.currentHolder?.GetComponent<SkeletonBody>();
             if (body != null)
-                body.RemovePart(bodyPart.Type);
+                body.RemovePart(bodyPart.Item.Type);
             else
                 bodyPart.Detach();
         }

@@ -119,7 +119,7 @@ public sealed class TheftContext {
         StakeAsset? stakeAsset = null,
         BodyPart? bodyPart = null,
         CardData? card = null,
-        ItemData? item = null,
+        IItem? item = null,
         Object? worldObject = null) {
         Actor = actor ?? throw new ArgumentNullException(nameof(actor));
         AssetOwnerTeam = assetOwnerTeam;
@@ -139,7 +139,7 @@ public sealed class TheftContext {
     public StakeAsset? StakeAsset { get; }
     public BodyPart? BodyPart { get; }
     public CardData? Card { get; }
-    public ItemData? Item { get; }
+    public IItem? Item { get; }
     public Object? WorldObject { get; }
 
     public bool IsViolation() {

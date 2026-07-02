@@ -298,7 +298,7 @@ public class BettingCanvasUI : MonoBehaviour
         foreach (StakeAsset asset in state.committedAssets)
         {
             if (asset != null && asset.bodyPart != null && IsLocalBodyAsset(asset))
-                selectedParts.Add(asset.bodyPart.Type);
+                selectedParts.Add(asset.bodyPart.Item.Type);
         }
     }
 
@@ -384,13 +384,13 @@ public class BettingCanvasUI : MonoBehaviour
         Team localTeam = gameManager.LocalPlayer.team;
         foreach (StakeAsset asset in localTeam.Assets)
         {
-            if (asset == null || asset.bodyPart == null || asset.bodyPart.Type != partType)
+            if (asset == null || asset.bodyPart == null || asset.bodyPart.Item.Type != partType)
                 continue;
 
             if (!IsLocalBodyAsset(asset))
                 continue;
 
-            if (asset.bodyPart.State != BodyPartState.Attached || asset.bodyPart.CurrentOwner == null)
+            if (asset.bodyPart.State != BodyPartState.Attached || asset.bodyPart.currentHolder == null)
                 continue;
 
             foundAsset = asset;
@@ -414,7 +414,7 @@ public class BettingCanvasUI : MonoBehaviour
 
         return localPlayer.Body != null
             && asset.bodyPart != null
-            && asset.bodyPart.CurrentOwner == localPlayer.Body.gameObject;
+            && asset.bodyPart.currentHolder == localPlayer.Body.gameObject;
     }
 
     private static int CalculateStakeValue(IList<StakeAsset> assets)

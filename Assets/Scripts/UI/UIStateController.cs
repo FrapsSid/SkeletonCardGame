@@ -1,5 +1,7 @@
 #nullable enable
 
+using System.Collections.Generic;
+using Interactions;
 using UnityEngine;
 
 [AddComponentMenu("UI/UI State Controller")]
@@ -134,6 +136,11 @@ public sealed class UIStateController : MonoBehaviour
         }
 
         CloseBaseLayer();
+    }
+
+    public void OpenInteractionMenu(IList<Interaction> interactions)
+    {
+        //TODO
     }
 
     public void HandleEsc()
