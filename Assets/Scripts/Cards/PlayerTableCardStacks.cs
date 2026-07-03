@@ -42,6 +42,31 @@ public sealed class PlayerTableCardStacks : MonoBehaviour
         AddCards(player, cards);
     }
 
+    public bool HasCards(Skeleton player)
+    {
+        return TryGetStack(player, out CardStack? stack)
+            && stack != null
+            && stack.Cards.Count > 0;
+    }
+
+    public bool TryTakeCards(Skeleton player, out List<CardData> cards)
+    {
+        cards = new List<CardData>();
+        if (!TryGetStack(player, out CardStack? stack) || stack == null)
+        {
+            return false;
+        }
+
+        cards = stack.GetCards();
+        if (cards.Count == 0)
+        {
+            return false;
+        }
+
+        RemoveStack(player);
+        return true;
+    }
+
     public void AddCards(Skeleton player, IReadOnlyList<CardData> cards)
     {
         if (cards == null)
