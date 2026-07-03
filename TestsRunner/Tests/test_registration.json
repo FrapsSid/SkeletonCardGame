@@ -24,7 +24,7 @@
       "configPath": "",
       "parameters": {
       },
-      "tags": ["card_game", "round_flow", "critical"],
+      "tags": ["smoke", "card_game", "round_flow", "critical"],
       "enabled": true
     }
   ]
