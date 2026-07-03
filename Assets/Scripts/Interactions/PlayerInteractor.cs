@@ -21,8 +21,10 @@ public class PlayerInteractor : MonoBehaviour
     private CameraController? _cameraController;
     private UIStateController? _uiStateController;
     private List<Interaction> _interactions = new();
+    private readonly Dictionary<GameObject, IList<Interaction>> _interactionsByObject = new();
 
     public IReadOnlyList<Interaction> Interactions => _interactions.AsReadOnly();
+    public IReadOnlyDictionary<GameObject, IList<Interaction>> InteractionsByObject => _interactionsByObject;
     public bool HasInteractions => _interactions.Count > 0;
 
     private void Awake()
@@ -35,9 +37,12 @@ public class PlayerInteractor : MonoBehaviour
     private void Update()
     {
         Skeleton? skeleton = _inventoryOwner.OwnerSkeleton;
-        _interactions = skeleton == null
-            ? new List<Interaction>()
-            : GatherInteractions(skeleton, _cameraController != null && _cameraController.IsFirstPerson);
+        _interactions.Clear();
+        _interactionsByObject.Clear();
+        if (skeleton != null)
+        {
+            GatherInteractions(skeleton, _cameraController != null && _cameraController.IsFirstPerson);
+        }
 
         if (InputKeyUtils.WasPressedThisFrame(interactionKey))
         {
@@ -69,15 +74,14 @@ public class PlayerInteractor : MonoBehaviour
         return _interactions.Count > 1;
     }
 
-    private List<Interaction> GatherInteractions(Skeleton player, bool firstPerson)
+    private void GatherInteractions(Skeleton player, bool firstPerson)
     {
-        List<Interaction> interactions = new();
         if (firstPerson
             && TryGetFirstPersonInteractable(out IInteractable? firstPersonInteractable)
             && firstPersonInteractable != null)
         {
-            interactions.AddRange(firstPersonInteractable.GetInteractions(player));
-            return interactions;
+            AddInteractions(player, firstPersonInteractable);
+            return;
         }
 
         int hitCount = Physics.OverlapSphereNonAlloc(
@@ -98,12 +102,49 @@ public class PlayerInteractor : MonoBehaviour
             IInteractable interactable = candidate.GetComponentInParent<IInteractable>();
             if (interactable != null)
             {
-                interactions.AddRange(interactable.GetInteractions(player));
+                AddInteractions(player, interactable);
             }
         }
 
         Array.Clear(_overlapResults, 0, hitCount);
-        return interactions;
+    }
+
+    private void AddInteractions(Skeleton player, IInteractable interactable)
+    {
+        IList<Interaction> interactions = interactable.GetInteractions(player);
+        if (interactions.Count == 0)
+        {
+            return;
+        }
+
+        _interactions.AddRange(interactions);
+        if (!TryGetInteractableGameObject(interactable, out GameObject sourceObject))
+        {
+            return;
+        }
+
+        if (!_interactionsByObject.TryGetValue(sourceObject, out IList<Interaction> objectInteractions))
+        {
+            objectInteractions = new List<Interaction>();
+            _interactionsByObject.Add(sourceObject, objectInteractions);
+        }
+
+        for (int i = 0; i < interactions.Count; i++)
+        {
+            objectInteractions.Add(interactions[i]);
+        }
+    }
+
+    private static bool TryGetInteractableGameObject(IInteractable interactable, out GameObject sourceObject)
+    {
+        if (interactable is Component component && component != null)
+        {
+            sourceObject = component.gameObject;
+            return true;
+        }
+
+        sourceObject = null!;
+        return false;
     }
 
     private void OpenInteractions()

@@ -51,6 +51,7 @@ GameObject:
   - component: {fileID: 2851626775133165417}
   - component: {fileID: 6659019729551723838}
   - component: {fileID: 3896716528124093602}
+  - component: {fileID: 8062750853284510935}
   m_Layer: 0
   m_Name: BasePlayerPrefab
   m_TagString: Untagged
@@ -312,6 +313,19 @@ MonoBehaviour:
   heldItemLocalPosition: {x: 0.35, y: 1.15, z: 0.55}
   heldItemLocalEulerAngles: {x: 15, y: 25, z: 0}
   heldItemLocalScale: {x: 0.35, y: 0.35, z: 0.35}
+--- !u!114 &8062750853284510935
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 585361176538992301}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d4bcd14e64e49bfadf4d2f2d281a0b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Interactions.InteractionHighlighter
+  playerInteractor: {fileID: 1401119328840052995}
 --- !u!1 &2120465651696651453
 GameObject:
   m_ObjectHideFlags: 0
