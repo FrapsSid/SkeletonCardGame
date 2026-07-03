@@ -17,6 +17,7 @@ public class PlayerInteractor : MonoBehaviour
     public LayerMask interactionLayerMask = ~0;
 
     private readonly Collider[] _overlapResults = new Collider[32];
+    private readonly RaycastHit[] _raycastResults = new RaycastHit[32];
     private PlayerInventoryOwner _inventoryOwner = null!;
     private CameraController? _cameraController;
     private UIStateController? _uiStateController;
@@ -85,11 +86,14 @@ public class PlayerInteractor : MonoBehaviour
 
     private void GatherInteractions(Skeleton player, bool firstPerson)
     {
-        if (firstPerson
-            && TryGetFirstPersonInteractable(out IInteractable? firstPersonInteractable)
-            && firstPersonInteractable != null)
+        if (firstPerson && player.Body != null && player.Body.HasSkull())
         {
-            AddInteractions(player, firstPersonInteractable);
+            if (TryGetFirstPersonInteractable(out IInteractable? firstPersonInteractable)
+                && firstPersonInteractable != null)
+            {
+                AddInteractions(player, firstPersonInteractable);
+            }
+
             return;
         }
 
@@ -289,13 +293,39 @@ public class PlayerInteractor : MonoBehaviour
             return false;
         }
 
-        Ray ray = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
-        if (!Physics.Raycast(ray, out RaycastHit hit, interactionRange, interactionLayerMask, QueryTriggerInteraction.Collide))
+        Ray ray = mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        int hitCount = Physics.RaycastNonAlloc(
+            ray,
+            _raycastResults,
+            interactionRange,
+            interactionLayerMask,
+            QueryTriggerInteraction.Collide);
+
+        IInteractable? closestInteractable = null;
+        float closestDistance = float.PositiveInfinity;
+        for (int i = 0; i < hitCount; i++)
         {
-            return false;
+            RaycastHit hit = _raycastResults[i];
+            if (hit.collider == null || IsOwnCollider(hit.collider))
+            {
+                continue;
+            }
+
+            IInteractable hitInteractable = hit.collider.GetComponentInParent<IInteractable>();
+            if (hitInteractable != null && hit.distance < closestDistance)
+            {
+                closestInteractable = hitInteractable;
+                closestDistance = hit.distance;
+            }
         }
 
-        interactable = hit.collider.GetComponentInParent<IInteractable>();
+        Array.Clear(_raycastResults, 0, hitCount);
+        interactable = closestInteractable;
         return interactable != null;
+    }
+
+    private bool IsOwnCollider(Collider candidate)
+    {
+        return candidate.transform == transform || candidate.transform.IsChildOf(transform);
     }
 }
