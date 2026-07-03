@@ -22,17 +22,28 @@
     <Compile Include="../Assets/Scripts/Testing/TesterFactory.cs" Link="Testing/TesterFactory.cs" />
     <Compile Include="../Assets/Scripts/Testing/ISystemTester.cs" Link="Testing/ISystemTester.cs" />
     <Compile Include="../Assets/Scripts/Testing/CombinationsTests/CombinationSystemTester.cs" Link="Testing/CombinationSystemTester.cs" />
+    <Compile Include="../Assets/Scripts/Testing/CardGameTests/CardGameRoundFlowTester.cs" Link="Testing/CardGameRoundFlowTester.cs" />
 
     <!-- Если модели лежат отдельными файлами -->
     <Compile Include="../Assets/Scripts/Testing/TestRegistration.cs" Link="Testing/TestRegistration.cs" />
     <Compile Include="../Assets/Scripts/Testing/TestResult.cs" Link="Testing/TestResult.cs" />
     <Compile Include="../Assets/Scripts/Testing/CombinationsTests/CombinationTestConfig.cs" Link="Testing/CombinationSystemTester.cs" />
+    <Compile Include="Stubs/CardGameDomainStubs.cs" Link="Testing/CardGameDomainStubs.cs" />
 
     <!-- Игровая логика комбинаций -->
     <Compile Include="../Assets/Scripts/Combinations/**/*.cs"
              LinkBase="GameLogic/Combinations" />
 
     <!-- Карты / enum'ы / CardWithPool -->
+    <Compile Include="../Assets/Scripts/CardGame/CardGame.cs" Link="GameLogic/CardGame.cs" />
+    <Compile Include="../Assets/Scripts/Skeleton.cs" Link="GameLogic/Skeleton.cs" />
+    <Compile Include="../Assets/Scripts/Team.cs" Link="GameLogic/Team.cs" />
+    <Compile Include="../Assets/Scripts/Cards/Deck.cs" Link="GameLogic/Deck.cs" />
+    <Compile Include="../Assets/Scripts/Cards/Hand.cs" Link="GameLogic/Hand.cs" />
+    <Compile Include="../Assets/Scripts/Betting/DeclaredCombinationTier.cs" Link="GameLogic/DeclaredCombinationTier.cs" />
+    <Compile Include="../Assets/Scripts/Betting/PlayerBetState.cs" Link="GameLogic/PlayerBetState.cs" />
+    <Compile Include="../Assets/Scripts/GameFlow/RoundResult.cs" Link="GameLogic/RoundResult.cs" />
+    <Compile Include="../Assets/Scripts/GameFlow/PlayerRoundEvaluation.cs" Link="GameLogic/PlayerRoundEvaluation.cs" />
     <Compile Include="../Assets/Scripts/Cards/CardData.cs" Link="GameLogic/CardData.cs" />
     <Compile Include="../Assets/Scripts/Cards/CardSuit.cs" Link="GameLogic/CardSuit.cs" />
     <Compile Include="../Assets/Scripts/Cards/CardValue.cs" Link="GameLogic/CardValue.cs" />
