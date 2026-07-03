@@ -11,6 +11,12 @@ public class BodyPart : MonoBehaviour
     public void Initialize(BodyPartItem item)
     {
         Item = item;
+        item.SetCurrentBodyPart(this);
+    }
+
+    private void OnDestroy()
+    {
+        Item.ClearCurrentBodyPart(this);
     }
 
     public void Detach()

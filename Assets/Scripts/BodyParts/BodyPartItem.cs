@@ -8,6 +8,7 @@ public sealed class BodyPartItem : IItem
     private readonly GameObject _prefab;
     public readonly BodyPartType Type;
     public readonly Skeleton? OriginalOwner;
+    public BodyPart? CurrentBodyPart { get; private set; }
 
     public BodyPartItem(GameObject prefab, BodyPartType type, Skeleton? originalOwner)
     {
@@ -22,7 +23,9 @@ public sealed class BodyPartItem : IItem
 
     public GameObject CreateHeldObject()
     {
-        return ItemUtils.InstantiateWithPickupable(_prefab, false);
+        GameObject heldObject = ItemUtils.InstantiateWithPickupable(_prefab, false);
+        InitializeBodyPart(heldObject);
+        return heldObject;
     }
 
     public GameObject CreateInventoryView()
@@ -33,9 +36,28 @@ public sealed class BodyPartItem : IItem
     public GameObject CreateDropped()
     {
         GameObject droppedObject = Object.Instantiate(_prefab);
-        BodyPart bodyPart = droppedObject.GetComponent<BodyPart>() ?? throw new Exception("invalid prefab without BodyPart");
-        bodyPart.Initialize(this);
+        BodyPart bodyPart = InitializeBodyPart(droppedObject);
         bodyPart.Detach();
         return droppedObject;
+    }
+
+    public void SetCurrentBodyPart(BodyPart bodyPart)
+    {
+        CurrentBodyPart = bodyPart;
+    }
+
+    public void ClearCurrentBodyPart(BodyPart bodyPart)
+    {
+        if (CurrentBodyPart == bodyPart)
+        {
+            CurrentBodyPart = null;
+        }
+    }
+
+    private BodyPart InitializeBodyPart(GameObject instance)
+    {
+        BodyPart bodyPart = instance.GetComponent<BodyPart>() ?? throw new Exception("invalid prefab without BodyPart");
+        bodyPart.Initialize(this);
+        return bodyPart;
     }
 }
