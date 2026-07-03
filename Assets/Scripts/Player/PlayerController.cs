@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
@@ -19,6 +20,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("References")]
     public Transform cameraTransform;
+    [SerializeField] private UIStateController uiStateController;
 
     private CharacterController _cc;
     private InputReader _input;
@@ -36,6 +38,9 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
+        if (uiStateController == null)
+            uiStateController = FindFirstObjectByType<UIStateController>();
+
         _cc = GetComponent<CharacterController>();
         _input = GetComponent<InputReader>();
         _skeletonBody = GetComponent<SkeletonBody>();
@@ -47,6 +52,13 @@ public class PlayerController : MonoBehaviour
 
         HandleGravity(isGrounded);
         if (_skeletonBody.IsIncapacitated)
+        {
+            _input.ConsumeJump();
+            StopHorizontalMovement();
+            return;
+        }
+
+        if (uiStateController.AnyUiOpen)
         {
             _input.ConsumeJump();
             StopHorizontalMovement();

@@ -10,13 +10,13 @@ public sealed class CardStack : MonoBehaviour
 {
     [Header("Cards")]
     [SerializeField] private GameObject? cardPrefab;
-    [SerializeField] private List<CardData> cards = new List<CardData>();
+    [SerializeField] private List<CardData> cards = new();
 
     [Header("Layout")]
-    [SerializeField] private Vector3 cardStep = new Vector3(0.45f, 0f, -0.001f);
+    [SerializeField] private Vector3 cardStep = new(0.45f, 0f, -0.001f);
 
-    [SerializeField, HideInInspector] private List<GameObject> cardInstances = new List<GameObject>();
-    [SerializeField, HideInInspector] private List<WorldCardView> cardViews = new List<WorldCardView>();
+    [SerializeField, HideInInspector] private List<GameObject> cardInstances = new();
+    [SerializeField, HideInInspector] private List<WorldCardView> cardViews = new();
 
     public IReadOnlyList<CardData> Cards => cards;
     public GameObject? CardPrefab => cardPrefab;
@@ -90,11 +90,6 @@ public sealed class CardStack : MonoBehaviour
 
     public bool RemoveCard(CardData card)
     {
-        if (card == null)
-        {
-            return false;
-        }
-
         bool removed = cards.Remove(card);
         if (removed)
         {

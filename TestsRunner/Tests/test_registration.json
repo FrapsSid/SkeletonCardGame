@@ -17,6 +17,15 @@
       },
       "tags": ["full", "nightly"],
       "enabled": true
+    },
+    {
+      "testId": "card_game_round_flow",
+      "testerId": "card_game_round_flow_tester",
+      "configPath": "",
+      "parameters": {
+      },
+      "tags": ["smoke", "card_game", "round_flow", "critical"],
+      "enabled": true
     }
   ]
 }

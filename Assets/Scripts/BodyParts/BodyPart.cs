@@ -1,53 +1,91 @@
+#nullable enable
 using UnityEngine;
 
 public class BodyPart : MonoBehaviour
 {
-    [Header("Part Info")]
-    public BodyPartType Type;
-    public BodyPartState State = BodyPartState.Attached;
+    public BodyPartState State { get; private set; } = BodyPartState.Detached;
+    public BodyPartItem Item { get; private set; } = null!;
+    public BodyPartType Type => Item.Type;
+    public GameObject? currentHolder;
 
-    [Header("Ownership")]
-    public GameObject CurrentOwner;
-    public GameObject OriginalOwner;
-
-    [Header("Pickup")]
-    public ItemData itemData;
-
-    public void Initialize(GameObject owner)
+    public void Initialize(BodyPartItem item)
     {
-        OriginalOwner = owner;
-        CurrentOwner = owner;
-        State = BodyPartState.Attached;
+        Item = item;
+        item.SetCurrentBodyPart(this);
+    }
+
+    private void OnDestroy()
+    {
+        Item.ClearCurrentBodyPart(this);
     }
 
     public void Detach()
     {
         State = BodyPartState.Detached;
-        CurrentOwner = null;
         transform.SetParent(null);
         SetColliderEnabled(true);
         EnableWorldPickup();
+        if (Item.Type == BodyPartType.LeftArm || Item.Type == BodyPartType.RightArm)
+        {
+            var hand = GetComponent<PlayerHand>();
+            var item = hand?.Item;
+            if (hand != null && item != null)
+            {
+                ItemUtils.DropItem(item, hand.transform.position, Quaternion.identity);
+                hand.SetItem(null);
+            }
+
+            if (currentHolder != null)
+            {
+                var inventoryOwner = currentHolder.GetComponent<PlayerInventoryOwner>();
+                if (inventoryOwner != null)
+                {
+                    if (Item.Type == BodyPartType.LeftArm)
+                        inventoryOwner.leftHand = null;
+                    if (Item.Type == BodyPartType.RightArm)
+                        inventoryOwner.rightHand = null;
+                }
+            }
+        }
+
+        currentHolder = null;
     }
 
     public void Attach(GameObject newOwner, Transform boneParent)
     {
+        currentHolder = newOwner;
         State = BodyPartState.Attached;
-        CurrentOwner = newOwner;
         SetColliderEnabled(false);
         DisableWorldPickup();
-        
+
         transform.SetParent(boneParent);
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
+
+        if (Item.Type == BodyPartType.LeftArm || Item.Type == BodyPartType.RightArm)
+        {
+            var hand = GetComponent<PlayerHand>();
+            var inventoryOwner = currentHolder?.GetComponent<PlayerInventoryOwner>();
+            if (inventoryOwner != null)
+            {
+                if (Item.Type == BodyPartType.LeftArm)
+                    inventoryOwner.leftHand = hand;
+                if (Item.Type == BodyPartType.RightArm)
+                    inventoryOwner.rightHand = hand;
+            }
+        }
     }
+
     private void SetColliderEnabled(bool enabled)
     {
         foreach (Collider col in GetComponents<Collider>())
             col.enabled = enabled;
     }
+
     private void EnableWorldPickup()
     {
-        if (GetComponent<Rigidbody>() == null) {
+        if (GetComponent<Rigidbody>() == null)
+        {
             Rigidbody rb = gameObject.AddComponent<Rigidbody>();
             rb.maxAngularVelocity = 2f;
             rb.angularDamping = 5f;
@@ -56,44 +94,25 @@ public class BodyPart : MonoBehaviour
 
         Pickupable pickupable = GetComponent<Pickupable>();
         if (pickupable == null)
+        {
             pickupable = gameObject.AddComponent<Pickupable>();
+        }
 
-        pickupable.itemData = itemData;
-        pickupable.SetPickupable(true);
+        pickupable.Item = Item;
     }
 
     private void DisableWorldPickup()
     {
         Pickupable pickupable = GetComponent<Pickupable>();
-        if (pickupable != null) Destroy(pickupable);
+        if (pickupable != null)
+        {
+            Destroy(pickupable);
+        }
 
         Rigidbody rb = GetComponent<Rigidbody>();
-        if (rb != null) Destroy(rb);
-    }
-}
-
-public static class BodyPartExtensions 
-{ 
-    public static int GetBodyPartCost(BodyPart bodyPart) 
-    { 
-        switch (bodyPart.Type) 
-        { 
-            case BodyPartType.Head:
-                return 3; 
-            case BodyPartType.LeftArm:
-                return 2;
-            case BodyPartType.RightArm:
-                return 2;
-            case BodyPartType.LeftLeg:
-                return 2;
-            case BodyPartType.RightLeg:
-                return 2;
-            case BodyPartType.Soul:
-                return 6;
-            case BodyPartType.Torso:
-                return 1;
-            default:
-                return 1;
+        if (rb != null)
+        {
+            Destroy(rb);
         }
     }
 }

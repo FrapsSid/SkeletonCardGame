@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Cinemachine;
@@ -31,6 +32,9 @@ public class CameraController : MonoBehaviour
     [Header("Player Control")]
     public PlayerController playerController;
 
+    [Header("UI State")]
+    [SerializeField] private UIStateController uiStateController;
+
     [Header("Player Body")]
     public SkeletonBody _skeletonBody;
     public Renderer skullRenderer;
@@ -49,10 +53,30 @@ public class CameraController : MonoBehaviour
     private float _fpYawVelocity;
     private float _fpPitchVelocity;
     private bool _isFirstPerson;
+    private readonly List<Renderer> _hiddenBodyRenderers = new();
+    private PlayerHand _playerHand;
+    private BodyPartItem _firstPersonBodyPartItem;
+
+    public bool IsFirstPerson => _isFirstPerson;
 
     private void Awake()
     {
+        if (uiStateController == null)
+        {
+            uiStateController = FindFirstObjectByType<UIStateController>();
+        }
+
         _input = GetComponentInParent<InputReader>();
+        _playerHand = GetComponentInParent<PlayerHand>();
+        if (_skeletonBody == null)
+        {
+            _skeletonBody = GetComponentInParent<SkeletonBody>();
+        }
+
+        if (_skeletonBody != null)
+        {
+            _skeletonBody.OnBodyChanged += HandleBodyChanged;
+        }
 
         if (thirdPersonPivot != null)
         {
@@ -63,47 +87,48 @@ public class CameraController : MonoBehaviour
         SetFirstPerson(false);
     }
 
+    private void Start()
+    {
+        CacheFirstPersonBodyPartItem();
+        UpdateFirstPersonViewpoint();
+    }
+
+    private void OnDisable()
+    {
+        SetLocalBodyVisible(true);
+    }
+
+    private void OnDestroy()
+    {
+        if (_skeletonBody != null)
+        {
+            _skeletonBody.OnBodyChanged -= HandleBodyChanged;
+        }
+    }
+
     private void Update()
     {
         if (Keyboard.current != null && Keyboard.current.hKey.wasPressedThisFrame)
         {
-            if (!_isFirstPerson && (_skeletonBody == null || !_skeletonBody.HasSkull()))
+            if (!_isFirstPerson && !HasFirstPersonViewpoint())
             {
                 return;
             }
             SetFirstPerson(!_isFirstPerson);
         }
-        if (_isFirstPerson && _skeletonBody != null && !_skeletonBody.HasSkull())
+        if (_isFirstPerson && !HasFirstPersonViewpoint())
         {
             SetFirstPerson(false);
         }
-        HandleCursorToggle();
     }
-    private bool _cursorUnlocked;
-    private void HandleCursorToggle()
-    {
-        if (Keyboard.current == null) return;
 
-        bool altHeld = Keyboard.current.leftAltKey.isPressed || Keyboard.current.rightAltKey.isPressed;
-
-        if (altHeld && !_cursorUnlocked)
-        {
-            SetCursorLocked(false);
-        }
-        else if (!altHeld && _cursorUnlocked)
-        {
-            SetCursorLocked(true);
-        }
-    }
-    private void SetCursorLocked(bool locked)
-    {
-        _cursorUnlocked = !locked;
-        Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
-        Cursor.visible = !locked;
-    }
     private void LateUpdate()
     {
-        if (_cursorUnlocked) return;
+        if (IsAnyUiOpen())
+        {
+            return;
+        }
+
         if (_input == null)
         {
             return;
@@ -142,7 +167,8 @@ public class CameraController : MonoBehaviour
 
     private void UpdateFirstPerson()
     {
-        if (firstPersonPivot == null)
+        Transform viewpoint = UpdateFirstPersonViewpoint();
+        if (viewpoint == null)
         {
             return;
         }
@@ -163,7 +189,14 @@ public class CameraController : MonoBehaviour
             playerController.transform.rotation = Quaternion.Euler(0f, _fpCurrentYaw, 0f);
         }
 
-        firstPersonPivot.localRotation = Quaternion.Euler(_fpCurrentPitch, 0f, 0f);
+        if (IsDetachedSkullViewpoint(viewpoint))
+        {
+            viewpoint.rotation = Quaternion.Euler(_fpCurrentPitch, _fpCurrentYaw, 0f);
+        }
+        else
+        {
+            viewpoint.localRotation = Quaternion.Euler(_fpCurrentPitch, 0f, 0f);
+        }
     }
 
     private void SetFirstPerson(bool enable)
@@ -185,8 +218,11 @@ public class CameraController : MonoBehaviour
             playerController.SetFirstPersonLock(enable);
         }
 
+        SetLocalBodyVisible(!enable);
+
         if (enable)
         {
+            Transform viewpoint = UpdateFirstPersonViewpoint();
             _fpYaw = playerController != null ? playerController.transform.eulerAngles.y : transform.eulerAngles.y;
             _fpPitch = 0f;
             _fpCurrentYaw = _fpYaw;
@@ -194,9 +230,9 @@ public class CameraController : MonoBehaviour
             _fpYawVelocity = 0f;
             _fpPitchVelocity = 0f;
 
-            if (firstPersonPivot != null)
+            if (viewpoint != null)
             {
-                firstPersonPivot.localRotation = Quaternion.identity;
+                viewpoint.localRotation = Quaternion.identity;
             }
         }
         else
@@ -205,6 +241,129 @@ public class CameraController : MonoBehaviour
             _currentYaw = _yaw;
             _fpYawVelocity = 0f;
             _fpPitchVelocity = 0f;
+        }
+    }
+
+    private bool IsAnyUiOpen()
+    {
+        return uiStateController.AnyUiOpen;
+    }
+
+    private bool HasFirstPersonViewpoint()
+    {
+        if (_skeletonBody == null)
+        {
+            return false;
+        }
+
+        return _skeletonBody.HasSkull() || UpdateFirstPersonViewpoint() != null;
+    }
+
+    private bool IsDetachedSkullViewpoint(Transform viewpoint)
+    {
+        BodyPart skull = viewpoint.GetComponent<BodyPart>();
+        BodyPartItem skullItem = skull != null ? skull.Item : null;
+        if (skullItem == null)
+        {
+            return false;
+        }
+
+        return skullItem.Type == BodyPartType.Head && skull.State == BodyPartState.Detached;
+    }
+
+    private Transform UpdateFirstPersonViewpoint()
+    {
+        Transform viewpoint = GetFirstPersonViewpoint();
+        if (viewpoint == null)
+        {
+            return null;
+        }
+
+        firstPersonPivot = viewpoint;
+        if (firstPersonCam != null)
+        {
+            firstPersonCam.Follow = viewpoint;
+        }
+
+        return viewpoint;
+    }
+
+    private Transform GetFirstPersonViewpoint()
+    {
+        CacheFirstPersonBodyPartItem();
+        if (_firstPersonBodyPartItem != null && _firstPersonBodyPartItem.CurrentBodyPart != null)
+        {
+            return _firstPersonBodyPartItem.CurrentBodyPart.transform;
+        }
+
+        return firstPersonPivot;
+    }
+
+    private void CacheFirstPersonBodyPartItem()
+    {
+        if (_firstPersonBodyPartItem != null || firstPersonPivot == null)
+        {
+            return;
+        }
+
+        BodyPart skull = firstPersonPivot.GetComponent<BodyPart>();
+        BodyPartItem skullItem = skull != null ? skull.Item : null;
+        if (skullItem != null && skullItem.Type == BodyPartType.Head)
+        {
+            _firstPersonBodyPartItem = skullItem;
+        }
+    }
+
+    private void HandleBodyChanged()
+    {
+        if (_isFirstPerson)
+        {
+            SetLocalBodyVisible(false);
+        }
+    }
+
+    private void SetLocalBodyVisible(bool visible)
+    {
+        for (int i = 0; i < _hiddenBodyRenderers.Count; i++)
+        {
+            Renderer renderer = _hiddenBodyRenderers[i];
+            if (renderer != null)
+            {
+                renderer.enabled = true;
+            }
+        }
+
+        _hiddenBodyRenderers.Clear();
+
+        if (visible || _skeletonBody == null)
+        {
+            return;
+        }
+
+        Transform viewpoint = UpdateFirstPersonViewpoint();
+        if (viewpoint == null || !IsDetachedSkullViewpoint(viewpoint))
+        {
+            HideRenderers(_skeletonBody.GetComponentsInChildren<Renderer>(true));
+        }
+
+        if (!_skeletonBody.HasSkull() && viewpoint != null)
+        {
+            HideRenderers(viewpoint.GetComponentsInChildren<Renderer>(true), true);
+        }
+    }
+
+    private void HideRenderers(Renderer[] renderers, bool includeHeldItems = false)
+    {
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer renderer = renderers[i];
+            if (!renderer.enabled || (!includeHeldItems && _playerHand != null && _playerHand.ContainsHeldItemRenderer(renderer)))
+            {
+                continue;
+            }
+
+            renderer.enabled = false;
+            _hiddenBodyRenderers.Add(renderer);
         }
     }
 }

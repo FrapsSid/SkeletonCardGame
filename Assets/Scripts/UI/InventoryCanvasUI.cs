@@ -1,5 +1,6 @@
+#nullable enable
+
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -8,66 +9,38 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public class InventoryCanvasUI : MonoBehaviour
 {
-    private const string RuntimeIconName = "Runtime Item Icon";
-    private const string RuntimeCountName = "Runtime Item Count";
-    private const string RuntimeDragIconName = "Inventory Drag Icon";
+    private const string RuntimeItemViewName = "Runtime Item View";
+    private const int PreviewLayer = 31;
 
     [Header("Inventory")]
-    [SerializeField] private PlayerInventoryOwner inventoryOwner;
-    [SerializeField] private Inventory inventory;
+    [SerializeField] private PlayerInventoryOwner? inventoryOwner;
+    [SerializeField] private Inventory? inventory;
     [SerializeField] private bool autoBindRuntimeInventory = true;
 
     [Header("Canvas")]
-    [SerializeField] private RectTransform inventoryPanel;
-    [SerializeField] private Canvas rootCanvas;
-    [SerializeField] private CanvasGroup canvasGroup;
+    [SerializeField] private RectTransform? inventoryPanel;
+    [SerializeField] private Canvas? rootCanvas;
+    [SerializeField] private CanvasGroup? canvasGroup;
     [SerializeField] private RectTransform[] slotRoots = new RectTransform[0];
 
-    [Header("Drag")]
-    [SerializeField] private bool dropEntireStackWhenDraggedOutside = false;
-    [SerializeField, Min(1)] private int dropQuantity = 1;
-    [SerializeField] private bool dropOutsideSlotsWhenPanelIsRootCanvas = true;
+    [Header("Preview")]
+    [SerializeField, Min(64)] private int previewTextureSize = 256;
+    [SerializeField] private Color emptySlotColor = new(1f, 1f, 1f, 0.6f);
+    [SerializeField] private Color draggedSlotColor = new(1f, 1f, 1f, 0.9f);
 
-    [Header("Cursor")]
-    [SerializeField] private bool unlockCursorWhenVisible = true;
-
-    [Header("Presentation")]
-    [SerializeField, Min(0f)] private float iconInset = 18f;
-    [SerializeField] private Color iconTint = Color.white;
-    [SerializeField] private Color fallbackIconTint = new Color(1f, 1f, 1f, 0.28f);
-    [SerializeField] private Color draggedSlotTint = new Color(1f, 1f, 1f, 0.45f);
-
-    private readonly List<SlotView> slotViews = new List<SlotView>();
-    private readonly List<RaycastResult> raycastResults = new List<RaycastResult>();
-
-    private Inventory subscribedInventory;
-    private Image dragIcon;
-    private RectTransform dragIconRect;
+    private readonly List<SlotView> slotViews = new();
+    private readonly List<RaycastResult> raycastResults = new();
     private int draggingSlotIndex = -1;
-    private bool isDraggingSlot;
-    private bool cursorStateCaptured;
-    private CursorLockMode previousCursorLockMode;
-    private bool previousCursorVisible;
 
-    public Inventory Inventory => inventory;
+    public Inventory? Inventory => inventory;
 
-    public static bool IsAnyInventoryOpen
+    public bool IsVisible
     {
         get
         {
-            InventoryCanvasUI[] inventoryUis = FindObjectsByType<InventoryCanvasUI>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
-
-            for (int i = 0; i < inventoryUis.Length; i++)
-            {
-                if (inventoryUis[i] != null && inventoryUis[i].IsVisible())
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            bool canvasVisible = rootCanvas == null || rootCanvas.enabled;
+            bool groupVisible = canvasGroup == null || canvasGroup.alpha > 0.001f;
+            return isActiveAndEnabled && canvasVisible && groupVisible;
         }
     }
 
@@ -86,21 +59,6 @@ public class InventoryCanvasUI : MonoBehaviour
         Refresh();
     }
 
-    private void OnEnable()
-    {
-        SubscribeToInventory(inventory);
-        Refresh();
-    }
-
-    private void OnDisable()
-    {
-        SubscribeToInventory(null);
-        EndCursorOverride();
-        HideDragIcon();
-        isDraggingSlot = false;
-        draggingSlotIndex = -1;
-    }
-
     private void Update()
     {
         if (autoBindRuntimeInventory && inventory == null)
@@ -108,7 +66,63 @@ public class InventoryCanvasUI : MonoBehaviour
             TryBindInventory();
         }
 
-        ApplyCursorState(IsVisible());
+        if (IsVisible)
+        {
+            Refresh();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        ClearSlotViews();
+    }
+
+    public void Show()
+    {
+        ResolveCanvasReferences();
+
+        if (rootCanvas != null)
+        {
+            rootCanvas.enabled = true;
+        }
+
+        GraphicRaycaster? raycaster = GetGraphicRaycaster();
+        if (raycaster != null)
+        {
+            raycaster.enabled = true;
+        }
+
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 1f;
+            canvasGroup.interactable = true;
+            canvasGroup.blocksRaycasts = true;
+        }
+
+        Refresh();
+    }
+
+    public void Hide()
+    {
+        ResolveCanvasReferences();
+
+        if (rootCanvas != null)
+        {
+            rootCanvas.enabled = false;
+        }
+
+        GraphicRaycaster? raycaster = GetGraphicRaycaster();
+        if (raycaster != null)
+        {
+            raycaster.enabled = false;
+        }
+
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+        }
     }
 
     public void Refresh()
@@ -117,463 +131,216 @@ public class InventoryCanvasUI : MonoBehaviour
 
         for (int i = 0; i < slotViews.Count; i++)
         {
-            InventorySlot slot = inventory != null ? inventory.GetSlot(i) : null;
-            SetSlotView(slotViews[i], slot);
+            IItem? item = inventory != null && i < inventory.Items.Length ? inventory.Items[i] : null;
+            SetSlotView(slotViews[i], item, i == draggingSlotIndex);
         }
+    }
+
+    public void ClickSlot(InventoryCanvasSlot slot, PointerEventData eventData)
+    {
+        if (inventory == null || inventoryOwner == null || slot == null || !slot.BelongsTo(this))
+        {
+            return;
+        }
+
+        PlayerHand? hand = eventData.button switch
+        {
+            PointerEventData.InputButton.Left => inventoryOwner.leftHand,
+            PointerEventData.InputButton.Right => inventoryOwner.rightHand,
+            _ => null
+        };
+
+        if (hand == null)
+        {
+            return;
+        }
+
+        inventory.SwapWithHand(hand, slot.SlotIndex);
+        Refresh();
     }
 
     public void BeginDragSlot(InventoryCanvasSlot slot, PointerEventData eventData)
     {
-        if (slot == null || !slot.BelongsTo(this) || !HasItem(slot.SlotIndex))
+        if (inventory == null || slot == null || !slot.BelongsTo(this) || !HasItem(slot.SlotIndex))
         {
             return;
         }
 
         draggingSlotIndex = slot.SlotIndex;
-        isDraggingSlot = true;
-        ShowDragIcon(draggingSlotIndex, eventData);
-        SetDraggedSlotTint(draggingSlotIndex, true);
+        Refresh();
     }
 
     public void DragSlot(InventoryCanvasSlot slot, PointerEventData eventData)
     {
-        if (!isDraggingSlot || slot == null || slot.SlotIndex != draggingSlotIndex)
-        {
-            return;
-        }
-
-        MoveDragIcon(eventData);
     }
 
     public void EndDragSlot(InventoryCanvasSlot slot, PointerEventData eventData)
     {
-        if (!isDraggingSlot || slot == null || slot.SlotIndex != draggingSlotIndex)
+        if (inventory == null || draggingSlotIndex < 0)
         {
+            draggingSlotIndex = -1;
+            Refresh();
             return;
         }
 
         int sourceSlotIndex = draggingSlotIndex;
-        bool pointerOverSlot = TryGetSlotUnderPointer(eventData, out int targetSlotIndex);
-        bool pointerInsideInventory = pointerOverSlot || IsPointerInsideInventory(eventData);
-
-        HideDragIcon();
-        SetDraggedSlotTint(sourceSlotIndex, false);
-        isDraggingSlot = false;
         draggingSlotIndex = -1;
 
-        if (inventory == null)
+        if (TryGetSlotUnderPointer(eventData, out int targetSlotIndex) && targetSlotIndex != sourceSlotIndex)
         {
-            Refresh();
-            return;
+            IItem? targetItem = inventory.Items[targetSlotIndex];
+            inventory.Items[targetSlotIndex] = inventory.Items[sourceSlotIndex];
+            inventory.Items[sourceSlotIndex] = targetItem;
+        }
+        else if (!IsPointerInsideInventory(eventData))
+        {
+            IItem? item = inventory.Items[sourceSlotIndex];
+            if (item != null)
+            {
+                inventory.Items[sourceSlotIndex] = null;
+                ItemUtils.DropItem(item, transform.position, transform.rotation);
+            }
         }
 
-        if (pointerOverSlot && targetSlotIndex != sourceSlotIndex)
-        {
-            inventory.MoveItem(sourceSlotIndex, targetSlotIndex);
-        }
-        else if (!pointerInsideInventory)
-        {
-            DropSlot(sourceSlotIndex);
-        }
-        else
-        {
-            Refresh();
-        }
-    }
-
-    public void DropSlot(int slotIndex)
-    {
-        if (inventory == null)
-        {
-            return;
-        }
-
-        InventorySlot slot = inventory.GetSlot(slotIndex);
-        if (slot == null || slot.IsEmpty)
-        {
-            Refresh();
-            return;
-        }
-
-        int quantity = dropEntireStackWhenDraggedOutside
-            ? slot.quantity
-            : Mathf.Min(dropQuantity, slot.quantity);
-
-        if (!inventory.DropItem(slotIndex, quantity))
-        {
-            Refresh();
-        }
+        Refresh();
     }
 
     public bool TryGetSlotIndex(InventoryCanvasSlot slot, out int slotIndex)
     {
-        slotIndex = -1;
-        if (slot == null || !slot.BelongsTo(this))
-        {
-            return false;
-        }
-
-        slotIndex = slot.SlotIndex;
-        return slotIndex >= 0 && slotIndex < slotViews.Count;
+        slotIndex = slot != null && slot.BelongsTo(this) ? slot.SlotIndex : -1;
+        return slotIndex >= 0;
     }
 
-    public bool TryPlaceExternalSlot(int slotIndex, InventorySlot incomingSlot, out InventorySlot swappedSlot)
+    private bool HasItem(int slotIndex)
     {
-        swappedSlot = null;
-        if (inventory == null || incomingSlot == null || incomingSlot.IsEmpty)
-        {
-            return false;
-        }
-
-        InventorySlot targetSlot = inventory.GetSlot(slotIndex);
-        if (targetSlot == null)
-        {
-            return false;
-        }
-
-        swappedSlot = new InventorySlot();
-        swappedSlot.CopyFrom(targetSlot);
-        targetSlot.CopyFrom(incomingSlot);
-        inventory.NotifyInventoryChanged();
-        Refresh();
-        return true;
-    }
-
-    public void ShowTooltip(InventorySlot slot)
-    {
-    }
-
-    public void HideTooltip()
-    {
+        return inventory != null
+            && slotIndex >= 0
+            && slotIndex < inventory.Items.Length
+            && inventory.Items[slotIndex] != null;
     }
 
     private bool TryBindInventory()
     {
         if (inventoryOwner != null)
         {
-            Inventory ownerInventory = inventoryOwner.Inventory != null
+            inventory = inventoryOwner.Inventory != null
                 ? inventoryOwner.Inventory
                 : inventoryOwner.GetComponent<Inventory>();
-
-            SetInventory(ownerInventory);
             return inventory != null;
         }
 
         if (inventory != null)
         {
-            SubscribeToInventory(inventory);
+            inventoryOwner = inventoryOwner != null ? inventoryOwner : inventory.GetComponent<PlayerInventoryOwner>();
             return true;
         }
 
-        PlayerInventoryOwner foundOwner = FindPreferredInventoryOwner();
+        PlayerInventoryOwner? foundOwner = FindFirstObjectByType<PlayerInventoryOwner>();
         if (foundOwner != null)
         {
             inventoryOwner = foundOwner;
-            SetInventory(foundOwner.Inventory != null ? foundOwner.Inventory : foundOwner.GetComponent<Inventory>());
+            inventory = foundOwner.Inventory != null ? foundOwner.Inventory : foundOwner.GetComponent<Inventory>();
             return inventory != null;
         }
 
-        SetInventory(FindFirstObjectByType<Inventory>());
+        inventory = FindFirstObjectByType<Inventory>();
         return inventory != null;
-    }
-
-    private PlayerInventoryOwner FindPreferredInventoryOwner()
-    {
-        PlayerInventoryOwner[] owners = FindObjectsByType<PlayerInventoryOwner>(
-            FindObjectsInactive.Exclude,
-            FindObjectsSortMode.None);
-
-        PlayerInventoryOwner fallback = null;
-
-        foreach (PlayerInventoryOwner owner in owners)
-        {
-            if (owner == null)
-            {
-                continue;
-            }
-
-            if (fallback == null)
-            {
-                fallback = owner;
-            }
-
-            if (owner.GetComponent<PlayerController>() != null)
-            {
-                return owner;
-            }
-        }
-
-        return fallback;
-    }
-
-    private void SetInventory(Inventory target)
-    {
-        if (inventory == target && subscribedInventory == target)
-        {
-            return;
-        }
-
-        inventory = target;
-        SubscribeToInventory(inventory);
-        Refresh();
-    }
-
-    private void SubscribeToInventory(Inventory target)
-    {
-        if (subscribedInventory == target)
-        {
-            return;
-        }
-
-        if (subscribedInventory != null)
-        {
-            subscribedInventory.OnInventoryChanged -= Refresh;
-        }
-
-        subscribedInventory = target;
-
-        if (subscribedInventory != null && isActiveAndEnabled)
-        {
-            subscribedInventory.OnInventoryChanged += Refresh;
-        }
-    }
-
-    private bool HasItem(int slotIndex)
-    {
-        InventorySlot slot = inventory != null ? inventory.GetSlot(slotIndex) : null;
-        return slot != null && !slot.IsEmpty && slot.quantity > 0;
     }
 
     private void EnsureSlotViews()
     {
-        ResolveCanvasReferences();
         ResolveSlotRoots();
+        int requiredCount = inventory != null ? inventory.MaxSlots : slotRoots.Length;
 
-        if (slotViews.Count == slotRoots.Length)
+        while (slotViews.Count > requiredCount)
         {
-            return;
+            int lastIndex = slotViews.Count - 1;
+            slotViews[lastIndex].Dispose();
+            slotViews.RemoveAt(lastIndex);
         }
 
-        slotViews.Clear();
-
-        for (int i = 0; i < slotRoots.Length; i++)
+        while (slotViews.Count < requiredCount)
         {
-            RectTransform root = slotRoots[i];
+            RectTransform? root = slotViews.Count < slotRoots.Length ? slotRoots[slotViews.Count] : null;
             if (root == null)
             {
-                continue;
+                break;
             }
 
-            InventoryCanvasSlot slotComponent = root.GetComponent<InventoryCanvasSlot>();
-            if (slotComponent == null)
+            slotViews.Add(new SlotView(this, root, slotViews.Count, previewTextureSize));
+        }
+    }
+
+    private void SetSlotView(SlotView view, IItem? item, bool isDragging)
+    {
+        view.Background.color = isDragging ? draggedSlotColor : emptySlotColor;
+        if (view.Item == item)
+        {
+            view.Root.gameObject.SetActive(view.Index < (inventory?.MaxSlots ?? slotRoots.Length));
+            return;
+        }
+
+        view.SetItem(item);
+    }
+
+    private void ResolveCanvasReferences()
+    {
+        if (rootCanvas == null)
+        {
+            rootCanvas = GetComponent<Canvas>();
+            if (rootCanvas == null)
             {
-                slotComponent = root.gameObject.AddComponent<InventoryCanvasSlot>();
+                rootCanvas = GetComponentInParent<Canvas>();
             }
+        }
 
-            slotComponent.Initialize(this, i);
+        if (canvasGroup == null)
+        {
+            canvasGroup = GetComponent<CanvasGroup>();
+        }
 
-            SlotView view = new SlotView
+        if (inventoryPanel == null)
+        {
+            inventoryPanel = transform as RectTransform;
+        }
+    }
+
+    private void ResolveSlotRoots()
+    {
+        if (slotRoots != null && slotRoots.Length > 0)
+        {
+            return;
+        }
+
+        List<RectTransform> found = new();
+        foreach (Transform child in transform)
+        {
+            if (child is RectTransform childRect && child.name.StartsWith("Slot "))
             {
-                root = root,
-                slot = slotComponent,
-                icon = EnsureIcon(root),
-                countText = EnsureCountText(root)
-            };
-
-            slotViews.Add(view);
-        }
-    }
-
-    private Image EnsureIcon(RectTransform slotRoot)
-    {
-        Transform existing = slotRoot.Find(RuntimeIconName);
-        GameObject iconObject = existing != null ? existing.gameObject : new GameObject(RuntimeIconName, typeof(RectTransform));
-        iconObject.transform.SetParent(slotRoot, false);
-
-        Image image = iconObject.GetComponent<Image>();
-        if (image == null)
-        {
-            image = iconObject.AddComponent<Image>();
+                found.Add(childRect);
+            }
         }
 
-        image.raycastTarget = false;
-        image.preserveAspect = true;
-
-        RectTransform rect = iconObject.GetComponent<RectTransform>();
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = new Vector2(iconInset, iconInset);
-        rect.offsetMax = new Vector2(-iconInset, -iconInset);
-        rect.SetAsLastSibling();
-
-        return image;
-    }
-
-    private TMP_Text EnsureCountText(RectTransform slotRoot)
-    {
-        Transform existing = slotRoot.Find(RuntimeCountName);
-        GameObject countObject = existing != null ? existing.gameObject : new GameObject(RuntimeCountName, typeof(RectTransform));
-        countObject.transform.SetParent(slotRoot, false);
-
-        TextMeshProUGUI text = countObject.GetComponent<TextMeshProUGUI>();
-        if (text == null)
-        {
-            text = countObject.AddComponent<TextMeshProUGUI>();
-        }
-
-        text.raycastTarget = false;
-        text.alignment = TextAlignmentOptions.BottomRight;
-        text.fontSize = 18f;
-        text.fontStyle = FontStyles.Bold;
-        text.color = Color.white;
-        text.outlineColor = Color.black;
-        text.outlineWidth = 0.18f;
-
-        RectTransform rect = text.rectTransform;
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = new Vector2(6f, 4f);
-        rect.offsetMax = new Vector2(-7f, -4f);
-        rect.SetAsLastSibling();
-
-        return text;
-    }
-
-    private void SetSlotView(SlotView view, InventorySlot slot)
-    {
-        bool hasItem = slot != null && !slot.IsEmpty && slot.quantity > 0;
-        Sprite icon = hasItem && slot.itemData != null ? slot.itemData.icon : null;
-
-        if (view.icon != null)
-        {
-            view.icon.gameObject.SetActive(hasItem);
-            view.icon.sprite = icon;
-            view.icon.color = icon != null ? iconTint : fallbackIconTint;
-        }
-
-        if (view.countText != null)
-        {
-            view.countText.text = hasItem && slot.quantity > 1 ? slot.quantity.ToString() : string.Empty;
-            view.countText.gameObject.SetActive(hasItem && slot.quantity > 1);
-        }
-    }
-
-    private void ShowDragIcon(int slotIndex, PointerEventData eventData)
-    {
-        InventorySlot slot = inventory != null ? inventory.GetSlot(slotIndex) : null;
-        if (slot == null || slot.IsEmpty)
-        {
-            return;
-        }
-
-        EnsureDragIcon();
-        if (dragIcon == null)
-        {
-            return;
-        }
-
-        dragIcon.sprite = slot.itemData != null ? slot.itemData.icon : null;
-        dragIcon.color = dragIcon.sprite != null ? iconTint : fallbackIconTint;
-        dragIcon.gameObject.SetActive(true);
-        dragIcon.transform.SetAsLastSibling();
-
-        RectTransform slotRoot = slotIndex >= 0 && slotIndex < slotViews.Count ? slotViews[slotIndex].root : null;
-        if (slotRoot != null && dragIconRect != null)
-        {
-            float size = Mathf.Max(28f, Mathf.Min(slotRoot.rect.width, slotRoot.rect.height) - iconInset * 2f);
-            dragIconRect.sizeDelta = new Vector2(size, size);
-        }
-
-        MoveDragIcon(eventData);
-    }
-
-    private void MoveDragIcon(PointerEventData eventData)
-    {
-        if (dragIconRect != null && eventData != null)
-        {
-            dragIconRect.position = eventData.position;
-        }
-    }
-
-    private void HideDragIcon()
-    {
-        if (dragIcon != null)
-        {
-            dragIcon.gameObject.SetActive(false);
-            dragIcon.sprite = null;
-        }
-    }
-
-    private void EnsureDragIcon()
-    {
-        if (dragIcon != null)
-        {
-            return;
-        }
-
-        ResolveCanvasReferences();
-        Transform parent = rootCanvas != null ? rootCanvas.transform : transform;
-        GameObject dragObject = new GameObject(RuntimeDragIconName, typeof(RectTransform));
-        dragObject.transform.SetParent(parent, false);
-
-        dragIcon = dragObject.AddComponent<Image>();
-        dragIcon.raycastTarget = false;
-        dragIcon.preserveAspect = true;
-
-        CanvasGroup dragCanvasGroup = dragObject.AddComponent<CanvasGroup>();
-        dragCanvasGroup.blocksRaycasts = false;
-        dragCanvasGroup.interactable = false;
-
-        dragIconRect = dragObject.GetComponent<RectTransform>();
-        dragIconRect.sizeDelta = new Vector2(64f, 64f);
-        dragObject.SetActive(false);
-    }
-
-    private void SetDraggedSlotTint(int slotIndex, bool dragging)
-    {
-        if (slotIndex < 0 || slotIndex >= slotViews.Count)
-        {
-            return;
-        }
-
-        Image icon = slotViews[slotIndex].icon;
-        if (icon != null && icon.gameObject.activeSelf)
-        {
-            icon.color = dragging ? draggedSlotTint : iconTint;
-        }
+        found.Sort((left, right) => GetSlotNumber(left.name).CompareTo(GetSlotNumber(right.name)));
+        slotRoots = found.ToArray();
     }
 
     private bool TryGetSlotUnderPointer(PointerEventData eventData, out int slotIndex)
     {
         slotIndex = -1;
-        if (eventData == null)
+        if (eventData == null || EventSystem.current == null)
         {
             return false;
         }
 
-        if (EventSystem.current != null)
+        raycastResults.Clear();
+        EventSystem.current.RaycastAll(eventData, raycastResults);
+        foreach (RaycastResult result in raycastResults)
         {
-            raycastResults.Clear();
-            EventSystem.current.RaycastAll(eventData, raycastResults);
-
-            foreach (RaycastResult result in raycastResults)
+            InventoryCanvasSlot slot = result.gameObject.GetComponentInParent<InventoryCanvasSlot>();
+            if (slot != null && slot.BelongsTo(this))
             {
-                InventoryCanvasSlot slot = result.gameObject.GetComponentInParent<InventoryCanvasSlot>();
-                if (slot != null && slot.BelongsTo(this))
-                {
-                    slotIndex = slot.SlotIndex;
-                    return true;
-                }
-            }
-        }
-
-        Camera eventCamera = GetEventCamera(eventData);
-        for (int i = 0; i < slotViews.Count; i++)
-        {
-            RectTransform root = slotViews[i].root;
-            if (root != null && RectTransformUtility.RectangleContainsScreenPoint(root, eventData.position, eventCamera))
-            {
-                slotIndex = i;
+                slotIndex = slot.SlotIndex;
                 return true;
             }
         }
@@ -588,148 +355,197 @@ public class InventoryCanvasUI : MonoBehaviour
             return false;
         }
 
-        if (dropOutsideSlotsWhenPanelIsRootCanvas && rootCanvas != null && inventoryPanel == rootCanvas.transform)
-        {
-            return false;
-        }
-
-        return RectTransformUtility.RectangleContainsScreenPoint(
-            inventoryPanel,
-            eventData.position,
-            GetEventCamera(eventData));
+        Camera? eventCamera = rootCanvas != null && rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay
+            ? rootCanvas.worldCamera
+            : null;
+        return RectTransformUtility.RectangleContainsScreenPoint(inventoryPanel, eventData.position, eventCamera);
     }
 
-    private Camera GetEventCamera(PointerEventData eventData)
+    private void ClearSlotViews()
     {
-        if (eventData != null && eventData.pressEventCamera != null)
+        foreach (SlotView slotView in slotViews)
         {
-            return eventData.pressEventCamera;
+            slotView.Dispose();
         }
 
-        if (rootCanvas != null && rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
-        {
-            return rootCanvas.worldCamera;
-        }
-
-        return null;
+        slotViews.Clear();
     }
 
-    private bool IsVisible()
+    private GraphicRaycaster? GetGraphicRaycaster()
     {
-        bool canvasVisible = rootCanvas == null || rootCanvas.enabled;
-        bool groupVisible = canvasGroup == null || (canvasGroup.alpha > 0.001f && canvasGroup.blocksRaycasts);
-        return isActiveAndEnabled && canvasVisible && groupVisible;
-    }
-
-    private void ApplyCursorState(bool visible)
-    {
-        if (!unlockCursorWhenVisible)
+        if (rootCanvas != null)
         {
-            return;
+            return rootCanvas.GetComponent<GraphicRaycaster>();
         }
 
-        if (visible)
-        {
-            if (!cursorStateCaptured)
-            {
-                previousCursorLockMode = Cursor.lockState;
-                previousCursorVisible = Cursor.visible;
-                cursorStateCaptured = true;
-            }
-
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            return;
-        }
-
-        EndCursorOverride();
-    }
-
-    private void EndCursorOverride()
-    {
-        if (!cursorStateCaptured)
-        {
-            return;
-        }
-
-        Cursor.lockState = previousCursorLockMode;
-        Cursor.visible = previousCursorVisible;
-        cursorStateCaptured = false;
-    }
-
-    private void ResolveCanvasReferences()
-    {
-        if (inventoryPanel == null)
-        {
-            inventoryPanel = transform as RectTransform;
-        }
-
-        if (rootCanvas == null)
-        {
-            rootCanvas = GetComponent<Canvas>();
-            if (rootCanvas == null)
-            {
-                rootCanvas = GetComponentInParent<Canvas>();
-            }
-        }
-
-        if (canvasGroup == null)
-        {
-            canvasGroup = GetComponent<CanvasGroup>();
-        }
-    }
-
-    private void ResolveSlotRoots()
-    {
-        if (slotRoots != null && slotRoots.Length > 0)
-        {
-            return;
-        }
-
-        List<RectTransform> found = new List<RectTransform>();
-        foreach (Transform child in transform)
-        {
-            RectTransform childRect = child as RectTransform;
-            if (childRect != null && child.name.StartsWith("Slot "))
-            {
-                found.Add(childRect);
-            }
-        }
-
-        found.Sort((left, right) => GetSlotNumber(left.name).CompareTo(GetSlotNumber(right.name)));
-        slotRoots = found.ToArray();
+        return GetComponent<GraphicRaycaster>();
     }
 
     private static int GetSlotNumber(string slotName)
     {
-        if (string.IsNullOrEmpty(slotName))
-        {
-            return int.MaxValue;
-        }
-
         string[] parts = slotName.Split(' ');
-        if (parts.Length > 1 && int.TryParse(parts[parts.Length - 1], out int number))
-        {
-            return number;
-        }
-
-        return int.MaxValue;
+        return parts.Length > 1 && int.TryParse(parts[parts.Length - 1], out int number) ? number : int.MaxValue;
     }
-
-#if UNITY_EDITOR
-    private void OnValidate()
-    {
-        dropQuantity = Mathf.Max(1, dropQuantity);
-        ResolveCanvasReferences();
-        ResolveSlotRoots();
-    }
-#endif
 
     private sealed class SlotView
     {
-        public RectTransform root;
-        public InventoryCanvasSlot slot;
-        public Image icon;
-        public TMP_Text countText;
+        private readonly Camera _camera;
+        private readonly RenderTexture _texture;
+        private GameObject? _itemView;
+
+        public SlotView(InventoryCanvasUI owner, RectTransform root, int index, int textureSize)
+        {
+            Root = root;
+            Index = index;
+            Slot = root.GetComponent<InventoryCanvasSlot>() ?? root.gameObject.AddComponent<InventoryCanvasSlot>();
+            Slot.Initialize(owner, index);
+
+            Background = root.GetComponent<Image>() ?? root.gameObject.AddComponent<Image>();
+            Background.raycastTarget = true;
+
+            RawImage = EnsureRawImage(root);
+            _texture = new RenderTexture(textureSize, textureSize, 16);
+            RawImage.texture = _texture;
+
+            GameObject cameraObject = new($"Inventory Slot Camera {index + 1}");
+            cameraObject.hideFlags = HideFlags.HideAndDontSave;
+            _camera = cameraObject.AddComponent<Camera>();
+            _camera.enabled = true;
+            _camera.clearFlags = CameraClearFlags.SolidColor;
+            _camera.backgroundColor = Color.clear;
+            _camera.cullingMask = 1 << PreviewLayer;
+            _camera.targetTexture = _texture;
+            _camera.orthographic = true;
+            _camera.orthographicSize = 1.4f;
+            _camera.transform.position = new Vector3(index * 4f, -1000f, -4f);
+            _camera.transform.rotation = Quaternion.identity;
+        }
+
+        public RectTransform Root { get; }
+        public int Index { get; }
+        public InventoryCanvasSlot Slot { get; }
+        public Image Background { get; }
+        public RawImage RawImage { get; }
+        public IItem? Item { get; private set; }
+
+        public void SetItem(IItem? item)
+        {
+            ClearItemView();
+            Item = item;
+
+            if (item == null)
+            {
+                RawImage.enabled = false;
+                return;
+            }
+
+            _itemView = item.CreateInventoryView();
+            if (_itemView == null)
+            {
+                RawImage.enabled = false;
+                return;
+            }
+
+            RawImage.enabled = true;
+            _itemView.name = RuntimeItemViewName;
+            _itemView.hideFlags = HideFlags.HideAndDontSave;
+            _itemView.transform.SetPositionAndRotation(_camera.transform.position + Vector3.forward * 2f, Quaternion.identity);
+            _itemView.transform.localScale = Vector3.one;
+            SetLayerRecursively(_itemView, PreviewLayer);
+            DisablePhysics(_itemView);
+            FitItemView(_itemView, _camera.transform.position + Vector3.forward * 2f);
+        }
+
+        public void Dispose()
+        {
+            ClearItemView();
+
+            if (_camera != null)
+            {
+                Object.Destroy(_camera.gameObject);
+            }
+
+            if (_texture != null)
+            {
+                _texture.Release();
+                Object.Destroy(_texture);
+            }
+        }
+
+        private void ClearItemView()
+        {
+            if (_itemView == null)
+            {
+                return;
+            }
+
+            Object.Destroy(_itemView);
+            _itemView = null;
+        }
+
+        private static RawImage EnsureRawImage(RectTransform root)
+        {
+            Transform existing = root.Find(RuntimeItemViewName);
+            GameObject rawImageObject = existing != null
+                ? existing.gameObject
+                : new GameObject(RuntimeItemViewName, typeof(RectTransform), typeof(RawImage));
+            rawImageObject.transform.SetParent(root, false);
+
+            RawImage rawImage = rawImageObject.GetComponent<RawImage>();
+            rawImage.raycastTarget = false;
+
+            RectTransform rect = rawImage.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            rect.SetAsLastSibling();
+            return rawImage;
+        }
+
+        private static void SetLayerRecursively(GameObject target, int layer)
+        {
+            target.layer = layer;
+            foreach (Transform child in target.transform)
+            {
+                SetLayerRecursively(child.gameObject, layer);
+            }
+        }
+
+        private static void DisablePhysics(GameObject target)
+        {
+            foreach (Collider collider in target.GetComponentsInChildren<Collider>())
+            {
+                collider.enabled = false;
+            }
+
+            foreach (Rigidbody body in target.GetComponentsInChildren<Rigidbody>())
+            {
+                body.isKinematic = true;
+                body.useGravity = false;
+            }
+        }
+
+        private static void FitItemView(GameObject target, Vector3 center)
+        {
+            Renderer[] renderers = target.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0)
+            {
+                return;
+            }
+
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+            {
+                bounds.Encapsulate(renderers[i].bounds);
+            }
+
+            target.transform.position += center - bounds.center;
+            float maxSize = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z);
+            if (maxSize > 0.001f)
+            {
+                target.transform.localScale *= 1.6f / maxSize;
+            }
+        }
     }
 }

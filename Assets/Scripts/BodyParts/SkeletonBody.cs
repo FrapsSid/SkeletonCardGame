@@ -7,7 +7,7 @@ public class SkeletonBody : MonoBehaviour
 {
     public event Action OnBodyChanged;
 
-    private Dictionary<BodyPartType, BodyPart> _attachedParts = new Dictionary<BodyPartType, BodyPart>();
+    private Dictionary<BodyPartType, BodyPart> _attachedParts = new();
 
     [Header("Bone References")]
     public Transform headBone;
@@ -15,17 +15,17 @@ public class SkeletonBody : MonoBehaviour
     public Transform rightArmBone;
     public Transform leftLegBone;
     public Transform rightLegBone;
+    public Transform torsoBone;
 
     public bool IsIncapacitated => !HasSoul();
     public bool CanHoldCards => GetArmCount() > 0;
 
-    private void Awake()
+    private void Start()
     {
         BodyPart[] initialParts = GetComponentsInChildren<BodyPart>();
         foreach (var part in initialParts)
         {
-            part.Initialize(gameObject);
-            _attachedParts[part.Type] = part;
+            AttachPart(part);
         }
     }
 
@@ -72,14 +72,14 @@ public class SkeletonBody : MonoBehaviour
     {
         if (part == null) return;
 
-        if (HasPart(part.Type)) 
+        if (HasPart(part.Item.Type)) 
         {
-            RemovePart(part.Type);
+            RemovePart(part.Item.Type);
         }
 
-        Transform targetBone = GetBoneForType(part.Type);
+        Transform targetBone = GetBoneForType(part.Item.Type);
         
-        _attachedParts[part.Type] = part;
+        _attachedParts[part.Item.Type] = part;
         part.Attach(gameObject, targetBone);
         OnBodyChanged?.Invoke();
     }
@@ -93,6 +93,7 @@ public class SkeletonBody : MonoBehaviour
             BodyPartType.RightArm => rightArmBone,
             BodyPartType.LeftLeg => leftLegBone,
             BodyPartType.RightLeg => rightLegBone,
+            BodyPartType.Torso => torsoBone,
             _ => transform
         };
     }

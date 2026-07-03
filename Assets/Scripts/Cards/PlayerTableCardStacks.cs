@@ -7,6 +7,8 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class PlayerTableCardStacks : MonoBehaviour
 {
+    private static readonly Quaternion FaceDownRotation = Quaternion.Euler(0f, 180f, 0f);
+
     [SerializeField] private TablePositions? tablePositions;
     [SerializeField] private CardStack? cardStackPrefab;
     [SerializeField] private Transform? stackParent;
@@ -40,6 +42,31 @@ public sealed class PlayerTableCardStacks : MonoBehaviour
     public void PlaceStack(Skeleton player, IReadOnlyList<CardData> cards)
     {
         AddCards(player, cards);
+    }
+
+    public bool HasCards(Skeleton player)
+    {
+        return TryGetStack(player, out CardStack? stack)
+            && stack != null
+            && stack.Cards.Count > 0;
+    }
+
+    public bool TryTakeCards(Skeleton player, out List<CardData> cards)
+    {
+        cards = new List<CardData>();
+        if (!TryGetStack(player, out CardStack? stack) || stack == null)
+        {
+            return false;
+        }
+
+        cards = stack.GetCards();
+        if (cards.Count == 0)
+        {
+            return false;
+        }
+
+        RemoveStack(player);
+        return true;
     }
 
     public void AddCards(Skeleton player, IReadOnlyList<CardData> cards)
@@ -183,7 +210,7 @@ public sealed class PlayerTableCardStacks : MonoBehaviour
     private void MoveStackToPlayerPosition(Skeleton player, CardStack stack)
     {
         Transform position = RequireTablePositions().GetPlayerDealCardPosition(player);
-        stack.transform.SetPositionAndRotation(position.position, position.rotation);
+        stack.transform.SetPositionAndRotation(position.position, position.rotation * FaceDownRotation);
     }
 
     private TablePositions RequireTablePositions()

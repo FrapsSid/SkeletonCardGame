@@ -183,8 +183,30 @@ public sealed class GameManager : MonoBehaviour
     }
     private void HandleRoundEnded(RoundResult result)
     {
+        ClearHeldCardItems();
         StopRestartRound();
         _restartRoundCoroutine = StartCoroutine(RestartRoundAfterRoundEnded());
+    }
+
+    private void ClearHeldCardItems()
+    {
+        foreach (Skeleton player in _players)
+        {
+            PlayerInventoryOwner inventoryOwner = player.InventoryOwner;
+            if (inventoryOwner == null)
+                continue;
+
+            ClearHeldCardItem(inventoryOwner.leftHand);
+            ClearHeldCardItem(inventoryOwner.rightHand);
+        }
+    }
+
+    private static void ClearHeldCardItem(PlayerHand hand)
+    {
+        if (hand != null && hand.Item is CardsItem)
+        {
+            hand.SetItem(null);
+        }
     }
 
     private void HandleTableCardsDealt(IReadOnlyList<CardData> cards)

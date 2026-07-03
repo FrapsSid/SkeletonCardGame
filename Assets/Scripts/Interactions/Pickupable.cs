@@ -1,126 +1,71 @@
-using System;
+#nullable enable
+
+using System.Collections.Generic;
+using Interactions;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class Pickupable : MonoBehaviour {
-    [Header("Item")] public ItemData itemData;
-    public CardData cardData;
-    [Min(1)] public int quantity = 1;
-    public bool isPickupable = true;
+public class Pickupable : MonoBehaviour, IInteractable
+{
+    public const string InteractionText = "Pickup";
+
+    [Header("Item")] 
+    public IItem? Item;
     [Min(0f)] public float interactionRadius = 2f;
-
-    [Header("Focus Visuals")] public bool tintRenderersOnFocus = true;
     public bool addTriggerColliderIfMissing = true;
-    public Color focusTint = new Color(1f, 0.9f, 0.35f, 1f);
 
-    public event Action<PlayerInventoryOwner> OnPickedUp;
-    public event Action<PlayerInventoryOwner, string> OnPickupFailed;
-
-    private Renderer[] _renderers;
-    private MaterialPropertyBlock _propertyBlock;
-    private bool _isFocused;
-
-    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-    private static readonly int ColorId = Shader.PropertyToID("_Color");
-
-    private void Reset() {
+    private void Reset()
+    {
         EnsureDiscoveryCollider();
     }
 
-    private void Awake() {
+    private void Awake()
+    {
         EnsureDiscoveryCollider();
-        CacheRenderers();
-        SetFocused(false, KeyCode.E);
     }
 
-    private void OnValidate() {
-        quantity = Mathf.Max(1, quantity);
+    private void OnValidate()
+    {
         interactionRadius = Mathf.Max(0f, interactionRadius);
     }
 
-    public bool Pickup(PlayerInventoryOwner player) {
-        if (!player) {
-            return FailPickup(null, "Player is null");
-        }
-
-        if (!isPickupable) {
-            return FailPickup(player, "Item is not pickupable");
-        }
-
-        if (!itemData && cardData == null) {
-            return FailPickup(player, "Item data is null");
-        }
-
-        if (!IsPlayerInRange(player)) {
-            return FailPickup(player, "Player is too far");
-        }
-
-        if (!player.TryPickup(this)) {
-            return FailPickup(player, "No room in hand or inventory");
-        }
-
-        OnPickedUp?.Invoke(player);
-        Destroy(gameObject);
-        return true;
-    }
-
-    public PickupDropVisual CaptureDropVisual() {
-        var prefab = itemData != null && itemData.dropPrefab ? itemData.dropPrefab : null;
-        return new PickupDropVisual(prefab, transform.localScale, focusTint, tintRenderersOnFocus);
-    }
-
-    public void SetPickupable(bool state) {
-        isPickupable = state;
-
-        if (!isPickupable) {
-            SetFocused(false, KeyCode.E);
-        }
-    }
-
-    public bool IsPlayerInRange(PlayerInventoryOwner player) {
-        return player && Vector3.Distance(transform.position, player.transform.position) <= interactionRadius;
-    }
-
-    public void SetFocused(bool focused, KeyCode pickupKey) {
-        _isFocused = focused && isPickupable;
-        ApplyFocusTint(_isFocused);
-    }
-
-    private bool FailPickup(PlayerInventoryOwner player, string reason) {
-        OnPickupFailed?.Invoke(player, reason);
-        return false;
-    }
-
-    private void CacheRenderers() {
-        _renderers = GetComponentsInChildren<Renderer>();
-        _propertyBlock = new MaterialPropertyBlock();
-    }
-
-    private void ApplyFocusTint(bool focused) {
-        if (!tintRenderersOnFocus || _renderers == null) {
+    public void Pickup(PlayerInventoryOwner player, InteractionType interactionType)
+    {
+        if (player == null || Item == null)
+        {
             return;
         }
 
-        foreach (Renderer itemRenderer in _renderers) {
-            if (!itemRenderer) {
-                continue;
-            }
+        bool pickedUp = interactionType switch
+        {
+            InteractionType.LeftHand => TrySetHand(player.leftHand),
+            InteractionType.RightHand => TrySetHand(player.rightHand),
+            _ => TrySetHand(player.leftHand) || TrySetHand(player.rightHand) || player.Inventory.TryAdd(Item)
+        };
 
-            itemRenderer.GetPropertyBlock(_propertyBlock);
-            if (focused) {
-                _propertyBlock.SetColor(BaseColorId, focusTint);
-                _propertyBlock.SetColor(ColorId, focusTint);
-            }
-            else {
-                _propertyBlock.Clear();
-            }
-
-            itemRenderer.SetPropertyBlock(_propertyBlock);
+        if (pickedUp)
+        {
+            Destroy(gameObject);
         }
     }
 
-    private void EnsureDiscoveryCollider() {
-        if (!addTriggerColliderIfMissing || GetComponentInChildren<Collider>() != null) {
+    public IList<Interaction> GetInteractions(Skeleton player)
+    {
+        if (!CanPickup(player))
+        {
+            return new List<Interaction>();
+        }
+
+        return new List<Interaction>
+        {
+            new(Item!.Name, InteractionText, type => Pickup(player.InventoryOwner, type))
+        };
+    }
+
+    private void EnsureDiscoveryCollider()
+    {
+        if (!addTriggerColliderIfMissing || GetComponentInChildren<Collider>() != null)
+        {
             return;
         }
 
@@ -129,8 +74,62 @@ public class Pickupable : MonoBehaviour {
         discoveryCollider.radius = Mathf.Max(0.1f, interactionRadius);
     }
 
-    private void OnDrawGizmosSelected() {
-        Gizmos.color = isPickupable ? Color.yellow : Color.gray;
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, interactionRadius);
+    }
+
+    private bool CanPickup(Skeleton player)
+    {
+        if (player?.InventoryOwner == null || Item == null || !IsPlayerInRange(player.InventoryOwner))
+        {
+            return false;
+        }
+
+        PlayerInventoryOwner owner = player.InventoryOwner;
+        return IsFree(owner.leftHand)
+            || IsFree(owner.rightHand)
+            || (Item.CanBePutInInventory && HasFreeInventorySlot(owner.Inventory));
+    }
+
+    private bool IsPlayerInRange(PlayerInventoryOwner player)
+    {
+        return player != null && Vector3.Distance(transform.position, player.transform.position) <= interactionRadius;
+    }
+
+    private bool TrySetHand(PlayerHand hand)
+    {
+        if (!IsFree(hand) || Item == null)
+        {
+            return false;
+        }
+
+        hand.SetItem(Item);
+        return true;
+    }
+
+    private static bool IsFree(PlayerHand hand)
+    {
+        return hand != null && !hand.HasItem;
+    }
+
+    private static bool HasFreeInventorySlot(Inventory inventory)
+    {
+        if (inventory == null)
+        {
+            return false;
+        }
+
+        IItem?[] items = inventory.Items;
+        for (int i = 0; i < items.Length; i++)
+        {
+            if (items[i] == null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
