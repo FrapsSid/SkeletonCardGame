@@ -29,13 +29,16 @@ public class BodyPart : MonoBehaviour
                 hand.SetItem(null);
             }
 
-            var inventoryOwner = currentHolder?.GetComponent<PlayerInventoryOwner>();
-            if (inventoryOwner != null)
+            if (currentHolder != null)
             {
-                if (Item.Type == BodyPartType.LeftArm)
-                    inventoryOwner.leftHand = null;
-                if (Item.Type == BodyPartType.RightArm)
-                    inventoryOwner.rightHand = null;
+                var inventoryOwner = currentHolder.GetComponent<PlayerInventoryOwner>();
+                if (inventoryOwner != null)
+                {
+                    if (Item.Type == BodyPartType.LeftArm)
+                        inventoryOwner.leftHand = null;
+                    if (Item.Type == BodyPartType.RightArm)
+                        inventoryOwner.rightHand = null;
+                }
             }
         }
 
