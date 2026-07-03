@@ -50,7 +50,8 @@ public class PlayerInteractor : MonoBehaviour
             return;
         }
 
-        if (TryGetMouseButtonInteractionType(out InteractionType interactionType)
+        if (!IsAnyUiOpen()
+            && TryGetMouseButtonInteractionType(out InteractionType interactionType)
             && TryGetSingleMouseButtonInteraction(out Interaction interaction))
         {
             interaction.Callback(interactionType);
@@ -232,6 +233,11 @@ public class PlayerInteractor : MonoBehaviour
         {
             return false;
         }
+    }
+
+    private bool IsAnyUiOpen()
+    {
+        return _uiStateController != null && _uiStateController.AnyUiOpen;
     }
 
     private bool TryGetFirstPersonInteractable(out IInteractable? interactable)
