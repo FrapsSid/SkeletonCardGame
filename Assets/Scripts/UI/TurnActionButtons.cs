@@ -10,6 +10,9 @@ using CardGameRound = CardGame.Round;
 [DisallowMultipleComponent]
 public class TurnActionButtons : MonoBehaviour
 {
+    public event Action LocalPlayerTurnStarted;
+    public event Action LocalPlayerTurnEnded;
+
     [Header("Game")]
     [SerializeField] private GameManager gameManager = null;
 
@@ -32,6 +35,15 @@ public class TurnActionButtons : MonoBehaviour
             bool canvasVisible = rootCanvas == null || rootCanvas.enabled;
             bool groupVisible = canvasGroup == null || canvasGroup.alpha > 0.001f;
             return isActiveAndEnabled && canvasVisible && groupVisible;
+        }
+    }
+
+    public bool CanShowForLocalPlayer
+    {
+        get
+        {
+            return TryGetActionContext(out CardGameRound round, out Skeleton localPlayer)
+                && CanLocalPlayerAct(round, localPlayer);
         }
     }
 
@@ -252,8 +264,8 @@ public class TurnActionButtons : MonoBehaviour
         subscribedGame.OnPriceMatched += HandlePriceChanged;
         subscribedGame.OnPriceRaised += HandlePriceChanged;
         subscribedGame.OnPlayerFolded += HandlePlayerChanged;
-        subscribedGame.OnTurnStarted += HandlePlayerChanged;
-        subscribedGame.OnTurnEnded += HandlePlayerChanged;
+        subscribedGame.OnTurnStarted += HandleTurnStarted;
+        subscribedGame.OnTurnEnded += HandleTurnEnded;
         subscribedGame.OnCardTaken += HandleCardTaken;
         subscribedGame.OnTableCardsDealt += HandleTableCardsDealt;
     }
@@ -271,8 +283,8 @@ public class TurnActionButtons : MonoBehaviour
         subscribedGame.OnPriceMatched -= HandlePriceChanged;
         subscribedGame.OnPriceRaised -= HandlePriceChanged;
         subscribedGame.OnPlayerFolded -= HandlePlayerChanged;
-        subscribedGame.OnTurnStarted -= HandlePlayerChanged;
-        subscribedGame.OnTurnEnded -= HandlePlayerChanged;
+        subscribedGame.OnTurnStarted -= HandleTurnStarted;
+        subscribedGame.OnTurnEnded -= HandleTurnEnded;
         subscribedGame.OnCardTaken -= HandleCardTaken;
         subscribedGame.OnTableCardsDealt -= HandleTableCardsDealt;
         subscribedGame = null;
@@ -359,6 +371,22 @@ public class TurnActionButtons : MonoBehaviour
     private void HandlePlayerChanged(Skeleton player)
     {
         RefreshButtons();
+    }
+
+    private void HandleTurnStarted(Skeleton player)
+    {
+        RefreshButtons();
+
+        if (player == gameManager.LocalPlayer && CanShowForLocalPlayer)
+            LocalPlayerTurnStarted?.Invoke();
+    }
+
+    private void HandleTurnEnded(Skeleton player)
+    {
+        RefreshButtons();
+
+        if (player == gameManager.LocalPlayer)
+            LocalPlayerTurnEnded?.Invoke();
     }
 
     private void HandleCardTaken(Skeleton player, CardData card)

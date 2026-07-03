@@ -39,17 +39,30 @@ public sealed class UIStateController : MonoBehaviour
     {
         if (interactionMenuSurface != null)
             interactionMenuSurface.InteractionSelected += CloseInteractionMenu;
+
+        if (turnSurface != null)
+        {
+            turnSurface.LocalPlayerTurnStarted += OpenTurnUi;
+            turnSurface.LocalPlayerTurnEnded += CloseTurnUi;
+        }
     }
 
     private void OnDisable()
     {
         if (interactionMenuSurface != null)
             interactionMenuSurface.InteractionSelected -= CloseInteractionMenu;
+
+        if (turnSurface != null)
+        {
+            turnSurface.LocalPlayerTurnStarted -= OpenTurnUi;
+            turnSurface.LocalPlayerTurnEnded -= CloseTurnUi;
+        }
     }
 
     private void Start()
     {
         CaptureInitialBaseState();
+        turnUiOpen = turnSurface.CanShowForLocalPlayer;
         ApplyBaseLayer();
     }
 
@@ -78,6 +91,9 @@ public sealed class UIStateController : MonoBehaviour
 
     public void OpenTurnUi()
     {
+        if (!turnSurface.CanShowForLocalPlayer)
+            return;
+
         turnUiOpen = true;
         ApplyBaseLayer();
     }
@@ -90,8 +106,10 @@ public sealed class UIStateController : MonoBehaviour
 
     public void ToggleTurnUi()
     {
-        turnUiOpen = !turnUiOpen;
-        ApplyBaseLayer();
+        if (turnUiOpen)
+            CloseTurnUi();
+        else
+            OpenTurnUi();
     }
 
     public void OpenBetting()
