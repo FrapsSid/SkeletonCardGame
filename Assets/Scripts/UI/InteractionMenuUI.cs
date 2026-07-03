@@ -72,7 +72,7 @@ public sealed class InteractionMenuUI : MonoBehaviour
             Button button = Instantiate(buttonPrefab, root);
             createdButtons.Add(button.gameObject);
             PositionButton(button, i);
-            SetButtonText(button, interaction.Text);
+            SetButtonText(button, $"{interaction.Source}: {interaction.Text}");
             ConfigureButton(button, interaction);
         }
 
