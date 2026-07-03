@@ -7,6 +7,8 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class PlayerTableCardStacks : MonoBehaviour
 {
+    private static readonly Quaternion FaceDownRotation = Quaternion.Euler(0f, 180f, 0f);
+
     [SerializeField] private TablePositions? tablePositions;
     [SerializeField] private CardStack? cardStackPrefab;
     [SerializeField] private Transform? stackParent;
@@ -208,7 +210,7 @@ public sealed class PlayerTableCardStacks : MonoBehaviour
     private void MoveStackToPlayerPosition(Skeleton player, CardStack stack)
     {
         Transform position = RequireTablePositions().GetPlayerDealCardPosition(player);
-        stack.transform.SetPositionAndRotation(position.position, position.rotation);
+        stack.transform.SetPositionAndRotation(position.position, position.rotation * FaceDownRotation);
     }
 
     private TablePositions RequireTablePositions()
