@@ -12,6 +12,7 @@ public sealed class UIStateController : MonoBehaviour
     {
         None,
         Betting,
+        InteractionMenu,
         EscapeMenu,
         Settings
     }
@@ -22,6 +23,7 @@ public sealed class UIStateController : MonoBehaviour
 
     [Header("Modal UI")]
     [SerializeField] private BettingCanvasUI bettingSurface = null!;
+    [SerializeField] private InteractionMenuUI interactionMenuSurface = null!;
     [SerializeField] private CanvasToggle escapeMenuSurface = null!;
     [SerializeField] private CanvasToggle settingsSurface = null!;
 
@@ -32,6 +34,19 @@ public sealed class UIStateController : MonoBehaviour
 
     public bool AnyUiOpen => HasVisibleUiOpen();
     public bool IsInventoryOpen => inventoryOpen;
+
+    private void OnEnable()
+    {
+        if (interactionMenuSurface != null)
+            interactionMenuSurface.InteractionSelected += CloseInteractionMenu;
+    }
+
+    private void OnDisable()
+    {
+        if (interactionMenuSurface != null)
+            interactionMenuSurface.InteractionSelected -= CloseInteractionMenu;
+    }
+
     private void Start()
     {
         CaptureInitialBaseState();
@@ -140,7 +155,23 @@ public sealed class UIStateController : MonoBehaviour
 
     public void OpenInteractionMenu(IList<Interaction> interactions)
     {
-        //TODO
+        if (interactionMenuSurface == null)
+        {
+            Debug.LogWarning($"{nameof(UIStateController)} has no interaction menu surface assigned.", this);
+            return;
+        }
+
+        if (interactions.Count == 0)
+            return;
+
+        if (openModal != ModalUi.InteractionMenu)
+        {
+            CloseModal();
+            openModal = ModalUi.InteractionMenu;
+            ApplyBaseLayer();
+        }
+
+        interactionMenuSurface.Show(interactions);
     }
 
     public void HandleEsc()
@@ -188,6 +219,10 @@ public sealed class UIStateController : MonoBehaviour
         {
             case ModalUi.Betting:
                 bettingSurface.Hide();
+                break;
+            case ModalUi.InteractionMenu:
+                if (interactionMenuSurface != null)
+                    interactionMenuSurface.Hide();
                 break;
             case ModalUi.EscapeMenu:
                 escapeMenuSurface.Hide();
@@ -247,7 +282,21 @@ public sealed class UIStateController : MonoBehaviour
         return inventorySurface.IsVisible
             || turnSurface.IsVisible
             || bettingSurface.IsOpen
+            || (interactionMenuSurface != null && interactionMenuSurface.IsVisible)
             || escapeMenuSurface.IsVisible
             || (settingsSurface != null && settingsSurface.IsVisible);
+    }
+
+    private void CloseInteractionMenu()
+    {
+        if (openModal != ModalUi.InteractionMenu)
+        {
+            if (interactionMenuSurface != null)
+                interactionMenuSurface.Hide();
+            return;
+        }
+
+        CloseModal();
+        ApplyBaseLayer();
     }
 }
