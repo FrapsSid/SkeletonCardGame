@@ -22,6 +22,7 @@ public class CardsItem : IItem
 
     public string Name => "Cards";
     public string Description => "Cards";
+    public bool CanBePutInInventory => false;
 
     public GameObject CreateHeldObject()
     {

@@ -5,6 +5,7 @@ public class SimpleItem : IItem
     private readonly GameObject _prefab;
     public string Name { get; }
     public string Description { get; }
+    public bool CanBePutInInventory => true;
 
     public SimpleItem(string name, string description, GameObject prefab)
     {

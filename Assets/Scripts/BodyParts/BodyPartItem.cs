@@ -18,6 +18,7 @@ public sealed class BodyPartItem : IItem
 
     public string Name => Type.ToString();
     public string Description => $"{OriginalOwner}'s {Type}";
+    public bool CanBePutInInventory => Type != BodyPartType.Head;
 
     public GameObject CreateHeldObject()
     {

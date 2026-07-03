@@ -88,7 +88,9 @@ public class Pickupable : MonoBehaviour, IInteractable
         }
 
         PlayerInventoryOwner owner = player.InventoryOwner;
-        return IsFree(owner.leftHand) || IsFree(owner.rightHand) || HasFreeInventorySlot(owner.Inventory);
+        return IsFree(owner.leftHand)
+            || IsFree(owner.rightHand)
+            || (Item.CanBePutInInventory && HasFreeInventorySlot(owner.Inventory));
     }
 
     private bool IsPlayerInRange(PlayerInventoryOwner player)

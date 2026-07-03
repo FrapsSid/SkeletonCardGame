@@ -49,6 +49,11 @@ public class Inventory : MonoBehaviour
         }
 
         EnsureItems();
+        if (hand.Item != null && !hand.Item.CanBePutInInventory)
+        {
+            return;
+        }
+
         IItem? inventoryItem = Items[slot];
         Items[slot] = hand.Item;
         hand.SetItem(inventoryItem);
@@ -56,6 +61,11 @@ public class Inventory : MonoBehaviour
 
     public bool TryAdd(IItem item)
     {
+        if (!item.CanBePutInInventory)
+        {
+            return false;
+        }
+
         EnsureItems();
 
         for (int i = 0; i < Items.Length; i++)
