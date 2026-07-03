@@ -38,9 +38,9 @@ public class Pickupable : MonoBehaviour, IInteractable
 
         bool pickedUp = interactionType switch
         {
-            InteractionType.LeftHand => TrySetHand(player.LeftHand),
-            InteractionType.RightHand => TrySetHand(player.RightHand),
-            _ => TrySetHand(player.LeftHand) || TrySetHand(player.RightHand) || player.Inventory.TryAdd(Item)
+            InteractionType.LeftHand => TrySetHand(player.leftHand),
+            InteractionType.RightHand => TrySetHand(player.rightHand),
+            _ => TrySetHand(player.leftHand) || TrySetHand(player.rightHand) || player.Inventory.TryAdd(Item)
         };
 
         if (pickedUp)
@@ -88,7 +88,7 @@ public class Pickupable : MonoBehaviour, IInteractable
         }
 
         PlayerInventoryOwner owner = player.InventoryOwner;
-        return IsFree(owner.LeftHand) || IsFree(owner.RightHand) || HasFreeInventorySlot(owner.Inventory);
+        return IsFree(owner.leftHand) || IsFree(owner.rightHand) || HasFreeInventorySlot(owner.Inventory);
     }
 
     private bool IsPlayerInRange(PlayerInventoryOwner player)

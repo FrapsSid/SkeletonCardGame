@@ -15,6 +15,7 @@ public class SkeletonBody : MonoBehaviour
     public Transform rightArmBone;
     public Transform leftLegBone;
     public Transform rightLegBone;
+    public Transform torsoBone;
 
     public bool IsIncapacitated => !HasSoul();
     public bool CanHoldCards => GetArmCount() > 0;
@@ -24,7 +25,7 @@ public class SkeletonBody : MonoBehaviour
         BodyPart[] initialParts = GetComponentsInChildren<BodyPart>();
         foreach (var part in initialParts)
         {
-            _attachedParts[part.Item.Type] = part;
+            AttachPart(part);
         }
     }
 
@@ -92,6 +93,7 @@ public class SkeletonBody : MonoBehaviour
             BodyPartType.RightArm => rightArmBone,
             BodyPartType.LeftLeg => leftLegBone,
             BodyPartType.RightLeg => rightLegBone,
+            BodyPartType.Torso => torsoBone,
             _ => transform
         };
     }

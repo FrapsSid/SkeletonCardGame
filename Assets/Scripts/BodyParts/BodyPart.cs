@@ -15,11 +15,31 @@ public class BodyPart : MonoBehaviour
 
     public void Detach()
     {
-        currentHolder = null;
         State = BodyPartState.Detached;
         transform.SetParent(null);
         SetColliderEnabled(true);
         EnableWorldPickup();
+        if (Item.Type == BodyPartType.LeftArm || Item.Type == BodyPartType.RightArm)
+        {
+            var hand = GetComponent<PlayerHand>();
+            var item = hand?.Item;
+            if (hand != null && item != null)
+            {
+                ItemUtils.DropItem(item, hand.transform.position, Quaternion.identity);
+                hand.SetItem(null);
+            }
+
+            var inventoryOwner = currentHolder?.GetComponent<PlayerInventoryOwner>();
+            if (inventoryOwner != null)
+            {
+                if (Item.Type == BodyPartType.LeftArm)
+                    inventoryOwner.leftHand = null;
+                if (Item.Type == BodyPartType.RightArm)
+                    inventoryOwner.rightHand = null;
+            }
+        }
+
+        currentHolder = null;
     }
 
     public void Attach(GameObject newOwner, Transform boneParent)
@@ -32,6 +52,19 @@ public class BodyPart : MonoBehaviour
         transform.SetParent(boneParent);
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
+
+        if (Item.Type == BodyPartType.LeftArm || Item.Type == BodyPartType.RightArm)
+        {
+            var hand = GetComponent<PlayerHand>();
+            var inventoryOwner = currentHolder?.GetComponent<PlayerInventoryOwner>();
+            if (inventoryOwner != null)
+            {
+                if (Item.Type == BodyPartType.LeftArm)
+                    inventoryOwner.leftHand = hand;
+                if (Item.Type == BodyPartType.RightArm)
+                    inventoryOwner.rightHand = hand;
+            }
+        }
     }
 
     private void SetColliderEnabled(bool enabled)
