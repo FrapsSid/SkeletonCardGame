@@ -51,7 +51,6 @@ GameObject:
   - component: {fileID: 2851626775133165417}
   - component: {fileID: 6659019729551723838}
   - component: {fileID: 3896716528124093602}
-  - component: {fileID: 4616984950878446715}
   m_Layer: 0
   m_Name: BasePlayerPrefab
   m_TagString: Untagged
@@ -313,18 +312,6 @@ MonoBehaviour:
   heldItemLocalPosition: {x: 0.35, y: 1.15, z: 0.55}
   heldItemLocalEulerAngles: {x: 15, y: 25, z: 0}
   heldItemLocalScale: {x: 0.35, y: 0.35, z: 0.35}
---- !u!114 &4616984950878446715
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 585361176538992301}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dafe59e60deb11b49884b8a795b83cd8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerHandInput
 --- !u!1 &2120465651696651453
 GameObject:
   m_ObjectHideFlags: 0
@@ -590,7 +577,7 @@ Transform:
   m_GameObject: {fileID: 3117075400272018584}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.94782, y: 2.81974, z: -4.59828}
+  m_LocalPosition: {x: 2.24782, y: 2.0647402, z: -0.6022799}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
