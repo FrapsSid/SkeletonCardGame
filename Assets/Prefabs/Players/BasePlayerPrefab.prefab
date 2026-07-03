@@ -256,7 +256,7 @@ MonoBehaviour:
   firstPersonMaxPitch: 80
   playerController: {fileID: 6659019729551723838}
   uiStateController: {fileID: 0}
-  _skeletonBody: {fileID: 0}
+  _skeletonBody: {fileID: 669271470891616885}
   skullRenderer: {fileID: 0}
 --- !u!114 &2851626775133165417
 MonoBehaviour:
