@@ -11,6 +11,13 @@ public static class ItemUtils
         {
             return;
         }
+
+        Pickupable pickupable = droppedObject.GetComponent<Pickupable>();
+        if (pickupable != null && pickupable.Item == null)
+        {
+            pickupable.Item = item;
+        }
+
         droppedObject.transform.SetPositionAndRotation(position, rotation);
     }
 

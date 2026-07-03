@@ -51,10 +51,18 @@ public class PlayerInteractor : MonoBehaviour
         }
 
         if (!IsAnyUiOpen()
-            && TryGetMouseButtonInteractionType(out InteractionType interactionType)
-            && TryGetSingleMouseButtonInteraction(out Interaction interaction))
+            && TryGetMouseButtonInteractionType(out InteractionType interactionType))
         {
-            interaction.Callback(interactionType);
+            if (TryGetSingleMouseButtonInteraction(out Interaction interaction))
+            {
+                interaction.Callback(interactionType);
+                return;
+            }
+
+            if (!HasMouseButtonInteractions())
+            {
+                DropSelectedHandItem(interactionType);
+            }
         }
     }
 
@@ -192,6 +200,19 @@ public class PlayerInteractor : MonoBehaviour
         return found;
     }
 
+    private bool HasMouseButtonInteractions()
+    {
+        for (int i = 0; i < _interactions.Count; i++)
+        {
+            if (_interactions[i].AllowMouseButtonInteraction)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static bool TryGetMouseButtonInteractionType(out InteractionType interactionType)
     {
         if (WasMouseButtonPressedThisFrame(0))
@@ -238,6 +259,25 @@ public class PlayerInteractor : MonoBehaviour
     private bool IsAnyUiOpen()
     {
         return _uiStateController != null && _uiStateController.AnyUiOpen;
+    }
+
+    private void DropSelectedHandItem(InteractionType interactionType)
+    {
+        PlayerHand? hand = interactionType switch
+        {
+            InteractionType.LeftHand => _inventoryOwner.leftHand,
+            InteractionType.RightHand => _inventoryOwner.rightHand,
+            _ => null
+        };
+
+        IItem? item = hand?.Item;
+        if (hand == null || item == null || item is CardsItem)
+        {
+            return;
+        }
+
+        ItemUtils.DropItem(item, hand.transform.position, hand.transform.rotation);
+        hand.SetItem(null);
     }
 
     private bool TryGetFirstPersonInteractable(out IInteractable? interactable)
