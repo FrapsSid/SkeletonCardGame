@@ -2,5 +2,5 @@
 
 namespace Interactions
 {
-    public record Interaction(string Source, string Text, Action<InteractionType> Callback);
+    public record Interaction(string Source, string Text, Action<InteractionType> Callback, bool AllowMouseButtonInteraction = true);
 }

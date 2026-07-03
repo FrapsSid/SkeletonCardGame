@@ -1,8 +1,12 @@
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Interactions;
 using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(PlayerInventoryOwner))]
@@ -19,6 +23,7 @@ public class PlayerInteractor : MonoBehaviour
     private List<Interaction> _interactions = new();
 
     public IReadOnlyList<Interaction> Interactions => _interactions.AsReadOnly();
+    public bool HasInteractions => _interactions.Count > 0;
 
     private void Awake()
     {
@@ -37,7 +42,31 @@ public class PlayerInteractor : MonoBehaviour
         if (InputKeyUtils.WasPressedThisFrame(interactionKey))
         {
             OpenInteractions();
+            return;
         }
+
+        if (TryGetMouseButtonInteractionType(out InteractionType interactionType)
+            && TryGetSingleMouseButtonInteraction(out Interaction interaction))
+        {
+            interaction.Callback(interactionType);
+        }
+    }
+
+    public bool TryGetSingleInteraction(out Interaction interaction)
+    {
+        if (_interactions.Count != 1)
+        {
+            interaction = default!;
+            return false;
+        }
+
+        interaction = _interactions[0];
+        return true;
+    }
+
+    public bool ShouldOpenInteractionMenu()
+    {
+        return _interactions.Count > 1;
     }
 
     private List<Interaction> GatherInteractions(Skeleton player, bool firstPerson)
@@ -73,24 +102,95 @@ public class PlayerInteractor : MonoBehaviour
             }
         }
 
-        System.Array.Clear(_overlapResults, 0, hitCount);
+        Array.Clear(_overlapResults, 0, hitCount);
         return interactions;
     }
 
     private void OpenInteractions()
     {
-        if (_interactions.Count == 0)
+        if (!HasInteractions)
         {
             return;
         }
 
-        if (_interactions.Count == 1)
+        if (TryGetSingleInteraction(out Interaction interaction))
         {
-            _interactions[0].Callback(InteractionType.Other);
+            interaction.Callback(InteractionType.Other);
             return;
         }
 
-        _uiStateController?.OpenInteractionMenu(_interactions);
+        if (ShouldOpenInteractionMenu())
+        {
+            _uiStateController?.OpenInteractionMenu(_interactions);
+        }
+    }
+
+    public bool TryGetSingleMouseButtonInteraction(out Interaction interaction)
+    {
+        interaction = default!;
+        bool found = false;
+        for (int i = 0; i < _interactions.Count; i++)
+        {
+            Interaction candidate = _interactions[i];
+            if (!candidate.AllowMouseButtonInteraction)
+            {
+                continue;
+            }
+
+            if (found)
+            {
+                interaction = default!;
+                return false;
+            }
+
+            interaction = candidate;
+            found = true;
+        }
+
+        return found;
+    }
+
+    private static bool TryGetMouseButtonInteractionType(out InteractionType interactionType)
+    {
+        if (WasMouseButtonPressedThisFrame(0))
+        {
+            interactionType = InteractionType.LeftHand;
+            return true;
+        }
+
+        if (WasMouseButtonPressedThisFrame(1))
+        {
+            interactionType = InteractionType.RightHand;
+            return true;
+        }
+
+        interactionType = InteractionType.Other;
+        return false;
+    }
+
+    private static bool WasMouseButtonPressedThisFrame(int button)
+    {
+#if ENABLE_INPUT_SYSTEM
+        Mouse mouse = Mouse.current;
+        if (mouse != null)
+        {
+            return button switch
+            {
+                0 => mouse.leftButton.wasPressedThisFrame,
+                1 => mouse.rightButton.wasPressedThisFrame,
+                _ => false
+            };
+        }
+#endif
+
+        try
+        {
+            return Input.GetMouseButtonDown(button);
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
     }
 
     private bool TryGetFirstPersonInteractable(out IInteractable? interactable)
