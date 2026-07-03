@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Cinemachine;
@@ -52,6 +53,8 @@ public class CameraController : MonoBehaviour
     private float _fpYawVelocity;
     private float _fpPitchVelocity;
     private bool _isFirstPerson;
+    private readonly List<Renderer> _hiddenBodyRenderers = new();
+    private PlayerHand _playerHand;
 
     public bool IsFirstPerson => _isFirstPerson;
 
@@ -63,6 +66,16 @@ public class CameraController : MonoBehaviour
         }
 
         _input = GetComponentInParent<InputReader>();
+        _playerHand = GetComponentInParent<PlayerHand>();
+        if (_skeletonBody == null)
+        {
+            _skeletonBody = GetComponentInParent<SkeletonBody>();
+        }
+
+        if (_skeletonBody != null)
+        {
+            _skeletonBody.OnBodyChanged += HandleBodyChanged;
+        }
 
         if (thirdPersonPivot != null)
         {
@@ -71,6 +84,19 @@ public class CameraController : MonoBehaviour
         }
 
         SetFirstPerson(false);
+    }
+
+    private void OnDisable()
+    {
+        SetLocalBodyVisible(true);
+    }
+
+    private void OnDestroy()
+    {
+        if (_skeletonBody != null)
+        {
+            _skeletonBody.OnBodyChanged -= HandleBodyChanged;
+        }
     }
 
     private void Update()
@@ -177,6 +203,8 @@ public class CameraController : MonoBehaviour
             playerController.SetFirstPersonLock(enable);
         }
 
+        SetLocalBodyVisible(!enable);
+
         if (enable)
         {
             _fpYaw = playerController != null ? playerController.transform.eulerAngles.y : transform.eulerAngles.y;
@@ -203,5 +231,45 @@ public class CameraController : MonoBehaviour
     private bool IsAnyUiOpen()
     {
         return uiStateController.AnyUiOpen;
+    }
+
+    private void HandleBodyChanged()
+    {
+        if (_isFirstPerson)
+        {
+            SetLocalBodyVisible(false);
+        }
+    }
+
+    private void SetLocalBodyVisible(bool visible)
+    {
+        for (int i = 0; i < _hiddenBodyRenderers.Count; i++)
+        {
+            Renderer renderer = _hiddenBodyRenderers[i];
+            if (renderer != null)
+            {
+                renderer.enabled = true;
+            }
+        }
+
+        _hiddenBodyRenderers.Clear();
+
+        if (visible || _skeletonBody == null)
+        {
+            return;
+        }
+
+        Renderer[] renderers = _skeletonBody.GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer renderer = renderers[i];
+            if (!renderer.enabled || (_playerHand != null && _playerHand.ContainsHeldItemRenderer(renderer)))
+            {
+                continue;
+            }
+
+            renderer.enabled = false;
+            _hiddenBodyRenderers.Add(renderer);
+        }
     }
 }

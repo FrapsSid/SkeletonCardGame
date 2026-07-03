@@ -15,6 +15,11 @@ public class PlayerHand : MonoBehaviour {
     public IItem? Item => _item;
     public bool HasItem => _item != null;
 
+    public bool ContainsHeldItemRenderer(Renderer renderer) {
+        return _heldItemVisual != null
+            && (renderer.transform == _heldItemVisual.transform || renderer.transform.IsChildOf(_heldItemVisual.transform));
+    }
+
     private void Awake() {
         RefreshHeldItemVisual();
     }
