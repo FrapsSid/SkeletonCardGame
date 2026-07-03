@@ -575,8 +575,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3117075400272018584}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: 2.5478199, y: 2.22974, z: -4.59828}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.24782, y: 2.0647402, z: -0.6022799}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1227,17 +1227,9 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 9083751063234475161, guid: 173be4aae0cc1d94fab62a00569ba82b, type: 3}
-      insertIndex: -1
+      insertIndex: 3
       addedObject: {fileID: 6020884522737298680}
-    - targetCorrespondingSourceObject: {fileID: 9083751063234475161, guid: 173be4aae0cc1d94fab62a00569ba82b, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 467949499343903578}
   m_SourcePrefab: {fileID: 100100000, guid: 173be4aae0cc1d94fab62a00569ba82b, type: 3}
---- !u!4 &98998755084466848 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1881838256758160832, guid: 173be4aae0cc1d94fab62a00569ba82b, type: 3}
-  m_PrefabInstance: {fileID: 1964157930945939296}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7038390017492939448 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8858428001128216024, guid: 173be4aae0cc1d94fab62a00569ba82b, type: 3}
@@ -1262,22 +1254,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BodyParts.BodyPartInit
   prefab: {fileID: 9083751063234475161, guid: 173be4aae0cc1d94fab62a00569ba82b, type: 3}
   type: 2
---- !u!114 &467949499343903578
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7299737194852676601}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 81a42411efae5be47947b126fc2f4927, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerHand
-  heldItemAnchor: {fileID: 98998755084466848}
-  heldItemLocalPosition: {x: 0.35, y: 1.15, z: 0.55}
-  heldItemLocalEulerAngles: {x: 15, y: 25, z: 0}
-  heldItemLocalScale: {x: 0.35, y: 0.35, z: 0.35}
 --- !u!1001 &4472641810573648674
 PrefabInstance:
   m_ObjectHideFlags: 0

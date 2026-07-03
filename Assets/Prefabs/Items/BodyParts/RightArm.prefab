@@ -191,6 +191,7 @@ GameObject:
   - component: {fileID: 8858428001128216024}
   - component: {fileID: 2221861952161177863}
   - component: {fileID: 3692909266490501431}
+  - component: {fileID: 2106676014514674746}
   m_Layer: 0
   m_Name: RightArm
   m_TagString: Untagged
@@ -252,6 +253,22 @@ CapsuleCollider:
   m_Height: 1.0523005
   m_Direction: 1
   m_Center: {x: 0.0018336773, y: -0.5200038, z: -0.029221416}
+--- !u!114 &2106676014514674746
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9083751063234475161}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81a42411efae5be47947b126fc2f4927, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHand
+  heldItemAnchor: {fileID: 1881838256758160832}
+  heldItemLocalPosition: {x: 0.35, y: 1.15, z: 0.55}
+  heldItemLocalEulerAngles: {x: 15, y: 25, z: 0}
+  heldItemLocalScale: {x: 1, y: 1, z: 1}
 --- !u!1 &9205552950607361759
 GameObject:
   m_ObjectHideFlags: 0
