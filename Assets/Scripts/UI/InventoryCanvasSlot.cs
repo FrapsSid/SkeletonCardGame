@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 
 [AddComponentMenu("UI/Inventory Canvas Slot")]
 [DisallowMultipleComponent]
-public class InventoryCanvasSlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class InventoryCanvasSlot : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     private InventoryCanvasUI owner;
 
@@ -18,6 +18,11 @@ public class InventoryCanvasSlot : MonoBehaviour, IBeginDragHandler, IDragHandle
     public bool BelongsTo(InventoryCanvasUI inventoryOwner)
     {
         return owner == inventoryOwner;
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        owner?.ClickSlot(this, eventData);
     }
 
     public void OnBeginDrag(PointerEventData eventData)

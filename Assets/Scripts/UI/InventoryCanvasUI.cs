@@ -136,6 +136,29 @@ public class InventoryCanvasUI : MonoBehaviour
         }
     }
 
+    public void ClickSlot(InventoryCanvasSlot slot, PointerEventData eventData)
+    {
+        if (inventory == null || inventoryOwner == null || slot == null || !slot.BelongsTo(this))
+        {
+            return;
+        }
+
+        PlayerHand? hand = eventData.button switch
+        {
+            PointerEventData.InputButton.Left => inventoryOwner.leftHand,
+            PointerEventData.InputButton.Right => inventoryOwner.rightHand,
+            _ => null
+        };
+
+        if (hand == null)
+        {
+            return;
+        }
+
+        inventory.SwapWithHand(hand, slot.SlotIndex);
+        Refresh();
+    }
+
     public void BeginDragSlot(InventoryCanvasSlot slot, PointerEventData eventData)
     {
         if (inventory == null || slot == null || !slot.BelongsTo(this) || !HasItem(slot.SlotIndex))
@@ -208,6 +231,7 @@ public class InventoryCanvasUI : MonoBehaviour
 
         if (inventory != null)
         {
+            inventoryOwner = inventoryOwner != null ? inventoryOwner : inventory.GetComponent<PlayerInventoryOwner>();
             return true;
         }
 
