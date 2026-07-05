@@ -260,6 +260,7 @@ MonoBehaviour:
   uiStateController: {fileID: 0}
   _skeletonBody: {fileID: 669271470891616885}
   skullRenderer: {fileID: 0}
+  thirdPersonFilterFeature: {fileID: -3625499942535467462, guid: f288ae1f4751b564a96ac7587541f7a2, type: 2}
 --- !u!114 &2851626775133165417
 MonoBehaviour:
   m_ObjectHideFlags: 0

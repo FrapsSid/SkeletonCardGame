@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Cinemachine;
+using System;
+using UnityEngine.Rendering.Universal;
 
 public class CameraController : MonoBehaviour
 {
@@ -38,6 +40,8 @@ public class CameraController : MonoBehaviour
     [Header("Player Body")]
     public SkeletonBody _skeletonBody;
     public Renderer skullRenderer;
+    [Header("Rendering")]
+    [SerializeField] private ScriptableRendererFeature thirdPersonFilterFeature;
 
     private InputReader _input;
     private float _yaw;
@@ -56,8 +60,9 @@ public class CameraController : MonoBehaviour
     private readonly List<Renderer> _hiddenBodyRenderers = new();
     private PlayerHand _playerHand;
     private BodyPartItem _firstPersonBodyPartItem;
-
     public bool IsFirstPerson => _isFirstPerson;
+    public static event Action<bool> PerspectiveChanged;
+    public static bool IsFirstPersonActive { get; private set; }
 
     private void Awake()
     {
@@ -96,6 +101,10 @@ public class CameraController : MonoBehaviour
     private void OnDisable()
     {
         SetLocalBodyVisible(true);
+        if (thirdPersonFilterFeature != null)
+        {
+            thirdPersonFilterFeature.SetActive(false); 
+        }
     }
 
     private void OnDestroy()
@@ -103,6 +112,10 @@ public class CameraController : MonoBehaviour
         if (_skeletonBody != null)
         {
             _skeletonBody.OnBodyChanged -= HandleBodyChanged;
+        }
+        if (thirdPersonFilterFeature != null)
+        {
+            thirdPersonFilterFeature.SetActive(false); 
         }
     }
 
@@ -202,6 +215,8 @@ public class CameraController : MonoBehaviour
     private void SetFirstPerson(bool enable)
     {
         _isFirstPerson = enable;
+        IsFirstPersonActive = enable;
+        PerspectiveChanged?.Invoke(enable);
 
         if (thirdPersonCam != null)
         {
@@ -216,6 +231,11 @@ public class CameraController : MonoBehaviour
         if (playerController != null)
         {
             playerController.SetFirstPersonLock(enable);
+        }
+
+        if (thirdPersonFilterFeature != null)
+        {
+            thirdPersonFilterFeature.SetActive(!enable);
         }
 
         SetLocalBodyVisible(!enable);

@@ -11,7 +11,6 @@ using UnityEngine.Rendering;
 public sealed class WorldCardView : MonoBehaviour
 {
     private const float MinimumSize = 0.01f;
-
     private static readonly int MainTextureId = Shader.PropertyToID("_MainTex");
     private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -22,6 +21,8 @@ public sealed class WorldCardView : MonoBehaviour
     private static readonly int SrcBlendId = Shader.PropertyToID("_SrcBlend");
     private static readonly int DstBlendId = Shader.PropertyToID("_DstBlend");
     private static readonly int ZWriteId = Shader.PropertyToID("_ZWrite");
+    private static readonly int AlphaClipId = Shader.PropertyToID("_AlphaClip");
+    private static readonly int CutoffId = Shader.PropertyToID("_Cutoff");
 
     private static readonly int[] FrontTriangles = { 0, 1, 2, 0, 2, 3 };
     private static readonly int[] BackTriangles = { 4, 5, 6, 4, 6, 7 };
@@ -35,6 +36,11 @@ public sealed class WorldCardView : MonoBehaviour
     [SerializeField] private Vector2 size = new Vector2(0.7f, 1f);
     [SerializeField, Min(0f)] private float thickness = 0.01f;
     [SerializeField] private Material? materialTemplate;
+    [SerializeField] private Material? thirdPersonFrontMaterial;
+    [SerializeField] private GameObject glitch;
+
+    private bool _isFirstPerson;
+    private bool _subscribedToPerspective;
 
     private MeshFilter? _meshFilter;
     private MeshRenderer? _meshRenderer;
@@ -55,7 +61,22 @@ public sealed class WorldCardView : MonoBehaviour
 
     private void OnEnable()
     {
+        if (!_subscribedToPerspective)
+        {
+            CameraController.PerspectiveChanged += HandlePerspectiveChanged;
+            _subscribedToPerspective = true;
+        }
+
+        _isFirstPerson = CameraController.IsFirstPersonActive;
         Refresh();
+    }
+    private void OnDisable()
+    {
+        if (_subscribedToPerspective)
+        {
+            CameraController.PerspectiveChanged -= HandlePerspectiveChanged;
+            _subscribedToPerspective = false;
+        }
     }
 
     private void OnValidate()
@@ -139,8 +160,37 @@ public sealed class WorldCardView : MonoBehaviour
         EnsureMesh(meshFilter);
         RebuildMesh(faceSprite, backSprite);
         ApplyMaterials(meshRenderer, faceSprite, backSprite);
+        ApplyFrontMaterialForPerspective();
 
         meshRenderer.enabled = true;
+    }
+    private void HandlePerspectiveChanged(bool isFirstPerson)
+    {
+        _isFirstPerson = isFirstPerson;
+        ApplyFrontMaterialForPerspective();
+    }
+
+    private void ApplyFrontMaterialForPerspective()
+    {
+        if (_frontMaterial == null || _backMaterial == null)
+        {
+            return;
+        }
+
+        MeshRenderer meshRenderer = GetRequiredMeshRenderer();
+
+        Material front = (!_isFirstPerson && thirdPersonFrontMaterial != null)
+            ? thirdPersonFrontMaterial
+            : _frontMaterial;
+        if (_isFirstPerson)
+        {
+            glitch.SetActive(false);
+        } else
+        {
+            glitch.SetActive(true);
+        }
+
+        meshRenderer.sharedMaterials = new[] { front, _backMaterial };
     }
 
     private MeshFilter GetRequiredMeshFilter()
@@ -334,9 +384,20 @@ public sealed class WorldCardView : MonoBehaviour
             material.SetFloat(ZWriteId, 0f);
         }
 
-        material.SetOverrideTag("RenderType", "Transparent");
-        material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-        material.renderQueue = (int)RenderQueue.Transparent;
+        if (material.HasProperty(AlphaClipId))
+        {
+            material.SetFloat(AlphaClipId, 1f);
+        }
+
+        if (material.HasProperty(CutoffId))
+        {
+            material.SetFloat(CutoffId, 0.5f);
+        }
+
+        material.EnableKeyword("_ALPHATEST_ON");
+        material.SetOverrideTag("RenderType", "Opaque");
+        material.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        material.renderQueue = (int)RenderQueue.Geometry;
     }
 
     private static SpriteUvRect GetSpriteUvRect(Sprite sprite)
