@@ -12,23 +12,12 @@ PrefabInstance:
       propertyPath: m_Name
       value: OfflinePlayerPrefab
       objectReference: {fileID: 0}
+    - target: {fileID: 647076135964467117, guid: b7c92f0eac1b4ce6a8b3b42b663d6610, type: 3}
+      propertyPath: thirdPersonFilterFeature
+      value: 
+      objectReference: {fileID: -3625499942535467462, guid: f288ae1f4751b564a96ac7587541f7a2, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b7c92f0eac1b4ce6a8b3b42b663d6610, type: 3}
---- !u!1 &585361176538992301 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 585361176538992301, guid: b7c92f0eac1b4ce6a8b3b42b663d6610, type: 3}
-  m_PrefabInstance: {fileID: 4400000000000000001}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1580037882707382472 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1580037882707382472, guid: b7c92f0eac1b4ce6a8b3b42b663d6610, type: 3}
-  m_PrefabInstance: {fileID: 4400000000000000001}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &669271470891616885 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 669271470891616885, guid: b7c92f0eac1b4ce6a8b3b42b663d6610, type: 3}
-  m_PrefabInstance: {fileID: 4400000000000000001}
-  m_PrefabAsset: {fileID: 0}

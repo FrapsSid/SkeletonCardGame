@@ -6967,7 +6967,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1140348125}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: 0.7071068, y: 0.000000021936923, z: -0.000000021936923, w: 0.7071068}
   m_LocalPosition: {x: -0.000000054639237, y: -0.35, z: -1.25}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -7049,7 +7049,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManagerTestBootstrapper
   startOnStart: 1
-  skeletonBodyPrefab: {fileID: 669271470891616885, guid: 60190339aa12fba4cb4fd2b1a85235e2, type: 3}
+  skeletonBodyPrefab: {fileID: 3766779963029867124, guid: 60190339aa12fba4cb4fd2b1a85235e2, type: 3}
   AIskeletonBodyPrefab: {fileID: 5559488353928638739, guid: 23b3cf605a437704380390efb35d030a, type: 3}
   seatPositions:
   - {fileID: 1984572562}
@@ -7556,7 +7556,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1282533228}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5, y: 0.5, z: -0.5, w: 0.5}
+  m_LocalRotation: {x: 0.50000006, y: 0.49999997, z: -0.49999997, w: 0.50000006}
   m_LocalPosition: {x: -1.25, y: -0.35, z: -0.000000109278474}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
