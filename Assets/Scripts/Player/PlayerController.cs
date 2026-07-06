@@ -21,6 +21,10 @@ public class PlayerController : MonoBehaviour
     [Header("References")]
     public Transform cameraTransform;
     [SerializeField] private UIStateController uiStateController;
+    [Header("Animation")]
+    public Animator animator;
+    public float speedDampTime = 0.15f;
+    private static readonly int SpeedHash = Animator.StringToHash("Speed");
 
     private CharacterController _cc;
     private InputReader _input;
@@ -38,6 +42,8 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
+        if (animator == null)
+            animator = GetComponentInChildren<Animator>();
         if (uiStateController == null)
             uiStateController = FindFirstObjectByType<UIStateController>();
 
@@ -58,7 +64,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        if (uiStateController.AnyUiOpen)
+        if (uiStateController != null && uiStateController.AnyUiOpen)
         {
             _input.ConsumeJump();
             StopHorizontalMovement();
@@ -141,10 +147,23 @@ public class PlayerController : MonoBehaviour
             Quaternion targetRotation = Quaternion.LookRotation(move);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         }
+
+        UpdateAnimator(finalSpeed);
+    }
+    private void UpdateAnimator(float currentMaxSpeed)
+    {
+        if (animator == null) return;
+
+        float normalizedSpeed = currentMaxSpeed > 0f
+            ? _horizontalVelocity.magnitude / runSpeed
+            : 0f;
+
+        animator.SetFloat(SpeedHash, normalizedSpeed, speedDampTime, Time.deltaTime);
     }
 
     private void StopHorizontalMovement()
     {
+        UpdateAnimator(0f);
         _horizontalVelocity = Vector3.SmoothDamp(_horizontalVelocity, Vector3.zero, ref _smoothMoveVelocity, accelerationTime);
         _cc.Move(_horizontalVelocity * Time.deltaTime);
     }

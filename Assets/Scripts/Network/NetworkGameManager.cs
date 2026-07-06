@@ -12,31 +12,23 @@ namespace Multiplayer
         Unknown,
         HostShutdown,
         ClientDisconnected,
-        SessionFull,
-        GameAlreadyStarted
     }
 
     [RequireComponent(typeof(NetworkManager))]
     public class NetworkGameManager : MonoBehaviour
     {
         public static NetworkGameManager Instance { get; private set; }
-
-        [SerializeField] private int maxPlayers = 4;
         [SerializeField] private ushort defaultPort = 7777;
         [SerializeField] private GameObject playerPrefab;
 
-        public int MaxPlayers => maxPlayers;
-
         private readonly List<ulong> _connectedClients = new();
         private bool _gameStarted;
-        public bool IsGameStarted => _gameStarted;
         public IReadOnlyList<ulong> ConnectedClients => _connectedClients;
         private bool _isDisconnecting;
 
         public event Action<ulong> OnClientConnected;
         public event Action<ulong> OnClientDisconnected;
         public event Action<DisconnectReason> OnDisconnected;
-        public event Action OnGameStarted;
         public event Action OnCustomGameStarted;
 
         private void Awake()
@@ -120,8 +112,6 @@ namespace Multiplayer
         private void ApproveConnection(NetworkManager.ConnectionApprovalRequest request,
             NetworkManager.ConnectionApprovalResponse response)
         {
-            bool roomFull = _connectedClients.Count >= maxPlayers;
-
             if (_gameStarted)
             {
                 response.Approved = false;
@@ -131,23 +121,16 @@ namespace Multiplayer
                 return;
             }
 
-            response.Approved = !roomFull;
+            response.Approved = true;
             response.CreatePlayerObject = false;
-            response.Reason = roomFull ? "Session is full" : string.Empty;
+            response.Reason = string.Empty;
             response.Pending = false;
-
-            if (roomFull)
-            {
-                OnDisconnected?.Invoke(DisconnectReason.SessionFull);
-            }
         }
 
         private void HandleClientDisconnect(ulong clientId)
         {
             if (clientId == NetworkManager.Singleton.LocalClientId && NetworkManager.Singleton.CustomMessagingManager != null)
             {
-                NetworkManager.Singleton.CustomMessagingManager.UnregisterNamedMessageHandler(
-                    "ClientList");
                 NetworkManager.Singleton.CustomMessagingManager.UnregisterNamedMessageHandler(
                     "CustomGameStarted");
             }
@@ -169,11 +152,13 @@ namespace Multiplayer
             _connectedClients.Add(clientId);
             OnClientConnected?.Invoke(clientId);
         }
-
         
         public void CustomGameStarted()
         {
             if (!NetworkManager.Singleton.IsServer) return;
+
+            _gameStarted = true;
+
             var buffer = new FastBufferWriter(1, Allocator.Temp);
             using (buffer)
             {

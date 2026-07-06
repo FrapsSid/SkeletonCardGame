@@ -8,36 +8,13 @@ namespace Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public class NetworkPlayer : NetworkBehaviour
     {
-        public enum Team
-        {
-            None = 0,
-            TeamA = 1,
-            TeamB = 2
-        }
-
         [SerializeField] private PlayerController playerController;
         [SerializeField] private CameraController cameraController;
         [SerializeField] private InputReader inputReader;
         [SerializeField] private CharacterController characterController;
         [Tooltip("Контейнер с камерами и cinemachine")]
         [SerializeField] private GameObject cameraRig;
-
-        private readonly NetworkVariable<FixedString64Bytes> _playerName = new NetworkVariable<FixedString64Bytes>(
-            default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-
-        private readonly NetworkVariable<Team> _assignedTeam = new NetworkVariable<Team>(
-            Team.None, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-
-        private readonly NetworkVariable<int> _playerIndex = new(
-            -1, 
-            NetworkVariableReadPermission.Everyone, 
-            NetworkVariableWritePermission.Server
-        );
-        public int PlayerIndex => _playerIndex.Value;
-
         public ulong ClientId { get; private set; }
-        public string PlayerName => _playerName.Value.ToString();
-        public Team AssignedTeam => _assignedTeam.Value;
         public bool IsLocalPlayer => IsOwner;
 
         public event Action OnPlayerSpawned;
@@ -73,15 +50,6 @@ namespace Multiplayer
                     transform.SetPositionAndRotation(spawnPoint.position, spawnPoint.rotation);
                     if (characterController != null) characterController.enabled = isOwner;
                 }
-
-                if (_playerName.Value.IsEmpty)
-                {
-                    _playerName.Value = new FixedString64Bytes($"Player {OwnerClientId}");
-                }
-            }
-            if (IsServer && _playerIndex.Value == -1)
-            {
-                _playerIndex.Value = (int)OwnerClientId;
             }
 
             OnPlayerSpawned?.Invoke();
@@ -97,13 +65,6 @@ namespace Multiplayer
             }
             
             OnPlayerDespawned?.Invoke();
-        }
-
-        [ServerRpc]
-        public void RequestSetNameServerRpc(string newName, ServerRpcParams rpcParams = default)
-        {
-            if (string.IsNullOrWhiteSpace(newName)) return;
-            _playerName.Value = new FixedString64Bytes(newName.Length > 63 ? newName[..63] : newName);
         }
     }
 }

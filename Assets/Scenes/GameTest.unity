@@ -7049,7 +7049,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManagerTestBootstrapper
   startOnStart: 1
-  skeletonBodyPrefab: {fileID: 3766779963029867124, guid: 60190339aa12fba4cb4fd2b1a85235e2, type: 3}
+  skeletonBodyPrefab: {fileID: 5694322673538062660, guid: d5e185439934e604d911c5e147ef9bfe, type: 3}
   AIskeletonBodyPrefab: {fileID: 5559488353928638739, guid: 23b3cf605a437704380390efb35d030a, type: 3}
   seatPositions:
   - {fileID: 1984572562}
@@ -10775,7 +10775,7 @@ GameObject:
   - component: {fileID: 1971057637}
   - component: {fileID: 1971057636}
   - component: {fileID: 1971057635}
-  - component: {fileID: 1971057634}
+  - component: {fileID: 1971057638}
   m_Layer: 6
   m_Name: Cylinder (1)
   m_TagString: Untagged
@@ -10783,29 +10783,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!136 &1971057634
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1971057633}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5000001
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
 --- !u!23 &1971057635
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -10878,6 +10855,28 @@ Transform:
   m_Children: []
   m_Father: {fileID: 476322909}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!64 &1971057638
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1971057633}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1984572561
 GameObject:
   m_ObjectHideFlags: 0
