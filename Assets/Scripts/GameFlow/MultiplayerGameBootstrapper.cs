@@ -63,6 +63,7 @@ public class MultiplayerGameBootstrapper : MonoBehaviour
 
         var teams = new List<Team>();
         var players = new List<Skeleton>();
+        PlayerPresentationRegistry presentationRegistry = PlayerPresentationRegistry.EnsureDefaultFor(gameManager);
 
         foreach (NetworkPlayer networkPlayer in networkPlayers)
         {
@@ -70,8 +71,10 @@ public class MultiplayerGameBootstrapper : MonoBehaviour
             teams.Add(team);
 
             Skeleton skeleton = new Skeleton(team);
+            skeleton.SetNetworkClientId(networkPlayer.ClientId);
             team.AddSkeleton(skeleton);
             players.Add(skeleton);
+            presentationRegistry.RegisterNetworkPlayer(skeleton, networkPlayer);
 
             SkeletonBody body = networkPlayer.GetComponentInChildren<SkeletonBody>();
             if (body != null)

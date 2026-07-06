@@ -20,16 +20,25 @@ public sealed class GameManager : MonoBehaviour
     private int _activeCardDealerWaits;
     private bool _roundResolved;
     private bool _waitingForTableDealAnimation;
+    private readonly MatchEndEvaluator _matchEndEvaluator = new();
+    private MatchEndResult? _matchEndResult;
 
     public CardGame? CardGame { get; private set; }
     public Skeleton? LocalPlayer { get; private set; }
     public IReadOnlyList<Team> Teams => _teams;
     public IReadOnlyList<Skeleton> Players => _players;
     public bool IsCardDealInProgress => _activeCardDealerWaits > 0;
+    public bool IsMatchEnded => _matchEndResult != null;
+    public MatchEndResult? CurrentMatchEndResult => _matchEndResult;
     public event Action<CardGame>? OnGameCreated;
     public event Action? OnCardDealCompleted;
+    public event Action<MatchEndResult>? OnMatchEnded;
 
     [SerializeField] private Multiplayer.NetworkGameState networkGameState;
+    [SerializeField] private bool autoInstallParticipantHud = true;
+    [SerializeField] private bool autoInstallWorldNameplates = true;
+    [SerializeField] private bool autoInstallRoundStateHud = true;
+    [SerializeField] private bool autoInstallMatchEndOverlay = true;
     private bool _isNetworkMode;
 
     private void Awake()
@@ -92,9 +101,11 @@ public sealed class GameManager : MonoBehaviour
         SubscribeToDiscussionGate();
         _roundResolved = false;
         _waitingForTableDealAnimation = false;
+        _matchEndResult = null;
 
         CardGame = new CardGame(_teams, _players);
         Subscribe(CardGame);
+        EnsurePlayerPresentationUi();
         OnGameCreated?.Invoke(CardGame);
         if (_isNetworkMode && !IsServer())
         {
@@ -134,6 +145,8 @@ public sealed class GameManager : MonoBehaviour
         game.OnRoundEnded += HandleRoundEnded;
         game.OnTableCardsDealt += HandleTableCardsDealt;
         game.OnCardTaken += HandleCardTaken;
+        game.OnBettingRoundEnded += HandleBettingRoundEnded;
+        game.OnTurnStarted += HandleTurnStarted;
     }
 
     private void Unsubscribe()
@@ -145,6 +158,8 @@ public sealed class GameManager : MonoBehaviour
         CardGame.OnRoundEnded -= HandleRoundEnded;
         CardGame.OnTableCardsDealt -= HandleTableCardsDealt;
         CardGame.OnCardTaken -= HandleCardTaken;
+        CardGame.OnBettingRoundEnded -= HandleBettingRoundEnded;
+        CardGame.OnTurnStarted -= HandleTurnStarted;
     }
 
     private void HandlePhaseChanged(GamePhase phase)
@@ -156,6 +171,8 @@ public sealed class GameManager : MonoBehaviour
         if (_isNetworkMode && networkGameState != null)
         {
             networkGameState.SetPhase(phase);
+            if (phase != GamePhase.Betting)
+                networkGameState.ClearCurrentTurn();
         }
 
         CardGame? game = CardGame;
@@ -183,9 +200,28 @@ public sealed class GameManager : MonoBehaviour
     }
     private void HandleRoundEnded(RoundResult result)
     {
+        ClearNetworkCurrentTurn();
         ClearHeldCardItems();
         StopRestartRound();
+
+        MatchEndResult? matchEndResult = _matchEndEvaluator.Evaluate(_teams);
+        if (matchEndResult != null && matchEndResult.HasWinner)
+        {
+            CompleteMatch(matchEndResult);
+            return;
+        }
+
         _restartRoundCoroutine = StartCoroutine(RestartRoundAfterRoundEnded());
+    }
+
+    private void HandleBettingRoundEnded(Round round)
+    {
+        ClearNetworkCurrentTurn();
+    }
+
+    private void HandleTurnStarted(Skeleton player)
+    {
+        PublishNetworkCurrentTurn(player);
     }
 
     private void ClearHeldCardItems()
@@ -232,6 +268,8 @@ public sealed class GameManager : MonoBehaviour
         CardGame? game = CardGame;
         if (game == null || game.phase != GamePhase.End)
             yield break;
+        if (IsMatchEnded)
+            yield break;
 
         game.ResetRound();
         _roundResolved = false;
@@ -270,6 +308,21 @@ public sealed class GameManager : MonoBehaviour
 
         StopCoroutine(_restartRoundCoroutine);
         _restartRoundCoroutine = null;
+    }
+
+    private void CompleteMatch(MatchEndResult result)
+    {
+        if (result == null || _matchEndResult != null)
+            return;
+
+        _matchEndResult = result;
+        StopRoundFlow();
+        StopTableDeal();
+        StopTakenCardDeal();
+        StopRestartRound();
+        _bettingDiscussionGate.StopDiscussion();
+        ClearNetworkCurrentTurn();
+        OnMatchEnded?.Invoke(result);
     }
 
     private void PrepareCardDealerForRound()
@@ -383,6 +436,47 @@ public sealed class GameManager : MonoBehaviour
     }
 
 // <Сетевая часть
+    private void EnsurePlayerPresentationUi()
+    {
+        PlayerPresentationRegistry.EnsureDefaultFor(this);
+
+        if (Application.isBatchMode)
+            return;
+
+        if (autoInstallParticipantHud)
+            ParticipantsHudUI.EnsureDefaultFor(this);
+
+        if (autoInstallWorldNameplates)
+            PlayerWorldNameplateManager.EnsureDefaultFor(this);
+
+        if (autoInstallRoundStateHud)
+            RoundStateHudUI.EnsureDefaultFor(this);
+
+        if (autoInstallMatchEndOverlay)
+            MatchEndOverlayUI.EnsureDefaultFor(this);
+    }
+
+    private void PublishNetworkCurrentTurn(Skeleton player)
+    {
+        if (!_isNetworkMode || networkGameState == null || !IsServer() || player == null)
+            return;
+
+        int playerIndex = _players.IndexOf(player);
+        ulong clientId = player.HasNetworkClientId
+            ? player.NetworkClientId
+            : Multiplayer.NetworkGameState.NoCurrentTurnClientId;
+
+        networkGameState.SetCurrentTurn(playerIndex, clientId);
+    }
+
+    private void ClearNetworkCurrentTurn()
+    {
+        if (!_isNetworkMode || networkGameState == null || !IsServer())
+            return;
+
+        networkGameState.ClearCurrentTurn();
+    }
+
     public void EnableNetworkMode(Multiplayer.NetworkGameState gameState)
     {
         _isNetworkMode = true;
