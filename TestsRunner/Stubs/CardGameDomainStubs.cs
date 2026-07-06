@@ -28,14 +28,16 @@ public enum StakeAssetType
 
 public sealed class StakeAsset
 {
-    public StakeAsset(Team owningTeam, StakeAssetType assetType, int stakeValue)
+    public StakeAsset(Team owningTeam, StakeAssetType assetType, int stakeValue, Skeleton? sourceOwner = null)
     {
         this.owningTeam = owningTeam;
         this.assetType = assetType;
         this.stakeValue = stakeValue;
+        this.sourceOwner = sourceOwner;
     }
 
     public Team owningTeam;
+    public Skeleton? sourceOwner;
     public StakeAssetType assetType;
     public int stakeValue;
 

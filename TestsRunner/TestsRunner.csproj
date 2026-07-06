@@ -44,6 +44,8 @@
     <Compile Include="../Assets/Scripts/Betting/PlayerBetState.cs" Link="GameLogic/PlayerBetState.cs" />
     <Compile Include="../Assets/Scripts/GameFlow/RoundResult.cs" Link="GameLogic/RoundResult.cs" />
     <Compile Include="../Assets/Scripts/GameFlow/PlayerRoundEvaluation.cs" Link="GameLogic/PlayerRoundEvaluation.cs" />
+    <Compile Include="../Assets/Scripts/GameFlow/MatchEndResult.cs" Link="GameLogic/MatchEndResult.cs" />
+    <Compile Include="../Assets/Scripts/GameFlow/MatchEndEvaluator.cs" Link="GameLogic/MatchEndEvaluator.cs" />
     <Compile Include="../Assets/Scripts/Cards/CardData.cs" Link="GameLogic/CardData.cs" />
     <Compile Include="../Assets/Scripts/Cards/CardSuit.cs" Link="GameLogic/CardSuit.cs" />
     <Compile Include="../Assets/Scripts/Cards/CardValue.cs" Link="GameLogic/CardValue.cs" />
