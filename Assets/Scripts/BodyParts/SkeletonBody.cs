@@ -72,8 +72,9 @@ public class SkeletonBody : MonoBehaviour
     {
         if (part == null) return;
 
+        print(part);
         if (HasPart(part.Item.Type)) 
-        {
+        {   
             RemovePart(part.Item.Type);
         }
 

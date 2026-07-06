@@ -1082,9 +1082,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81afd60719305db408ae0b79ea52a4d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Multiplayer.NetworkGameManager
-  maxPlayers: 4
   defaultPort: 7777
-  playerPrefab: {fileID: 7743526335853441159, guid: 024ae9253138f3642ad8ebfafd8cbcda, type: 3}
+  playerPrefab: {fileID: 4241231401316398140, guid: 220339dfef04d7447bc963189e20e274, type: 3}
 --- !u!114 &914237349
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -29,12 +29,12 @@ namespace Multiplayer
             Team.None, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
         private readonly NetworkVariable<int> _playerIndex = new(
-            -1, 
-            NetworkVariableReadPermission.Everyone, 
+            -1,
+            NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server
         );
-        public int PlayerIndex => _playerIndex.Value;
 
+        public int PlayerIndex => _playerIndex.Value;
         public ulong ClientId { get; private set; }
         public string PlayerName => _playerName.Value.ToString();
         public Team AssignedTeam => _assignedTeam.Value;
@@ -98,7 +98,7 @@ namespace Multiplayer
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
-            
+
             OnPlayerDespawned?.Invoke();
         }
 

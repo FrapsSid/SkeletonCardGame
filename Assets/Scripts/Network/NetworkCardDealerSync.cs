@@ -67,9 +67,10 @@ public class NetworkCardDealerSync : NetworkBehaviour
         if (!IsServer) return;
 
         var gm = FindFirstObjectByType<GameManager>();
-        if (gm != null)
+        if (gm != null) {
             gm.OnGameCreated -= HandleGameCreated;
             gm.OnCardDealCompleted -= HandleCardDealCompleted;
+        }
     }
 
     private void HandleGameCreated(CardGame game)
