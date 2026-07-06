@@ -37,8 +37,8 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
 
         bool useRealBodies = skeletonBodyPrefab != null;
 
-        Team firstTeam = useRealBodies ? new Team() : CreateTestTeam();
-        Team secondTeam = useRealBodies ? new Team() : CreateTestTeam();
+        Team firstTeam = new Team();
+        Team secondTeam = new Team();
 
         teams.Add(firstTeam);
         teams.Add(secondTeam);
@@ -48,6 +48,12 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
 
         players.Add(firstPlayer);
         players.Add(secondPlayer);
+
+        if (!useRealBodies)
+        {
+            RegisterTestAssets(firstTeam, firstPlayer);
+            RegisterTestAssets(secondTeam, secondPlayer);
+        }
 
         EnsureTestAiTurnAdapter();
         manager.StartGame(teams, players, players[0]);
@@ -95,13 +101,10 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
             : Instantiate(prefab);
     }
 
-    private static Team CreateTestTeam()
+    private static void RegisterTestAssets(Team team, Skeleton player)
     {
-        var team = new Team();
-        team.RegisterAsset(new StakeAsset(team, StakeAssetType.Soul, 1));
-        team.RegisterAsset(new StakeAsset(team, StakeAssetType.Soul, 2));
+        team.RegisterAsset(new StakeAsset(team, StakeAssetType.Soul, 6, sourceOwner: player));
         team.RegisterAsset(new StakeAsset(team, StakeAssetType.OtherTeamAsset, 3));
-        return team;
     }
 
     private static Skeleton CreatePlayer(Team team)

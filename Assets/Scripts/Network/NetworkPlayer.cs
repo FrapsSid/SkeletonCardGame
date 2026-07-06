@@ -38,13 +38,15 @@ namespace Multiplayer
         public ulong ClientId { get; private set; }
         public string PlayerName => _playerName.Value.ToString();
         public Team AssignedTeam => _assignedTeam.Value;
-        public bool IsLocalPlayer => IsOwner;
+        public new bool IsLocalPlayer => IsOwner;
 
         public event Action OnPlayerSpawned;
         public event Action OnPlayerDespawned;
+        public event Action<string> OnPlayerNameChanged;
 
         public override void OnNetworkSpawn()
         {
+            _playerName.OnValueChanged += HandlePlayerNameChanged;
             ClientId = OwnerClientId;
             gameObject.name = $"Player_{OwnerClientId}";
 
@@ -89,6 +91,7 @@ namespace Multiplayer
 
         public override void OnNetworkDespawn()
         {
+            _playerName.OnValueChanged -= HandlePlayerNameChanged;
             bool isOwner = IsOwner;
             if (isOwner)
             {
@@ -104,6 +107,11 @@ namespace Multiplayer
         {
             if (string.IsNullOrWhiteSpace(newName)) return;
             _playerName.Value = new FixedString64Bytes(newName.Length > 63 ? newName[..63] : newName);
+        }
+
+        private void HandlePlayerNameChanged(FixedString64Bytes oldName, FixedString64Bytes newName)
+        {
+            OnPlayerNameChanged?.Invoke(newName.ToString());
         }
     }
 }

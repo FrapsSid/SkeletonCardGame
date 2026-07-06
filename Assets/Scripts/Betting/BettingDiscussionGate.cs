@@ -25,9 +25,11 @@ public sealed class BettingDiscussionGate : MonoBehaviour
 
     public CardGameRound? CurrentRound { get; private set; }
     public bool IsDiscussionActive { get; private set; }
+    public float DiscussionRemainingSeconds { get; private set; }
     public bool ArePlayersSeated { get; private set; }
 
     public event Action<float>? OnDiscussionStarted;
+    public event Action<float>? OnDiscussionTimerChanged;
     public event Action<List<Player>>? OnPlayersSeated;
     public event Action<CardGameRound>? OnDiscussionCompleted;
 
@@ -41,6 +43,7 @@ public sealed class BettingDiscussionGate : MonoBehaviour
         CurrentRound = round;
         IsDiscussionActive = true;
         ArePlayersSeated = false;
+        SetDiscussionRemaining(DiscussionDurationSeconds);
 
         OnDiscussionStarted?.Invoke(DiscussionDurationSeconds);
         discussionCoroutine = StartCoroutine(RunDiscussionTimer());
@@ -62,13 +65,17 @@ public sealed class BettingDiscussionGate : MonoBehaviour
         StopDiscussionTimer();
         CurrentRound = null;
         IsDiscussionActive = false;
+        SetDiscussionRemaining(0f);
         ArePlayersSeated = false;
     }
 
     private IEnumerator RunDiscussionTimer()
     {
-        if (DiscussionDurationSeconds > 0f)
-            yield return new WaitForSeconds(DiscussionDurationSeconds);
+        while (DiscussionRemainingSeconds > 0f)
+        {
+            yield return null;
+            SetDiscussionRemaining(DiscussionRemainingSeconds - Time.deltaTime);
+        }
 
         discussionCoroutine = null;
         CompleteDiscussion();
@@ -90,8 +97,19 @@ public sealed class BettingDiscussionGate : MonoBehaviour
 
         IsDiscussionActive = false;
         ArePlayersSeated = true;
+        SetDiscussionRemaining(0f);
 
         OnPlayersSeated?.Invoke(CurrentRound.ActivePlayers.ToList());
         OnDiscussionCompleted?.Invoke(CurrentRound);
+    }
+
+    private void SetDiscussionRemaining(float remainingSeconds)
+    {
+        float clamped = Mathf.Max(0f, remainingSeconds);
+        if (Mathf.Approximately(DiscussionRemainingSeconds, clamped))
+            return;
+
+        DiscussionRemainingSeconds = clamped;
+        OnDiscussionTimerChanged?.Invoke(DiscussionRemainingSeconds);
     }
 }

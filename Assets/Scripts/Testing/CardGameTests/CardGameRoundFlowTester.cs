@@ -33,12 +33,14 @@ public sealed class CardGameRoundFlowTester : ISystemTester
             additionalData = new List<AdditionalDataItem>()
         };
 
-        TestCaseResult testCase = RunRoundFlowTest();
-        result.testCases.Add(testCase);
-        result.success = testCase.passed;
-        result.message = testCase.passed
-            ? "CardGame round flow passed"
-            : "CardGame round flow failed";
+        TestCaseResult roundFlowCase = RunRoundFlowTest();
+        TestCaseResult matchEndCase = RunMatchEndEvaluatorTest();
+        result.testCases.Add(roundFlowCase);
+        result.testCases.Add(matchEndCase);
+        result.success = result.testCases.All(testCase => testCase.passed);
+        result.message = result.success
+            ? "CardGame tests passed"
+            : "CardGame tests failed";
 
         return Task.FromResult(result);
     }
@@ -147,6 +149,55 @@ public sealed class CardGameRoundFlowTester : ISystemTester
                 },
                 phases,
                 "Phase sequence");
+
+            result.passed = true;
+        }
+        catch (Exception ex)
+        {
+            result.error = ex.Message;
+            result.stackTrace = ex.StackTrace ?? string.Empty;
+        }
+
+        return result;
+    }
+
+    private static TestCaseResult RunMatchEndEvaluatorTest()
+    {
+        TestCaseResult result = new TestCaseResult
+        {
+            name = "Match end evaluator detects a team losing all souls",
+            passed = false,
+            error = string.Empty,
+            stackTrace = string.Empty
+        };
+
+        try
+        {
+            Team firstTeam = new Team();
+            Team secondTeam = new Team();
+            Skeleton firstPlayer = CreatePlayer(firstTeam);
+            Skeleton secondPlayer = CreatePlayer(secondTeam);
+
+            StakeAsset firstSoul = new StakeAsset(firstTeam, StakeAssetType.Soul, 1, sourceOwner: firstPlayer);
+            StakeAsset secondSoul = new StakeAsset(secondTeam, StakeAssetType.Soul, 1, sourceOwner: secondPlayer);
+            StakeAsset firstHead = new StakeAsset(firstTeam, StakeAssetType.BodyPart, 3, sourceOwner: firstPlayer);
+            firstTeam.RegisterAsset(firstSoul);
+            firstTeam.RegisterAsset(firstHead);
+            secondTeam.RegisterAsset(secondSoul);
+
+            MatchEndEvaluator evaluator = new MatchEndEvaluator();
+            AssertNull(evaluator.Evaluate(new[] { firstTeam, secondTeam }), "Match should continue while both teams own a soul");
+
+            firstHead.TransferOwnership(secondTeam);
+            AssertNull(evaluator.Evaluate(new[] { firstTeam, secondTeam }), "Match should continue after losing a non-soul body part");
+
+            firstSoul.TransferOwnership(secondTeam);
+
+            MatchEndResult matchEndResult = evaluator.Evaluate(new[] { firstTeam, secondTeam });
+            AssertNotNull(matchEndResult, "Match should end after one team loses all souls");
+            AssertEqual(secondTeam, matchEndResult.WinningTeam, "Winning team");
+            AssertSequence(new[] { secondTeam }, matchEndResult.ActiveTeams, "Active teams after match end");
+            AssertSequence(new[] { firstTeam }, matchEndResult.EliminatedTeams, "Eliminated teams after match end");
 
             result.passed = true;
         }
