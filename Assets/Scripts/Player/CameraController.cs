@@ -266,6 +266,10 @@ public class CameraController : MonoBehaviour
 
     private bool IsAnyUiOpen()
     {
+        if(uiStateController == null)
+        {
+            return false;
+        }
         return uiStateController.AnyUiOpen;
     }
 

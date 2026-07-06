@@ -77,16 +77,16 @@ public class MultiplayerGameBootstrapper : MonoBehaviour
             if (body != null)
             {
                 SkeletonStakeLinker.RegisterBodyAssets(team, skeleton, body);
-                Debug.Log($"[MultiplayerBootstrapper] Игрок {networkPlayer.PlayerName} - зарегистрировано {team.Assets.Count} активов из тела.");
+                Debug.Log($"[MultiplayerBootstrapper] Игрок {networkPlayer.ClientId} - зарегистрировано {team.Assets.Count} активов из тела.");
             }
             else
             {
-                Debug.LogWarning($"[MultiplayerBootstrapper] У игрока {networkPlayer.PlayerName} нет SkeletonBody.");
+                Debug.LogWarning($"[MultiplayerBootstrapper] У игрока {networkPlayer.ClientId} нет SkeletonBody.");
             }
 
             _playerToSkeleton[networkPlayer] = skeleton;
 
-            Debug.Log($"[MultiplayerBootstrapper] Игрок {networkPlayer.PlayerName} (ID: {networkPlayer.ClientId}, Index: {networkPlayer.PlayerIndex}) зарегистрирован.");
+            Debug.Log($"[MultiplayerBootstrapper] Игрок (ID: {networkPlayer.ClientId}) зарегистрирован.");
         }
 
         Skeleton localPlayer = players[0];

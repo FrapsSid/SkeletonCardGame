@@ -33,7 +33,6 @@ public class CustomGameUINetwork : MonoBehaviour
         if (NetworkGameManager.Instance != null)
         {
             NetworkGameManager.Instance.OnDisconnected -= HandleDisconnected;
-            NetworkGameManager.Instance.OnGameStarted -= HandleGameStarted;
             NetworkGameManager.Instance.OnCustomGameStarted -= HandleCustomGameStarted;
         }
     }
@@ -61,11 +60,6 @@ public class CustomGameUINetwork : MonoBehaviour
     {
         Debug.Log($"Session ended: {reason}. Returning to Main Menu.");
         StartCoroutine(ReturnToMainMenu());
-    }
-
-    private void HandleGameStarted()
-    {
-        Debug.Log("Host Started the game");
     }
 
     private System.Collections.IEnumerator ReturnToMainMenu()
