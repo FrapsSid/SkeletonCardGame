@@ -7036,6 +7036,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   cardDealer: {fileID: 476322907}
   networkGameState: {fileID: 0}
+  autoInstallParticipantHud: 1
+  autoInstallWorldNameplates: 1
+  autoInstallRoundStateHud: 1
+  autoInstallMatchEndOverlay: 1
 --- !u!114 &1158992800
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7050,7 +7054,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManagerTestBootstrapper
   startOnStart: 1
   skeletonBodyPrefab: {fileID: 5694322673538062660, guid: d5e185439934e604d911c5e147ef9bfe, type: 3}
-  AIskeletonBodyPrefab: {fileID: 5559488353928638739, guid: 23b3cf605a437704380390efb35d030a, type: 3}
+  AIskeletonBodyPrefab: {fileID: 8751840716711117536, guid: 9669cc4fc2dab4f4cb693a08a9a510dc, type: 3}
   seatPositions:
   - {fileID: 1984572562}
   - {fileID: 648166579}

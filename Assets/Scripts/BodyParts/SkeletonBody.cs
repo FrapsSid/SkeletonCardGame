@@ -16,6 +16,12 @@ public class SkeletonBody : MonoBehaviour
     public Transform leftLegBone;
     public Transform rightLegBone;
     public Transform torsoBone;
+    [Header("Visible Mesh Folders")]
+    public Transform headMeshFolder;
+    public Transform leftArmMeshFolder;
+    public Transform rightArmMeshFolder;
+    public Transform leftLegMeshFolder;
+    public Transform rightLegMeshFolder;
 
     public bool IsIncapacitated => !HasSoul();
     public bool CanHoldCards => GetArmCount() > 0;
@@ -96,6 +102,19 @@ public class SkeletonBody : MonoBehaviour
             BodyPartType.RightLeg => rightLegBone,
             BodyPartType.Torso => torsoBone,
             _ => transform
+        };
+    }
+
+    public Transform? GetMeshFolderForType(BodyPartType type)
+    {
+        return type switch
+        {
+            BodyPartType.Head => headMeshFolder,
+            BodyPartType.LeftArm => leftArmMeshFolder,
+            BodyPartType.RightArm => rightArmMeshFolder,
+            BodyPartType.LeftLeg => leftLegMeshFolder,
+            BodyPartType.RightLeg => rightLegMeshFolder,
+            _ => null
         };
     }
 }

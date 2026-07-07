@@ -8,6 +8,8 @@ public class PlayerHand : MonoBehaviour {
     [SerializeField] private Vector3 heldItemLocalPosition = new Vector3(0.35f, -0.2f, 0.65f);
     [SerializeField] private Vector3 heldItemLocalEulerAngles = new Vector3(0f, 0f, 0f);
     [SerializeField] private Vector3 heldItemLocalScale = Vector3.one;
+    private static readonly int HasItemHash = Animator.StringToHash("HasItem");
+    private static readonly int PickupHash = Animator.StringToHash("Pickup");
 
     private IItem? _item;
     private GameObject? _heldItemVisual;
@@ -28,9 +30,38 @@ public class PlayerHand : MonoBehaviour {
         ClearHeldItemVisual();
     }
 
+    private Animator? _animator;
+    private bool _animatorCached;
+
+    private Animator? GetOwnerAnimator()
+    {
+        if (_animatorCached) return _animator;
+        
+        var body = GetComponentInParent<SkeletonBody>();
+        if (body != null)
+        {
+            _animator = body.GetComponentInChildren<Animator>();
+        }
+        _animatorCached = true;
+        return _animator;
+    }
+
     public void SetItem(IItem? item) {
         _item = item;
         RefreshHeldItemVisual();
+        UpdateAnimator(item);
+    }
+
+    private void UpdateAnimator(IItem? item) {
+        Animator? animator = GetOwnerAnimator();
+        if (animator == null) return;
+
+        bool hasItem = item != null;
+        animator.SetBool(HasItemHash, hasItem);
+
+        if (hasItem) {
+            animator.SetTrigger(PickupHash);
+        }
     }
 
     private void RefreshHeldItemVisual() {
