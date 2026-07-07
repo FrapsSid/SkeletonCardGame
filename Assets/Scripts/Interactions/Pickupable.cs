@@ -45,6 +45,7 @@ public class Pickupable : MonoBehaviour, IInteractable
 
         if (pickedUp)
         {
+            PlayPickupSound(Item);
             Destroy(gameObject);
         }
     }
@@ -107,6 +108,26 @@ public class Pickupable : MonoBehaviour, IInteractable
 
         hand.SetItem(Item);
         return true;
+    }
+
+    private static void PlayPickupSound(IItem item)
+    {
+        if (item is CardsItem)
+        {
+            global::Audio.AudioHandler.PlayEvent(global::Audio.SoundEvent.CardPickup);
+            return;
+        }
+
+        if (item is BodyPartItem bodyPartItem && bodyPartItem.Type == BodyPartType.Soul)
+        {
+            global::Audio.AudioHandler.PlayEvent(global::Audio.SoundEvent.SoulPickup);
+            return;
+        }
+
+        if (item is BodyPartItem)
+        {
+            global::Audio.AudioHandler.PlayEvent(global::Audio.SoundEvent.BonePickup);
+        }
     }
 
     private static bool IsFree(PlayerHand hand)
