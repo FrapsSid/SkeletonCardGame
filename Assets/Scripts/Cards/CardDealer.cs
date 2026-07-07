@@ -158,6 +158,7 @@ public sealed class CardDealer : MonoBehaviour
 
         WorldCardView movingCard = CreateCard(card, false);
         yield return MoveCard(movingCard.transform, destination.position, destination.rotation);
+        global::Audio.AudioHandler.PlayEvent(global::Audio.SoundEvent.CardDeal);
 
         _tableCards.Add(movingCard);
         OnTableCardDealt?.Invoke(card);
@@ -217,6 +218,7 @@ public sealed class CardDealer : MonoBehaviour
             Transform destination = RequireTablePositions().GetPlayerDealCardPosition(player);
             movingCard = CreateCard(card, true);
             yield return MoveCard(movingCard.transform, destination.position, destination.rotation * FaceDownRotation);
+            global::Audio.AudioHandler.PlayEvent(global::Audio.SoundEvent.CardDeal);
 
             DestroyGeneratedObject(movingCard.gameObject);
             PlayerTableCardStacks stacks = RequirePlayerTableCardStacks();
