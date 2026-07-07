@@ -12,6 +12,7 @@ public class BodyPart : MonoBehaviour
     {
         Item = item;
         item.SetCurrentBodyPart(this);
+        SetOwnRenderersEnabled(false);
     }
 
     private void OnDestroy()
@@ -25,6 +26,10 @@ public class BodyPart : MonoBehaviour
         transform.SetParent(null);
         SetColliderEnabled(true);
         EnableWorldPickup();
+
+        SetOwnRenderersEnabled(true);
+        SetSkinnedMeshRenderersEnabled(currentHolder, false);
+
         if (Item.Type == BodyPartType.LeftArm || Item.Type == BodyPartType.RightArm)
         {
             var hand = GetComponent<PlayerHand>();
@@ -57,6 +62,9 @@ public class BodyPart : MonoBehaviour
         State = BodyPartState.Attached;
         SetColliderEnabled(false);
         DisableWorldPickup();
+
+        SetOwnRenderersEnabled(false);
+        SetSkinnedMeshRenderersEnabled(currentHolder, true);
 
         transform.SetParent(boneParent);
         transform.localPosition = Vector3.zero;
@@ -113,6 +121,38 @@ public class BodyPart : MonoBehaviour
         if (rb != null)
         {
             Destroy(rb);
+        }
+    }
+
+    private void SetOwnRenderersEnabled(bool enabled)
+    {
+        foreach (Renderer renderer in GetComponentsInChildren<Renderer>())
+        {
+            if (IsHeldItemRenderer(renderer))
+                continue;
+            renderer.enabled = enabled;
+        }
+    }
+
+    private bool IsHeldItemRenderer(Renderer renderer)
+    {
+        var hand = GetComponent<PlayerHand>();
+        return hand != null && hand.ContainsHeldItemRenderer(renderer);
+    }
+
+    private void SetSkinnedMeshRenderersEnabled(GameObject? holder, bool enabled)
+    {
+        if (holder == null) return;
+        
+        var body = holder.GetComponent<SkeletonBody>();
+        if (body == null) return;
+        
+        Transform? folder = body.GetMeshFolderForType(Item.Type);
+        if (folder == null) return;
+        
+        foreach (SkinnedMeshRenderer smr in folder.GetComponentsInChildren<SkinnedMeshRenderer>())
+        {
+            smr.enabled = enabled;
         }
     }
 }
