@@ -14,6 +14,11 @@ public class PlayerInventoryOwner : MonoBehaviour {
         Inventory = GetComponent<Inventory>();
     }
 
+    public bool AnyHandHasItem() {
+        return (leftHand != null && leftHand.HasItem) 
+            || (rightHand != null && rightHand.HasItem);
+    }
+
     public void AssignSkeleton(Skeleton skeleton) {
         OwnerSkeleton = skeleton;
         OwnerSkeleton.SetInventoryOwner(this);

@@ -13826,6 +13826,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5236008776809442218, guid: 06499c09ecfce8341bf4c77bcb5b22b6, type: 3}
+      propertyPath: fanRadius
+      value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 5236008776809442218, guid: 06499c09ecfce8341bf4c77bcb5b22b6, type: 3}
+      propertyPath: fanAngleStep
+      value: 30
+      objectReference: {fileID: 0}
     - target: {fileID: 6903617506251665835, guid: 06499c09ecfce8341bf4c77bcb5b22b6, type: 3}
       propertyPath: m_Name
       value: CardStack

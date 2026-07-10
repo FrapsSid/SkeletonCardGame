@@ -40,9 +40,14 @@ public class PlayerHand : MonoBehaviour {
         var animator = body.GetComponentInChildren<Animator>();
         if (animator == null) return;
 
-        bool hasItem = item != null;
+        var inventoryOwner = GetComponentInParent<PlayerInventoryOwner>();
+        bool hasItem = inventoryOwner != null 
+            ? inventoryOwner.AnyHandHasItem() 
+            : item != null;
+
         animator.SetBool(HasItemHash, hasItem);
-        if (hasItem)
+        
+        if (hasItem && item != null)
             animator.SetTrigger(PickupHash);
     }
 

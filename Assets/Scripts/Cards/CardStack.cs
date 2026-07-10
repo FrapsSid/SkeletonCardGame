@@ -14,6 +14,10 @@ public sealed class CardStack : MonoBehaviour
 
     [Header("Layout")]
     [SerializeField] private Vector3 cardStep = new(0.45f, 0f, -0.001f);
+    [Header("Fan Layout")]
+    [SerializeField] private bool fanLayout = true;
+    [SerializeField] private float fanAngleStep = 8f;
+    [SerializeField] private float fanRadius = 1f;
 
     [SerializeField, HideInInspector] private List<GameObject> cardInstances = new();
     [SerializeField, HideInInspector] private List<WorldCardView> cardViews = new();
@@ -200,6 +204,7 @@ public sealed class CardStack : MonoBehaviour
     private void LayoutCards()
     {
         int instanceCount = cardInstances.Count;
+        float centerOffset = (instanceCount - 1) * 0.5f;
         for (int i = 0; i < instanceCount; i++)
         {
             GameObject instance = cardInstances[i];
@@ -209,7 +214,23 @@ public sealed class CardStack : MonoBehaviour
             }
 
             instance.transform.SetSiblingIndex(i);
-            instance.transform.localPosition = cardStep * i;
+            if (fanLayout)
+            {
+                float angleDeg = (i - centerOffset) * fanAngleStep;
+                float angleRad = angleDeg * Mathf.Deg2Rad;
+
+                instance.transform.localPosition = new Vector3(
+                    Mathf.Sin(angleRad) * fanRadius,
+                    Mathf.Cos(angleRad) * fanRadius - fanRadius,
+                    instanceCount * 0.01f - 0.01f * i
+                );
+                instance.transform.localRotation = Quaternion.Euler(0f, 0, -angleDeg);
+            }
+            else
+            {
+                instance.transform.localPosition = cardStep * i;
+                instance.transform.localRotation = Quaternion.identity;
+            }
         }
     }
 

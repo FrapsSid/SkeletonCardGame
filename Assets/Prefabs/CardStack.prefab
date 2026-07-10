@@ -47,5 +47,8 @@ MonoBehaviour:
   cardPrefab: {fileID: 2785554503567494442, guid: a6271a0e0c8880a4f874695dd08ab79c, type: 3}
   cards: []
   cardStep: {x: 0.12, y: 0, z: -0.01}
+  fanLayout: 1
+  fanAngleStep: 30
+  fanRadius: 0.2
   cardInstances: []
   cardViews: []
