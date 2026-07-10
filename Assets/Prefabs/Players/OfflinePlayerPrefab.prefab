@@ -7042,6 +7042,11 @@ MonoBehaviour:
   leftLegBone: {fileID: 8562962322393880023}
   rightLegBone: {fileID: 5044444236624984310}
   torsoBone: {fileID: 7972745718885170605}
+  headMeshFolder: {fileID: 5895451388881048168}
+  leftArmMeshFolder: {fileID: 603465486165206889}
+  rightArmMeshFolder: {fileID: 7118679637562200430}
+  leftLegMeshFolder: {fileID: 938228429567177901}
+  rightLegMeshFolder: {fileID: 5189934732289057699}
 --- !u!114 &138713368826721200
 MonoBehaviour:
   m_ObjectHideFlags: 0
