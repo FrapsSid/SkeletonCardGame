@@ -19,6 +19,8 @@ public class CardAtlas : ScriptableObject, ISerializationCallbackReceiver
 
     [Header("Back Sprite")]
     [SerializeField] private Sprite cardBackSprite;
+    [Header("Censored Sprite")]
+    [SerializeField] private Sprite censoredSprite;
 
     [Header("Face Sprites")]
     [SerializeField] private List<CardSpriteMapping> faceSpritesList = new List<CardSpriteMapping>();
@@ -26,6 +28,7 @@ public class CardAtlas : ScriptableObject, ISerializationCallbackReceiver
     private Dictionary<(CardSuit, CardValue), Sprite> _faceSpritesDictionary;
 
     public Sprite GetBackSprite() => cardBackSprite;
+    public Sprite GetCensoredSprite() => censoredSprite;
 
     public string SpritesFolderPath => spritesFolderPath;
 

@@ -37,6 +37,25 @@ public class SkeletonBody : MonoBehaviour
         };
     }
 
+    public void RefreshMeshVisibility()
+    {
+        SetMeshFolderVisible(BodyPartType.Head, HasPart(BodyPartType.Head));
+        SetMeshFolderVisible(BodyPartType.LeftArm, HasPart(BodyPartType.LeftArm));
+        SetMeshFolderVisible(BodyPartType.RightArm, HasPart(BodyPartType.RightArm));
+        SetMeshFolderVisible(BodyPartType.LeftLeg, HasPart(BodyPartType.LeftLeg));
+        SetMeshFolderVisible(BodyPartType.RightLeg, HasPart(BodyPartType.RightLeg));
+    }
+    private void SetMeshFolderVisible(BodyPartType type, bool visible)
+    {
+        Transform folder = GetMeshFolderForType(type);
+        if (folder == null) return;
+
+        foreach (SkinnedMeshRenderer smr in folder.GetComponentsInChildren<SkinnedMeshRenderer>())
+        {
+            smr.enabled = visible;
+        }
+    }
+
     public bool IsIncapacitated => !HasSoul();
     public bool CanHoldCards => GetArmCount() > 0;
 
@@ -82,6 +101,7 @@ public class SkeletonBody : MonoBehaviour
         {
             _attachedParts.Remove(type);
             part.Detach();
+            RefreshMeshVisibility();
             OnBodyChanged?.Invoke();
             return part;
         }
@@ -102,6 +122,7 @@ public class SkeletonBody : MonoBehaviour
         
         _attachedParts[part.Item.Type] = part;
         part.Attach(gameObject, targetBone);
+        RefreshMeshVisibility();
         OnBodyChanged?.Invoke();
     }
 

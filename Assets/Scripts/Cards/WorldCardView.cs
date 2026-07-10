@@ -36,7 +36,6 @@ public sealed class WorldCardView : MonoBehaviour
     [SerializeField] private Vector2 size = new Vector2(0.7f, 1f);
     [SerializeField, Min(0f)] private float thickness = 0.01f;
     [SerializeField] private Material? materialTemplate;
-    [SerializeField] private Material? thirdPersonFrontMaterial;
     [SerializeField] private GameObject glitch;
 
     private bool _isFirstPerson;
@@ -147,7 +146,7 @@ public sealed class WorldCardView : MonoBehaviour
             return;
         }
 
-        Sprite faceSprite = cardAtlas.GetFaceSprite(suit, value);
+        Sprite faceSprite = GetActiveFrontSprite();
         Sprite backSprite = cardAtlas.GetBackSprite();
 
         if (faceSprite == null || backSprite == null)
@@ -160,37 +159,26 @@ public sealed class WorldCardView : MonoBehaviour
         EnsureMesh(meshFilter);
         RebuildMesh(faceSprite, backSprite);
         ApplyMaterials(meshRenderer, faceSprite, backSprite);
-        ApplyFrontMaterialForPerspective();
-
         meshRenderer.enabled = true;
+        if (glitch != null)
+            glitch.SetActive(!_isFirstPerson);
     }
     private void HandlePerspectiveChanged(bool isFirstPerson)
     {
         _isFirstPerson = isFirstPerson;
-        ApplyFrontMaterialForPerspective();
+        Refresh();
     }
 
-    private void ApplyFrontMaterialForPerspective()
+    private Sprite? GetActiveFrontSprite()
     {
-        if (_frontMaterial == null || _backMaterial == null)
+        if (cardAtlas == null) return null;
+        
+        if (!_isFirstPerson && cardAtlas.GetCensoredSprite() != null)
         {
-            return;
+            return cardAtlas.GetCensoredSprite();
         }
 
-        MeshRenderer meshRenderer = GetRequiredMeshRenderer();
-
-        Material front = (!_isFirstPerson && thirdPersonFrontMaterial != null)
-            ? thirdPersonFrontMaterial
-            : _frontMaterial;
-        if (_isFirstPerson)
-        {
-            glitch.SetActive(false);
-        } else
-        {
-            glitch.SetActive(true);
-        }
-
-        meshRenderer.sharedMaterials = new[] { front, _backMaterial };
+        return cardAtlas.GetFaceSprite(suit, value);
     }
 
     private MeshFilter GetRequiredMeshFilter()

@@ -350,11 +350,14 @@ public class CameraController : MonoBehaviour
 
     private void SetLocalBodyVisible(bool visible)
     {
-        if (hiddenRenderersInFirstPerson == null) return;
-        foreach (var renderer in hiddenRenderersInFirstPerson)
+        if (visible &&_skeletonBody != null)
         {
-            if (renderer != null)
-                renderer.enabled = visible;
+            _skeletonBody.RefreshMeshVisibility();
+        }
+        if (!visible && hiddenRenderersInFirstPerson != null)
+        {
+            foreach (var renderer in hiddenRenderersInFirstPerson)
+                if (renderer != null) renderer.enabled = visible;
         }
     }
 }
