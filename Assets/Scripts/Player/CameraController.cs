@@ -39,9 +39,10 @@ public class CameraController : MonoBehaviour
 
     [Header("Player Body")]
     public SkeletonBody _skeletonBody;
-    public Renderer skullRenderer;
     [Header("Rendering")]
     [SerializeField] private ScriptableRendererFeature thirdPersonFilterFeature;
+    [Header("First Person Hidden Renderers")]
+    [SerializeField] private Renderer[] hiddenRenderersInFirstPerson = null;
 
     private InputReader _input;
     private float _yaw;
@@ -235,6 +236,7 @@ public class CameraController : MonoBehaviour
 
         if (thirdPersonFilterFeature != null)
         {
+            print("ВКЛЮЧЕНИЕ ФИЛЬТРА");
             thirdPersonFilterFeature.SetActive(!enable);
         }
 
@@ -348,46 +350,11 @@ public class CameraController : MonoBehaviour
 
     private void SetLocalBodyVisible(bool visible)
     {
-        for (int i = 0; i < _hiddenBodyRenderers.Count; i++)
+        if (hiddenRenderersInFirstPerson == null) return;
+        foreach (var renderer in hiddenRenderersInFirstPerson)
         {
-            Renderer renderer = _hiddenBodyRenderers[i];
             if (renderer != null)
-            {
-                renderer.enabled = true;
-            }
-        }
-
-        _hiddenBodyRenderers.Clear();
-
-        if (visible || _skeletonBody == null)
-        {
-            return;
-        }
-
-        Transform viewpoint = UpdateFirstPersonViewpoint();
-        if (viewpoint == null || !IsDetachedSkullViewpoint(viewpoint))
-        {
-            HideRenderers(_skeletonBody.GetComponentsInChildren<Renderer>(true));
-        }
-
-        if (!_skeletonBody.HasSkull() && viewpoint != null)
-        {
-            HideRenderers(viewpoint.GetComponentsInChildren<Renderer>(true), true);
-        }
-    }
-
-    private void HideRenderers(Renderer[] renderers, bool includeHeldItems = false)
-    {
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            Renderer renderer = renderers[i];
-            if (!renderer.enabled || (!includeHeldItems && _playerHand != null && _playerHand.ContainsHeldItemRenderer(renderer)))
-            {
-                continue;
-            }
-
-            renderer.enabled = false;
-            _hiddenBodyRenderers.Add(renderer);
+                renderer.enabled = visible;
         }
     }
 }

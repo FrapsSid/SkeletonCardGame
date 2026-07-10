@@ -28,9 +28,22 @@ public class PlayerHand : MonoBehaviour {
         ClearHeldItemVisual();
     }
 
+    private static readonly int HasItemHash = Animator.StringToHash("HasItem");
+    private static readonly int PickupHash = Animator.StringToHash("Pickup");
+
     public void SetItem(IItem? item) {
         _item = item;
         RefreshHeldItemVisual();
+
+        var body = GetComponentInParent<SkeletonBody>();
+        if (body == null) return;
+        var animator = body.GetComponentInChildren<Animator>();
+        if (animator == null) return;
+
+        bool hasItem = item != null;
+        animator.SetBool(HasItemHash, hasItem);
+        if (hasItem)
+            animator.SetTrigger(PickupHash);
     }
 
     private void RefreshHeldItemVisual() {

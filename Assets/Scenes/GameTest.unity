@@ -3682,7 +3682,6 @@ GameObject:
   - component: {fileID: 462030605}
   - component: {fileID: 462030604}
   - component: {fileID: 462030603}
-  - component: {fileID: 462030606}
   m_Layer: 5
   m_Name: turn texxt (1)
   m_TagString: Untagged
@@ -3853,23 +3852,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 462030601}
   m_CullTransparentMesh: 1
---- !u!114 &462030606
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 462030601}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: adc9b2cb530b42fe9aebc3509f5d7a57, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToggleObjectVisibilityButton
-  targetObject: {fileID: 40180290}
-  button: {fileID: 462030603}
-  registerButtonClick: 1
-  applyInitialVisibility: 0
-  visibleOnStart: 1
 --- !u!1 &471999724
 GameObject:
   m_ObjectHideFlags: 0
@@ -10946,7 +10928,6 @@ MonoBehaviour:
   musicSlider: {fileID: 181014835}
   sfxSlider: {fileID: 7316894}
   brightnessSlider: {fileID: 319051863}
-  brightnessOverlay: {fileID: 669406492}
 --- !u!1 &1578342324
 GameObject:
   m_ObjectHideFlags: 0

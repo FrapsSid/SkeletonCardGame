@@ -1004,6 +1004,37 @@ Transform:
   - {fileID: 3644474990966039498}
   m_Father: {fileID: 462888218469350497}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1851963273485089041
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6108777185050171977}
+  m_Layer: 0
+  m_Name: SkullPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6108777185050171977
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1851963273485089041}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.0004589873, y: 1.7334096, z: 0.39772567}
+  m_LocalScale: {x: 0.9042304, y: 0.9042304, z: 0.9042304}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5895451388881048168}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1906923997597895860
 GameObject:
   m_ObjectHideFlags: 0
@@ -1182,7 +1213,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -6140042677033249474, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -1719,7 +1750,7 @@ Transform:
   m_GameObject: {fileID: 3134148536381078185}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.745, z: -0.004000187}
+  m_LocalPosition: {x: 0, y: 0.745, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1922,7 +1953,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 3447038591770236762, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -2387,7 +2418,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -3540850596194804248, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -2534,7 +2565,7 @@ Transform:
   m_GameObject: {fileID: 3923888354603777151}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.745, z: -0.004000187}
+  m_LocalPosition: {x: 0, y: 0.745, z: 0.1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2898,7 +2929,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -606419294924500904, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -3135,7 +3166,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 212370497460711607, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -3413,7 +3444,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -6592957211005202357, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -3970,8 +4001,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5511199011331680381}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.24782, y: 2.0647402, z: -0.6022799}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 2.24782, y: 2.2347403, z: -0.27528}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3997,11 +4028,11 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 2618321050735793342}
+    TrackingTarget: {fileID: 6108777185050171977}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
-    FieldOfView: 60.000004
+    FieldOfView: 80
     OrthographicSize: 5
     NearClipPlane: 0.01
     FarClipPlane: 1000
@@ -4267,7 +4298,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 196288640622949635, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -4406,7 +4437,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -336103021598580943, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -4577,7 +4608,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 4029899406377155429, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -4929,7 +4960,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -6146871510574282191, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -5203,7 +5234,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -1928204645961537321, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -6479,7 +6510,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 4137455876009383503, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -6742,7 +6773,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 6552503254863439366, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -7011,11 +7042,6 @@ MonoBehaviour:
   leftLegBone: {fileID: 8562962322393880023}
   rightLegBone: {fileID: 5044444236624984310}
   torsoBone: {fileID: 7972745718885170605}
-  headMeshFolder: {fileID: 5895451388881048168}
-  leftArmMeshFolder: {fileID: 603465486165206889}
-  rightArmMeshFolder: {fileID: 7118679637562200430}
-  leftLegMeshFolder: {fileID: 938228429567177901}
-  rightLegMeshFolder: {fileID: 5189934732289057699}
 --- !u!114 &138713368826721200
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7087,8 +7113,9 @@ MonoBehaviour:
   playerController: {fileID: 5354738617605713859}
   uiStateController: {fileID: 0}
   _skeletonBody: {fileID: 5694322673538062660}
-  skullRenderer: {fileID: 0}
   thirdPersonFilterFeature: {fileID: -3625499942535467462, guid: f288ae1f4751b564a96ac7587541f7a2, type: 2}
+  hiddenRenderersInFirstPerson:
+  - {fileID: 2125026356604320062}
 --- !u!114 &7247342229740388756
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8113,6 +8140,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2919515225787986529}
+  - {fileID: 6108777185050171977}
   m_Father: {fileID: 838664350289208147}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &9126236832312015921

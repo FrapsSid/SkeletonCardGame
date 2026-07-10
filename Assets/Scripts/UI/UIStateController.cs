@@ -106,6 +106,7 @@ public sealed class UIStateController : MonoBehaviour
 
     public void ToggleTurnUi()
     {
+        print("TOGGLE TURN UI");
         if (turnUiOpen)
             CloseTurnUi();
         else
