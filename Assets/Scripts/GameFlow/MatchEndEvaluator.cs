@@ -37,30 +37,28 @@ public sealed class MatchEndEvaluator
 
     private static bool TeamRetainsAnySoul(Team team, IReadOnlyList<StakeAsset> allAssets)
     {
-        bool foundKnownPlayerSoul = false;
-        bool hasPlayerWithoutSoulData = false;
+        bool foundAnyPlayerSoul = false;
+        bool foundOwnedSoul = false;
 
         foreach (Skeleton player in team.Skeletons)
         {
             StakeAsset playerSoul = FindPlayerSoul(player, allAssets);
             if (playerSoul == null)
             {
-                hasPlayerWithoutSoulData = true;
                 continue;
             }
 
-            foundKnownPlayerSoul = true;
+            foundAnyPlayerSoul = true;
             if (playerSoul.owningTeam == team)
-                return true;
+            {
+                foundOwnedSoul = true;
+            }
         }
 
-        if (hasPlayerWithoutSoulData)
-            return true;
-
-        if (foundKnownPlayerSoul)
+        if (!foundAnyPlayerSoul)
             return false;
 
-        return true;
+        return foundOwnedSoul;
     }
 
     private static StakeAsset FindPlayerSoul(Skeleton player, IReadOnlyList<StakeAsset> allAssets)

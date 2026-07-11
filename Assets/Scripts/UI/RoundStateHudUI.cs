@@ -22,6 +22,7 @@ public sealed class RoundStateHudUI : MonoBehaviour
     private GameManager subscribedManager;
     private CardGame subscribedGame;
     private BettingDiscussionGate subscribedDiscussionGate;
+    private TurnTimer subscribedTurnTimer;
 
     private void Reset()
     {
@@ -38,6 +39,7 @@ public sealed class RoundStateHudUI : MonoBehaviour
         ResolveReferences();
         SubscribeToManager(gameManager);
         SubscribeToDiscussionGate(discussionGate);
+        SubscribeToTurnTimer();
         Refresh();
     }
 
@@ -45,6 +47,7 @@ public sealed class RoundStateHudUI : MonoBehaviour
     {
         UnsubscribeFromManager();
         UnsubscribeFromDiscussionGate();
+        UnsubscribeFromTurnTimer();
     }
 
     public static RoundStateHudUI EnsureDefaultFor(GameManager manager)
@@ -84,6 +87,7 @@ public sealed class RoundStateHudUI : MonoBehaviour
         ResolveReferences();
         SubscribeToManager(gameManager);
         SubscribeToDiscussionGate(discussionGate);
+        SubscribeToTurnTimer();
         Refresh();
     }
 
@@ -102,14 +106,22 @@ public sealed class RoundStateHudUI : MonoBehaviour
         if (phaseText != null)
             phaseText.text = ResolvePhaseLabel(phase);
 
-        bool showTimer = discussionGate != null
+        bool showDiscussionTimer = discussionGate != null
             && discussionGate.IsDiscussionActive
             && phase == CardGame.GamePhase.BettingRoundStart;
+
+        bool showTurnTimer = subscribedTurnTimer != null
+            && subscribedTurnTimer.IsRunning
+            && phase == CardGame.GamePhase.Betting;
+
+        bool showTimer = showDiscussionTimer || showTurnTimer;
+        float timerValue = showTurnTimer ? subscribedTurnTimer.RemainingSeconds : discussionGate?.DiscussionRemainingSeconds ?? 0f;
 
         if (timerText != null)
         {
             timerText.gameObject.SetActive(showTimer);
-            timerText.text = showTimer ? FormatSeconds(discussionGate.DiscussionRemainingSeconds) : string.Empty;
+            timerText.text = showTimer ? FormatSeconds(timerValue) : string.Empty;
+            timerText.color = showTurnTimer ? new Color(1f, 0.5f, 0.1f, 1f) : new Color(0.12f, 1f, 0.72f, 1f);
         }
     }
 
@@ -232,6 +244,7 @@ public sealed class RoundStateHudUI : MonoBehaviour
         subscribedManager.OnGameCreated += HandleGameCreated;
         subscribedManager.OnMatchEnded += HandleMatchEnded;
         SubscribeToGame(subscribedManager.CardGame);
+        SubscribeToTurnTimer();
     }
 
     private void UnsubscribeFromManager()
@@ -243,6 +256,7 @@ public sealed class RoundStateHudUI : MonoBehaviour
         subscribedManager.OnMatchEnded -= HandleMatchEnded;
         subscribedManager = null;
         UnsubscribeFromGame();
+        UnsubscribeFromTurnTimer();
     }
 
     private void SubscribeToGame(CardGame game)
@@ -293,11 +307,42 @@ public sealed class RoundStateHudUI : MonoBehaviour
         subscribedDiscussionGate = null;
     }
 
+    private void SubscribeToTurnTimer()
+    {
+        if (gameManager == null)
+            return;
+
+        TurnTimer turnTimer = gameManager.GetComponent<TurnTimer>();
+        if (turnTimer == subscribedTurnTimer)
+            return;
+
+        UnsubscribeFromTurnTimer();
+        subscribedTurnTimer = turnTimer;
+        if (subscribedTurnTimer == null)
+            return;
+
+        subscribedTurnTimer.OnTurnTimerStarted += HandleTurnTimerStarted;
+        subscribedTurnTimer.OnTurnTimerTick += HandleTurnTimerTick;
+        subscribedTurnTimer.OnTurnTimerExpired += HandleTurnTimerExpired;
+    }
+
+    private void UnsubscribeFromTurnTimer()
+    {
+        if (subscribedTurnTimer == null)
+            return;
+
+        subscribedTurnTimer.OnTurnTimerStarted -= HandleTurnTimerStarted;
+        subscribedTurnTimer.OnTurnTimerTick -= HandleTurnTimerTick;
+        subscribedTurnTimer.OnTurnTimerExpired -= HandleTurnTimerExpired;
+        subscribedTurnTimer = null;
+    }
+
     private void HandleGameCreated(CardGame game)
     {
         SubscribeToGame(game);
         if (gameManager != null)
             SubscribeToDiscussionGate(gameManager.GetComponent<BettingDiscussionGate>());
+        SubscribeToTurnTimer();
         Refresh();
     }
 
@@ -317,6 +362,21 @@ public sealed class RoundStateHudUI : MonoBehaviour
     }
 
     private void HandleDiscussionCompleted(CardGame.Round round)
+    {
+        Refresh();
+    }
+
+    private void HandleTurnTimerStarted(Skeleton player, float durationSeconds)
+    {
+        Refresh();
+    }
+
+    private void HandleTurnTimerTick(float remainingSeconds)
+    {
+        Refresh();
+    }
+
+    private void HandleTurnTimerExpired(Skeleton player)
     {
         Refresh();
     }
