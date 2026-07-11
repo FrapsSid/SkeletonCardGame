@@ -615,7 +615,6 @@ MonoBehaviour:
   musicSlider: {fileID: 1292917650}
   sfxSlider: {fileID: 1665112385}
   brightnessSlider: {fileID: 193466070}
-  brightnessOverlay: {fileID: 0}
 --- !u!1 &94846546
 GameObject:
   m_ObjectHideFlags: 0
