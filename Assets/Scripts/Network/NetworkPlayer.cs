@@ -74,6 +74,7 @@ namespace Multiplayer
                     if (characterController != null) characterController.enabled = false;
                     transform.SetPositionAndRotation(spawnPoint.position, spawnPoint.rotation);
                     if (characterController != null) characterController.enabled = isOwner;
+                    playerController?.SnapToGround();
                 }
 
                 if (_playerName.Value.IsEmpty)

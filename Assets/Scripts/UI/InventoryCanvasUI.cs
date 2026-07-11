@@ -460,8 +460,11 @@ public class InventoryCanvasUI : MonoBehaviour
         {
             ClearItemView();
 
+            RawImage.texture = null;
+
             if (_camera != null)
             {
+                _camera.targetTexture = null;
                 Object.Destroy(_camera.gameObject);
             }
 

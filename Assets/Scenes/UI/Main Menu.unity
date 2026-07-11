@@ -1092,9 +1092,9 @@ MonoBehaviour:
   sfxSource: {fileID: 864030229}
   musicSource: {fileID: 864030228}
   backgroundMusicPlaylist:
-  - {fileID: 8300000, guid: 8f0ce61fc6b0b7d40a9e5cbdb96d66e0, type: 3}
-  - {fileID: 8300000, guid: debee9ae35ff0c343b837bfc87168b90, type: 3}
   - {fileID: 8300000, guid: 9e4edf209ebac2443b3cd955a604efe4, type: 3}
+  - {fileID: 8300000, guid: debee9ae35ff0c343b837bfc87168b90, type: 3}
+  - {fileID: 8300000, guid: 8f0ce61fc6b0b7d40a9e5cbdb96d66e0, type: 3}
   musicVolume: 0.3
   musicFadeDuration: 2
   soundBanks:

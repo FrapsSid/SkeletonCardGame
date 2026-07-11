@@ -45,6 +45,7 @@ public sealed class GameManager : MonoBehaviour
     {
         _bettingDiscussionGate = GetComponent<BettingDiscussionGate>() ?? throw new NullReferenceException(nameof(BettingDiscussionGate));
         cardDealer ??= GetComponent<CardDealer>();
+        ResolveActiveCardDealer();
 
 // ISSUE 20 DEBUG
 #if UNITY_EDITOR
@@ -86,6 +87,8 @@ public sealed class GameManager : MonoBehaviour
 
     public void StartGame()
     {
+        ResolveActiveCardDealer();
+
         if (_teams.Count == 0 || _players.Count == 0)
             throw new InvalidOperationException("GameManager needs teams and players before starting a game.");
         if (LocalPlayer == null || !_players.Contains(LocalPlayer))
@@ -329,6 +332,8 @@ public sealed class GameManager : MonoBehaviour
 
     private void PrepareCardDealerForRound()
     {
+        ResolveActiveCardDealer();
+
         if (cardDealer == null)
             return;
 
@@ -435,6 +440,35 @@ public sealed class GameManager : MonoBehaviour
 
         StopCoroutine(_takenCardDealCoroutine);
         _takenCardDealCoroutine = null;
+    }
+
+    private void ResolveActiveCardDealer()
+    {
+        if (IsUsableCardDealer(cardDealer))
+            return;
+
+        CardDealer? activeDealer = FindFirstObjectByType<CardDealer>();
+        if (IsUsableCardDealer(activeDealer))
+        {
+            cardDealer = activeDealer;
+            return;
+        }
+
+        CardDealer[] allDealers = FindObjectsByType<CardDealer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < allDealers.Length; i++)
+        {
+            CardDealer dealer = allDealers[i];
+            if (IsUsableCardDealer(dealer))
+            {
+                cardDealer = dealer;
+                return;
+            }
+        }
+    }
+
+    private static bool IsUsableCardDealer(CardDealer? dealer)
+    {
+        return dealer != null && dealer.isActiveAndEnabled && dealer.gameObject.activeInHierarchy;
     }
 
 // <Сетевая часть

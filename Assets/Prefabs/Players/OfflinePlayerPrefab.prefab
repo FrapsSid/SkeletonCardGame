@@ -7156,7 +7156,7 @@ MonoBehaviour:
   groundCheckOffset: -0.88
   groundMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 4294967295
   cameraTransform: {fileID: 1351781952846503091}
   uiStateController: {fileID: 0}
   animator: {fileID: 6357563118673688624}
