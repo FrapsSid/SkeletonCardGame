@@ -368,12 +368,6 @@ public class CardGame
                 return;
             }
 
-            if (BettingRound >= MaxBettingRounds)
-            {
-                _game.phase = GamePhase.End;
-                return;
-            }
-
             _game.phase = GamePhase.AddingCards;
         }
         public void DealTableCards(int number)
@@ -579,7 +573,10 @@ public class CardGame
         if (round.BettingRound >= 1 && round.BettingRound <= 3)
             round.DealTableCards(1);
 
-        phase = GamePhase.BettingRoundStart;
+        if (round.BettingRound >= Round.MaxBettingRounds)
+            phase = GamePhase.End;
+        else
+            phase = GamePhase.BettingRoundStart;
     }
 
     public void ResetRound()

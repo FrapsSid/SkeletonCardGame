@@ -20,6 +20,7 @@ public sealed class GameManager : MonoBehaviour
     private int _activeCardDealerWaits;
     private bool _roundResolved;
     private bool _waitingForTableDealAnimation;
+    private bool _discussionStartedForRound;
     private readonly MatchEndEvaluator _matchEndEvaluator = new();
     private MatchEndResult? _matchEndResult;
     private TurnTimer? _turnTimer;
@@ -108,6 +109,7 @@ public sealed class GameManager : MonoBehaviour
         SubscribeToDiscussionGate();
         _roundResolved = false;
         _waitingForTableDealAnimation = false;
+        _discussionStartedForRound = false;
         _matchEndResult = null;
 
         CardGame = new CardGame(_teams, _players);
@@ -191,6 +193,13 @@ public sealed class GameManager : MonoBehaviour
             if (_waitingForTableDealAnimation)
                 return;
 
+            if (_discussionStartedForRound)
+            {
+                game.StartBettingRound();
+                return;
+            }
+
+            _discussionStartedForRound = true;
             StartBettingDiscussion(game.round);
         }
         else if (phase == GamePhase.AddingCards)
@@ -305,6 +314,7 @@ public sealed class GameManager : MonoBehaviour
 
         game.ResetRound();
         _roundResolved = false;
+        _discussionStartedForRound = false;
         StartRoundFlow(game);
     }
 
@@ -390,6 +400,12 @@ public sealed class GameManager : MonoBehaviour
         CardGame? game = CardGame;
         if (game?.round == null || game.phase != GamePhase.BettingRoundStart)
             yield break;
+
+        if (_discussionStartedForRound)
+        {
+            game.StartBettingRound();
+            yield break;
+        }
 
         StartBettingDiscussion(game.round);
     }
