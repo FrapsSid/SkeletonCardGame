@@ -116,6 +116,13 @@ public class BettingCanvasUI : MonoBehaviour
 
     public void Show()
     {
+        // Ghosts cannot bet
+        if (gameManager?.LocalPlayer?.IsGhost == true)
+        {
+            Hide();
+            return;
+        }
+
         LoadExistingBetSelection();
         SetOpen(true);
         RefreshControls();
@@ -329,6 +336,7 @@ public class BettingCanvasUI : MonoBehaviour
             && game.phase == CardGame.GamePhase.Betting
             && round != null
             && localPlayer != null
+            && !localPlayer.IsGhost
             && round.CurrentPlayer == localPlayer
             && round.ActivePlayers.Contains(localPlayer)
             && round.playerStates.ContainsKey(localPlayer)

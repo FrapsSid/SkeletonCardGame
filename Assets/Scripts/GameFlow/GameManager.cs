@@ -22,6 +22,7 @@ public sealed class GameManager : MonoBehaviour
     private bool _waitingForTableDealAnimation;
     private readonly MatchEndEvaluator _matchEndEvaluator = new();
     private MatchEndResult? _matchEndResult;
+    private TurnTimer? _turnTimer;
 
     public CardGame? CardGame { get; private set; }
     public Skeleton? LocalPlayer { get; private set; }
@@ -45,6 +46,12 @@ public sealed class GameManager : MonoBehaviour
     {
         _bettingDiscussionGate = GetComponent<BettingDiscussionGate>() ?? throw new NullReferenceException(nameof(BettingDiscussionGate));
         cardDealer ??= GetComponent<CardDealer>();
+
+        // TurnTimer
+        _turnTimer = GetComponent<TurnTimer>();
+        if (_turnTimer == null)
+            _turnTimer = gameObject.AddComponent<TurnTimer>();
+        _turnTimer.OnTurnTimerExpired += HandleTurnTimerExpired;
 
 // ISSUE 20 DEBUG
 #if UNITY_EDITOR
@@ -201,9 +208,20 @@ public sealed class GameManager : MonoBehaviour
     private void HandleRoundEnded(RoundResult result)
     {
         // global::Audio.AudioHandler.PlayEvent(global::Audio.SoundEvent.RoundEnd);
+        _turnTimer?.StopTurnTimer();
         ClearNetworkCurrentTurn();
         ClearHeldCardItems();
         StopRestartRound();
+
+        // Activate ghosts for any player who lost their soul
+        foreach (var player in _players)
+        {
+            if (player.IsGhost && player.Body != null)
+            {
+                var ghost = player.Body.GetComponent<GhostController>();
+                ghost?.Refresh();
+            }
+        }
 
         MatchEndResult? matchEndResult = _matchEndEvaluator.Evaluate(_teams);
         if (matchEndResult != null && matchEndResult.HasWinner)
@@ -223,7 +241,19 @@ public sealed class GameManager : MonoBehaviour
     private void HandleTurnStarted(Skeleton player)
     {
         // global::Audio.AudioHandler.PlayEvent(global::Audio.SoundEvent.TurnChange);
+        _turnTimer?.StartTurnTimer(player);
         PublishNetworkCurrentTurn(player);
+    }
+
+    private void HandleTurnTimerExpired(Skeleton player)
+    {
+        if (CardGame?.round == null) return;
+        if (CardGame.round.CurrentPlayer != player) return;
+
+        if (CardGame.round.HasMatchedBet(player))
+            CardGame.round.EndTurn(player);
+        else
+            CardGame.round.Fold(player);
     }
 
     private void ClearHeldCardItems()

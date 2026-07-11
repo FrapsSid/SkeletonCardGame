@@ -211,6 +211,7 @@ public class TurnActionButtons : MonoBehaviour
             && game.phase == CardGame.GamePhase.Betting
             && round != null
             && localPlayer != null
+            && !localPlayer.IsGhost
             && round.CurrentPlayer == localPlayer
             && round.ActivePlayers.Contains(localPlayer)
             && round.playerStates.ContainsKey(localPlayer)

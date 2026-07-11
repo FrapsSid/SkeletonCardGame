@@ -1,5 +1,8 @@
 using System;
 using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
@@ -29,6 +32,7 @@ public class PlayerController : MonoBehaviour
     private CharacterController _cc;
     private InputReader _input;
     private SkeletonBody _skeletonBody;
+    private GhostController? _ghost;
     private Vector3 _velocity;
     private Vector3 _horizontalVelocity;
     private Vector3 _smoothMoveVelocity;
@@ -50,10 +54,22 @@ public class PlayerController : MonoBehaviour
         _cc = GetComponent<CharacterController>();
         _input = GetComponent<InputReader>();
         _skeletonBody = GetComponent<SkeletonBody>();
+        _ghost = GetComponent<GhostController>();
     }
 
     private void Update()
     {
+        // Ghost flight — ghosts skip all normal movement
+        if (_ghost != null && _ghost.IsGhostActive)
+        {
+            bool up = Keyboard.current?.spaceKey.isPressed == true;
+            bool down = Keyboard.current?.leftCtrlKey.isPressed == true;
+            _ghost.HandleGhostMovement(_input.MoveInput, up, down);
+            _input.ConsumeJump();
+            UpdateAnimator(0f);
+            return;
+        }
+
         bool isGrounded = CheckGround();
 
         HandleGravity(isGrounded);

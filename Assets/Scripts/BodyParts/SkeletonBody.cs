@@ -8,6 +8,7 @@ public class SkeletonBody : MonoBehaviour
     public event Action OnBodyChanged;
 
     private Dictionary<BodyPartType, BodyPart> _attachedParts = new();
+    private Skeleton _owner;
 
     [Header("Bone References")]
     public Transform headBone;
@@ -56,7 +57,19 @@ public class SkeletonBody : MonoBehaviour
         }
     }
 
-    public bool IsIncapacitated => !HasSoul();
+    public bool IsIncapacitated
+    {
+        get
+        {
+            if (_owner != null) return _owner.IsGhost;
+            return !HasSoul();
+        }
+    }
+
+    public void SetOwner(Skeleton owner)
+    {
+        _owner = owner;
+    }
     public bool CanHoldCards => GetArmCount() > 0;
 
     private void Start()
@@ -83,9 +96,12 @@ public class SkeletonBody : MonoBehaviour
     public float GetMovementMultiplier()
     {
         int legs = GetLegCount();
-        if (legs == 0) return 0.0f;
-        if (legs == 1) return 0.5f;
-        return 1.0f;
+        return legs switch
+        {
+            0 => 0.15f,   // Crawling — very slow but NOT immobile
+            1 => 0.55f,   // Limping
+            _ => 1.0f     // Normal
+        };
     }
 
     public BodyPart RemovePart(BodyPartType type)

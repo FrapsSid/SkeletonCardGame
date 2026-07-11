@@ -85,6 +85,9 @@ public class CardGame
         }
         public bool CanTakeCard(Player player)
         {
+            if (player.IsGhost) return false;
+            if (!player.CanHoldCards) return false;
+
             return IsBettingPhase()
                 && !_game.deck.IsEmpty
                 && playerTurnStates[player] != PlayerTurnState.Raised
@@ -335,6 +338,13 @@ public class CardGame
             _game.RaiseBettingRoundStarted(this);
             _lastRaise = 0;
 
+            // Remove ghosts (soulless skeletons) from active players
+            var ghostsToRemove = _activePlayers
+                .Where(p => p.IsGhost)
+                .ToList();
+            foreach (var ghost in ghostsToRemove)
+                _activePlayers.Remove(ghost);
+
             if (_activePlayers.Count == 0)
             {
                 EndBettingRound();
@@ -345,6 +355,8 @@ public class CardGame
             MoveToNextActivePlayer();
             BeginPlayersTurn(CurrentPlayer);
         }
+        public const int MaxBettingRounds = 3;
+
         public void EndBettingRound()
         {
             BettingRound++;
@@ -356,7 +368,7 @@ public class CardGame
                 return;
             }
 
-            if (BettingRound == 5)
+            if (BettingRound >= MaxBettingRounds)
             {
                 _game.phase = GamePhase.End;
                 return;
@@ -545,6 +557,9 @@ public class CardGame
         if (round == null || phase != GamePhase.RoundStart)
             throw new InvalidOperationException("");
 
+        // Deal initial 2 shared table cards as per rules
+        round.DealTableCards(2);
+
         phase = GamePhase.BettingRoundStart;
         RaiseRoundStarted(round);
     }
@@ -559,10 +574,11 @@ public class CardGame
     {
         if (round == null || phase != GamePhase.AddingCards)
             throw new InvalidOperationException();
-        if (round.BettingRound == 1)
-            round.DealTableCards(2);
-        if (round.BettingRound > 1 && round.BettingRound <= 4)
+
+        // After each betting round, reveal 1 additional card
+        if (round.BettingRound >= 1 && round.BettingRound <= 3)
             round.DealTableCards(1);
+
         phase = GamePhase.BettingRoundStart;
     }
 

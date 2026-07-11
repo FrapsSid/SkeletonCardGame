@@ -73,6 +73,7 @@ public sealed class UIStateController : MonoBehaviour
 
     public void OpenInventory()
     {
+        if (IsLocalPlayerGhost()) return;
         inventoryOpen = true;
         ApplyBaseLayer();
     }
@@ -91,6 +92,7 @@ public sealed class UIStateController : MonoBehaviour
 
     public void OpenTurnUi()
     {
+        if (IsLocalPlayerGhost()) return;
         if (!turnSurface.CanShowForLocalPlayer)
             return;
 
@@ -115,6 +117,7 @@ public sealed class UIStateController : MonoBehaviour
 
     public void OpenBetting()
     {
+        if (IsLocalPlayerGhost()) return;
         if (openModal == ModalUi.Betting)
             return;
 
@@ -317,5 +320,11 @@ public sealed class UIStateController : MonoBehaviour
 
         CloseModal();
         ApplyBaseLayer();
+    }
+
+    private bool IsLocalPlayerGhost()
+    {
+        var gm = FindFirstObjectByType<GameManager>();
+        return gm?.LocalPlayer?.IsGhost == true;
     }
 }

@@ -79,6 +79,13 @@ public class InventoryCanvasUI : MonoBehaviour
 
     public void Show()
     {
+        // Ghosts have no physical inventory
+        if (IsLocalPlayerGhost())
+        {
+            Hide();
+            return;
+        }
+
         ResolveCanvasReferences();
 
         if (rootCanvas != null)
@@ -100,6 +107,11 @@ public class InventoryCanvasUI : MonoBehaviour
         }
 
         Refresh();
+    }
+
+    private bool IsLocalPlayerGhost()
+    {
+        return inventoryOwner?.OwnerSkeleton?.IsGhost == true;
     }
 
     public void Hide()

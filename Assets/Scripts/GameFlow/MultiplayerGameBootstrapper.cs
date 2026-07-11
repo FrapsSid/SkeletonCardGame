@@ -8,6 +8,10 @@ public class MultiplayerGameBootstrapper : MonoBehaviour
 {
     [SerializeField] private GameManager gameManager;
     [SerializeField] private NetworkGameState networkGameState;
+    [SerializeField] private NetworkBettingController networkBettingController;
+    [SerializeField] private NetworkRoundSync networkRoundSync;
+    [SerializeField] private NetworkAssetSync networkAssetSync;
+    [SerializeField] private NetworkCardSync networkCardSync;
 
     private Dictionary<NetworkPlayer, Skeleton> _playerToSkeleton = new();
 
@@ -22,13 +26,13 @@ public class MultiplayerGameBootstrapper : MonoBehaviour
 
         if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
         {
-            Debug.LogError("[MultiplayerBootstrapper] NetworkManager не запущен.");
+            Debug.LogError("[MultiplayerBootstrapper] NetworkManager not running.");
             yield break;
         }
 
         if (gameManager == null || networkGameState == null)
         {
-            Debug.LogError("[MultiplayerBootstrapper] Не назначены GameManager или NetworkGameState.");
+            Debug.LogError("[MultiplayerBootstrapper] GameManager or NetworkGameState not assigned.");
             yield break;
         }
 
@@ -37,33 +41,37 @@ public class MultiplayerGameBootstrapper : MonoBehaviour
             yield return null;
         }
 
-        if (NetworkManager.Singleton.IsServer)
-        {
-            Debug.Log("[MultiplayerBootstrapper] Инициализация игры на сервере.");
-            SetupGame();
-        }
-        else
-        {
-            Debug.Log("[MultiplayerBootstrapper] Инициализация игры на клиенте.");
-            SetupGame();
-        }
+        SetupGame();
     }
 
     private void SetupGame()
     {
         NetworkPlayer[] networkPlayers = FindObjectsByType<NetworkPlayer>(FindObjectsSortMode.None);
-        
+
         if (networkPlayers.Length == 0)
         {
-            Debug.LogError("[MultiplayerBootstrapper] Не найдено ни одного NetworkPlayer.");
+            Debug.LogError("[MultiplayerBootstrapper] No NetworkPlayers found.");
             return;
         }
 
-        Debug.Log($"[MultiplayerBootstrapper] Найдено {networkPlayers.Length} игроков.");
+        Debug.Log($"[MultiplayerBootstrapper] Found {networkPlayers.Length} players.");
 
         var teams = new List<Team>();
         var players = new List<Skeleton>();
         PlayerPresentationRegistry presentationRegistry = PlayerPresentationRegistry.EnsureDefaultFor(gameManager);
+
+        // Auto-wire network components if not assigned
+        if (networkBettingController == null)
+            networkBettingController = FindFirstObjectByType<NetworkBettingController>();
+        if (networkRoundSync == null)
+            networkRoundSync = FindFirstObjectByType<NetworkRoundSync>();
+        if (networkAssetSync == null)
+            networkAssetSync = FindFirstObjectByType<NetworkAssetSync>();
+        if (networkCardSync == null)
+            networkCardSync = FindFirstObjectByType<NetworkCardSync>();
+
+        // Wire SerializeField references on network components
+        WireNetworkComponents();
 
         foreach (NetworkPlayer networkPlayer in networkPlayers)
         {
@@ -79,17 +87,18 @@ public class MultiplayerGameBootstrapper : MonoBehaviour
             SkeletonBody body = networkPlayer.GetComponentInChildren<SkeletonBody>();
             if (body != null)
             {
+                skeleton.SetBody(body);
                 SkeletonStakeLinker.RegisterBodyAssets(team, skeleton, body);
-                Debug.Log($"[MultiplayerBootstrapper] Игрок {networkPlayer.ClientId} - зарегистрировано {team.Assets.Count} активов из тела.");
+                Debug.Log($"[MultiplayerBootstrapper] Player {networkPlayer.ClientId} - registered {team.Assets.Count} assets.");
             }
             else
             {
-                Debug.LogWarning($"[MultiplayerBootstrapper] У игрока {networkPlayer.ClientId} нет SkeletonBody.");
+                Debug.LogWarning($"[MultiplayerBootstrapper] Player {networkPlayer.ClientId} has no SkeletonBody.");
             }
 
             _playerToSkeleton[networkPlayer] = skeleton;
 
-            Debug.Log($"[MultiplayerBootstrapper] Игрок (ID: {networkPlayer.ClientId}) зарегистрирован.");
+            Debug.Log($"[MultiplayerBootstrapper] Player (ID: {networkPlayer.ClientId}) registered.");
         }
 
         Skeleton localPlayer = players[0];
@@ -97,7 +106,34 @@ public class MultiplayerGameBootstrapper : MonoBehaviour
         gameManager.EnableNetworkMode(networkGameState);
         gameManager.StartGame(teams, players, localPlayer);
 
-        Debug.Log($"[MultiplayerBootstrapper] Игра запущена: {teams.Count} команд, {players.Count} игроков");
+        Debug.Log($"[MultiplayerBootstrapper] Game started: {teams.Count} teams, {players.Count} players");
+    }
+
+    private void WireNetworkComponents()
+    {
+        if (networkBettingController != null)
+        {
+            SetPrivateField(networkBettingController, "gameManager", gameManager);
+            SetPrivateField(networkBettingController, "networkGameState", networkGameState);
+        }
+        if (networkRoundSync != null)
+        {
+            SetPrivateField(networkRoundSync, "gameManager", gameManager);
+        }
+        if (networkAssetSync != null)
+        {
+            SetPrivateField(networkAssetSync, "gameManager", gameManager);
+        }
+    }
+
+    private static void SetPrivateField(object target, string fieldName, object value)
+    {
+        var field = target.GetType().GetField(fieldName,
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (field != null)
+        {
+            field.SetValue(target, value);
+        }
     }
 
     public Skeleton GetSkeletonForPlayer(NetworkPlayer networkPlayer)

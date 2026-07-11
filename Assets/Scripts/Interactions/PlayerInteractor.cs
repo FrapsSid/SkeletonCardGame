@@ -40,10 +40,19 @@ public class PlayerInteractor : MonoBehaviour
         Skeleton? skeleton = _inventoryOwner.OwnerSkeleton;
         _interactions.Clear();
         _interactionsByObject.Clear();
-        if (skeleton != null)
+
+        if (skeleton == null) return;
+
+        // Ghosts can only interact with card stacks to reveal them
+        if (skeleton.IsGhost)
         {
-            GatherInteractions(skeleton, _cameraController != null && _cameraController.IsFirstPerson);
+            GatherGhostInteractions(skeleton);
+            if (InputKeyUtils.WasPressedThisFrame(interactionKey))
+                OpenInteractions();
+            return;
         }
+
+        GatherInteractions(skeleton, _cameraController != null && _cameraController.IsFirstPerson);
 
         if (InputKeyUtils.WasPressedThisFrame(interactionKey))
         {
@@ -117,6 +126,36 @@ public class PlayerInteractor : MonoBehaviour
             {
                 AddInteractions(player, interactable);
             }
+        }
+
+        Array.Clear(_overlapResults, 0, hitCount);
+    }
+
+    private void GatherGhostInteractions(Skeleton ghost)
+    {
+        var ghostCtrl = ghost.Body?.GetComponent<GhostController>();
+        if (ghostCtrl == null || ghostCtrl.HasUsedReveal) return;
+
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            transform.position,
+            interactionRange,
+            _overlapResults,
+            interactionLayerMask,
+            QueryTriggerInteraction.Collide);
+
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider candidate = _overlapResults[i];
+            if (candidate == null) continue;
+
+            CardStack stack = candidate.GetComponentInParent<CardStack>();
+            if (stack == null) continue;
+
+            _interactions.Add(new Interaction(
+                "Card Stack",
+                "Reveal Permanently",
+                _ => ghostCtrl.TryRevealCardStack(stack),
+                false));
         }
 
         Array.Clear(_overlapResults, 0, hitCount);
