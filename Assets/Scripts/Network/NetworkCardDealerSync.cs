@@ -25,6 +25,7 @@ public struct CardNetworkData : INetworkSerializable
         serializer.SerializeValue(ref Value);
     }
 }
+
 public struct PlayerCardsData : INetworkSerializable
 {
     public int PlayerIndex;
@@ -39,19 +40,21 @@ public struct PlayerCardsData : INetworkSerializable
 
 public class NetworkCardDealerSync : NetworkBehaviour
 {
-    [SerializeField] private CardDealer cardDealer;
+    [SerializeField] private CardDealer? cardDealer;
 
     public override void OnNetworkSpawn()
     {
-        if (cardDealer == null)
-            cardDealer = FindFirstObjectByType<CardDealer>();
-
+        ResolveCardDealer();
         Debug.Log($"[NetworkCardDealerSync] OnNetworkSpawn: IsServer={IsServer}, IsHost={IsHost}, IsClient={IsClient}, cardDealer={cardDealer != null}");
 
-        if (!IsServer) return;
+        if (!IsServer)
+            return;
 
         var gm = FindFirstObjectByType<GameManager>();
         Debug.Log($"[NetworkCardDealerSync] GameManager found: {gm != null}, CardGame exists: {gm?.CardGame != null}");
+        if (gm == null)
+            return;
+
         if (gm.CardGame != null)
         {
             HandleGameCreated(gm.CardGame);
@@ -64,10 +67,12 @@ public class NetworkCardDealerSync : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
-        if (!IsServer) return;
+        if (!IsServer)
+            return;
 
         var gm = FindFirstObjectByType<GameManager>();
-        if (gm != null) {
+        if (gm != null)
+        {
             gm.OnGameCreated -= HandleGameCreated;
             gm.OnCardDealCompleted -= HandleCardDealCompleted;
         }
@@ -75,8 +80,9 @@ public class NetworkCardDealerSync : NetworkBehaviour
 
     private void HandleGameCreated(CardGame game)
     {
-        Debug.Log("[NetworkCardDealerSync] HandleGameCreated: подписка на OnTableCardsDealt");
+        Debug.Log("[NetworkCardDealerSync] Subscribing to table card deal events");
         game.OnTableCardsDealt += HandleTableCardsDealt;
+
         var gm = FindFirstObjectByType<GameManager>();
         if (gm != null)
             gm.OnCardDealCompleted += HandleCardDealCompleted;
@@ -84,10 +90,12 @@ public class NetworkCardDealerSync : NetworkBehaviour
 
     private void HandleCardDealCompleted()
     {
-        if (!IsServer) return;
+        if (!IsServer)
+            return;
 
         var gm = FindFirstObjectByType<GameManager>();
-        if (gm?.CardGame == null) return;
+        if (gm?.CardGame == null)
+            return;
 
         var allData = new List<PlayerCardsData>();
         var playersList = new List<Skeleton>(gm.Players);
@@ -102,24 +110,30 @@ public class NetworkCardDealerSync : NetworkBehaviour
             allData.Add(new PlayerCardsData { PlayerIndex = i, Cards = netCards });
         }
 
-        Debug.Log($"[NetworkCardDealerSync] Отправляю карты {allData.Count} игрокам");
+        Debug.Log($"[NetworkCardDealerSync] Sending cards to {allData.Count} players");
         ShowPlayerCardsClientRpc(allData.ToArray());
     }
+
     [ClientRpc]
     private void ShowPlayerCardsClientRpc(PlayerCardsData[] playerCards)
     {
-        if (IsHost) return;
-        if (cardDealer == null) return;
+        ResolveCardDealer();
+        if (IsHost)
+            return;
+        if (cardDealer == null)
+            return;
 
         var gm = FindFirstObjectByType<GameManager>();
-        if (gm?.CardGame == null) return;
+        if (gm?.CardGame == null)
+            return;
 
         var playersList = new List<Skeleton>(gm.Players);
 
         int cardsPerPlayer = 0;
         foreach (var data in playerCards)
         {
-            if (data.PlayerIndex >= playersList.Count) continue;
+            if (data.PlayerIndex >= playersList.Count)
+                continue;
 
             var skeleton = playersList[data.PlayerIndex];
             foreach (var card in data.Cards)
@@ -128,14 +142,16 @@ public class NetworkCardDealerSync : NetworkBehaviour
             if (data.Cards.Length > cardsPerPlayer)
                 cardsPerPlayer = data.Cards.Length;
         }
+
         cardDealer.DealCardsToPlayers(playersList, cardsPerPlayer);
     }
 
     private void HandleTableCardsDealt(IReadOnlyList<CardData> cards)
     {
-        if (!IsServer) return;
+        if (!IsServer)
+            return;
 
-        Debug.Log($"[NetworkCardDealerSync] Сервер раздал {cards.Count} карт на стол, отправка ClientRpc");
+        Debug.Log($"[NetworkCardDealerSync] Server dealt {cards.Count} table cards, sending ClientRpc");
 
         var networkCards = new CardNetworkData[cards.Count];
         for (int i = 0; i < cards.Count; i++)
@@ -147,10 +163,12 @@ public class NetworkCardDealerSync : NetworkBehaviour
     [ClientRpc]
     private void ShowTableCardsClientRpc(CardNetworkData[] cards)
     {
-        Debug.Log($"[NetworkCardDealerSync] Клиент получил {cards.Length} карт: IsHost={IsHost}, cardDealer={cardDealer != null}");
+        ResolveCardDealer();
+        Debug.Log($"[NetworkCardDealerSync] Client received {cards.Length} cards: IsHost={IsHost}, cardDealer={cardDealer != null}");
 
-        if (IsHost) return;
-        if (cardDealer == null) 
+        if (IsHost)
+            return;
+        if (cardDealer == null)
         {
             Debug.LogWarning("[NetworkCardDealerSync] cardDealer is null.");
             return;
@@ -160,7 +178,36 @@ public class NetworkCardDealerSync : NetworkBehaviour
         for (int i = 0; i < cards.Length; i++)
             cardDataList.Add(cards[i].ToCardData());
 
-        Debug.Log($"[NetworkCardDealerSync] Вызов CardDealer.DealCardsToTable с {cardDataList.Count} картами");
+        Debug.Log($"[NetworkCardDealerSync] Calling CardDealer.DealCardsToTable with {cardDataList.Count} cards");
         cardDealer.DealCardsToTable(cardDataList);
+    }
+
+    private void ResolveCardDealer()
+    {
+        if (IsUsableCardDealer(cardDealer))
+            return;
+
+        CardDealer? activeDealer = FindFirstObjectByType<CardDealer>();
+        if (IsUsableCardDealer(activeDealer))
+        {
+            cardDealer = activeDealer;
+            return;
+        }
+
+        CardDealer[] allDealers = FindObjectsByType<CardDealer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < allDealers.Length; i++)
+        {
+            CardDealer dealer = allDealers[i];
+            if (IsUsableCardDealer(dealer))
+            {
+                cardDealer = dealer;
+                return;
+            }
+        }
+    }
+
+    private static bool IsUsableCardDealer(CardDealer? dealer)
+    {
+        return dealer != null && dealer.isActiveAndEnabled && dealer.gameObject.activeInHierarchy;
     }
 }

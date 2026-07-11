@@ -157,7 +157,8 @@ public sealed class CardDealer : MonoBehaviour
         _dealtTableCardCount++;
 
         WorldCardView movingCard = CreateCard(card, false);
-        yield return MoveCard(movingCard.transform, destination.position, destination.rotation);
+        Vector3 destinationPosition = destination.position;
+        yield return MoveCard(movingCard.transform, destinationPosition, destination.rotation);
         global::Audio.AudioHandler.PlayEvent(global::Audio.SoundEvent.CardDeal);
 
         _tableCards.Add(movingCard);

@@ -52,6 +52,11 @@ public class PlayerController : MonoBehaviour
         _skeletonBody = GetComponent<SkeletonBody>();
     }
 
+    private void Start()
+    {
+        SnapToGround();
+    }
+
     private void Update()
     {
         bool isGrounded = CheckGround();
@@ -78,7 +83,45 @@ public class PlayerController : MonoBehaviour
     private bool CheckGround()
     {
         Vector3 spherePos = transform.position + Vector3.up * groundCheckOffset;
-        return Physics.CheckSphere(spherePos, groundCheckRadius, groundMask, QueryTriggerInteraction.Ignore);
+        return Physics.CheckSphere(spherePos, groundCheckRadius, GetGroundMask(), QueryTriggerInteraction.Ignore);
+    }
+
+    public void SnapToGround()
+    {
+        if (_cc == null)
+            return;
+
+        int mask = GetGroundMask();
+        if (mask == 0)
+            return;
+
+        Vector3 origin = transform.position + Vector3.up * Mathf.Max(2f, _cc.height);
+        float maxDistance = Mathf.Max(5f, _cc.height * 4f);
+        if (!Physics.Raycast(origin, Vector3.down, out RaycastHit hit, maxDistance, mask, QueryTriggerInteraction.Ignore))
+            return;
+
+        bool controllerWasEnabled = _cc.enabled;
+        float bottomOffset = (_cc.height * 0.5f) - _cc.center.y;
+
+        if (controllerWasEnabled)
+            _cc.enabled = false;
+
+        Vector3 snappedPosition = transform.position;
+        snappedPosition.y = hit.point.y + bottomOffset;
+        transform.position = snappedPosition;
+        Physics.SyncTransforms();
+
+        if (controllerWasEnabled)
+            _cc.enabled = true;
+    }
+
+    private int GetGroundMask()
+    {
+        int groundLayer = LayerMask.NameToLayer("Ground");
+        if (groundLayer >= 0)
+            return 1 << groundLayer;
+
+        return groundMask;
     }
 
     private void HandleGravity(bool isGrounded)

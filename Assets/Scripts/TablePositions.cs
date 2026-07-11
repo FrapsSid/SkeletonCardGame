@@ -259,6 +259,69 @@ public sealed class TablePositions : MonoBehaviour
         return new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
     }
 
+    [ContextMenu("Snap Table Card Positions To Surface")]
+    private void SnapTableCardPositionsToSurfaceFromContextMenu()
+    {
+        EnsureTableCardPositionCount();
+        SnapTableCardPositionsToSurface();
+    }
+    private void SnapTableCardPositionsToSurface()
+    {
+        for (int i = 0; i < tableCardPositions.Length; i++)
+        {
+            Transform? marker = tableCardPositions[i];
+            if (marker == null)
+            {
+                continue;
+            }
+
+            if (TryGetSurfacePoint(marker.position, out Vector3 surfacePoint))
+            {
+                marker.position = surfacePoint;
+            }
+        }
+    }
+
+    private bool TryGetSurfacePoint(Vector3 worldPosition, out Vector3 surfacePoint)
+    {
+        surfacePoint = default;
+
+        Collider[] colliders = GetComponentsInChildren<Collider>(true);
+        if (colliders.Length == 0)
+        {
+            return false;
+        }
+
+        Ray ray = new Ray(worldPosition + Vector3.up * 10f, Vector3.down);
+        float bestDistance = float.PositiveInfinity;
+        bool found = false;
+
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            Collider collider = colliders[i];
+            if (collider == null || !collider.enabled || collider.isTrigger)
+            {
+                continue;
+            }
+
+            if (!collider.Raycast(ray, out RaycastHit hit, 20f))
+            {
+                continue;
+            }
+
+            if (hit.distance >= bestDistance)
+            {
+                continue;
+            }
+
+            bestDistance = hit.distance;
+            surfacePoint = hit.point;
+            found = true;
+        }
+
+        return found;
+    }
+
     private static void DestroyGeneratedObject(UnityEngine.Object? target)
     {
         if (target == null)
