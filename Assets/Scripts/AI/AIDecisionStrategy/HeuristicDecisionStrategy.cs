@@ -29,6 +29,11 @@ public class HeuristicDecisionStrategy : BaseAIDecisionStrategy
             return new AIResponsePackage(AIActionType.Fold);
         }
 
+        if(snapshot.CurrentParticipationPrice == 0)
+        {
+            return new AIResponsePackage(AIActionType.Pass);
+        }
+
         // подсчет собранной комбинации
         CombinationDifficulty? realDifficulty = EvaluateHand(snapshot.OwnHand, snapshot.TableCards, snapshot.RoundCombinations);
 
@@ -44,36 +49,24 @@ public class HeuristicDecisionStrategy : BaseAIDecisionStrategy
             {
                 int totalCost = partsToCall.Sum(part => BodyPartExtensions.GetBodyPartCost(part));
 
-                return new AIResponsePackage(AIActionType.CheckCall, totalCost, partsToCall, null);
+                return new AIResponsePackage(AIActionType.CheckCall, totalCost, partsToCall, snapshot.OwnTarget!=null ? snapshot.OwnTarget : DeclaredCombinationTier.Easy);
+                
             }
             else
             {
                 return new AIResponsePackage(AIActionType.Fold);
             }
         }
-        else
-        // выбор между чеком и рейзом
-        {
-            List<BodyPart> partsToRaise = stakeCalculator.SelectBodypartsForTradeAction(risk, snapshot.OwnBody);
 
-            if (partsToRaise != null)
-            {
-                int totalCost = partsToRaise.Sum(part => BodyPartExtensions.GetBodyPartCost(part));
-                return new AIResponsePackage(AIActionType.Raise, totalCost, partsToRaise, null);
-            }
-            else
-            {
-                return new AIResponsePackage(AIActionType.CheckCall);
-            }
-        }
+        return new AIResponsePackage(AIActionType.Fold);
     }
 
     // --- ХОД С КАРТАМИ ---
     public override AIResponsePackage ChooseCardAction(GameStateSnapshot snapshot)
     {
-        if (snapshot.OwnBody != null && snapshot.OwnBody.IsIncapacitated)
+        if (snapshot.OwnBody == null || snapshot.OwnBody.IsIncapacitated)
         {
-            return new AIResponsePackage(AIActionType.Pass);
+            return new AIResponsePackage(AIActionType.Fold);
         }
 
         // подсчет собранной комбинации
@@ -137,8 +130,7 @@ public class HeuristicDecisionStrategy : BaseAIDecisionStrategy
         }
 
         // Дефолтный защитный пропуск хода
-        return new AIResponsePackage(AIActionType.CheckCall);
-
+        return new AIResponsePackage(AIActionType.Pass);
     }
 
 
@@ -248,7 +240,6 @@ public class HeuristicDecisionStrategy : BaseAIDecisionStrategy
     private float CalculateRiskForTradeAction(GameStateSnapshot snapshot, CombinationDifficulty? difficulty)
     {
         float risk = GetRiskForTier(difficulty);
-        risk -= snapshot.CurrentIteration;
         risk = Mathf.Clamp01(risk);
 
         return risk;

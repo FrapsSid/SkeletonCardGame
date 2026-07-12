@@ -56,7 +56,6 @@ public class SimpleStakeCalculator : BaseStakeCalculator
         if (skeletonBody == null) return new List<BodyPart>();
 
         return skeletonBody.GetAttachedParts()
-            .Where(part => part.Type != BodyPartType.Torso)
             .OrderBy(part => BodyPartExtensions.GetBodyPartCost(part))
             .ToList();
     }
