@@ -1,4 +1,3 @@
-using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,14 +10,22 @@ public class JoinGameUINetwork : MonoBehaviour
     [SerializeField] private Button backButton;
     [SerializeField] private TMP_InputField addressInputField;
     [SerializeField] private Button connectButton;
-    void Start()
+    [SerializeField] private TextMeshProUGUI statusText;
+
+    private void Start()
     {
         backButton.onClick.AddListener(OnBackClicked);
         connectButton.onClick.AddListener(OnConnectClicked);
 
-        addressInputField.text = "127.0.0.1";
+        addressInputField.text = "";
+        addressInputField.placeholder.GetComponent<TextMeshProUGUI>().text = "Room code";
 
-        NetworkGameManager.Instance.OnDisconnected += HandleDisconnected;
+        if (LobbyManager.Instance != null)
+        {
+            LobbyManager.Instance.OnLobbyFound += HandleLobbyFound;
+            LobbyManager.Instance.OnLobbyNotFound += HandleLobbyNotFound;
+            LobbyManager.Instance.OnError += HandleError;
+        }
     }
 
     private void OnDestroy()
@@ -26,9 +33,11 @@ public class JoinGameUINetwork : MonoBehaviour
         backButton?.onClick.RemoveListener(OnBackClicked);
         connectButton?.onClick.RemoveListener(OnConnectClicked);
 
-        if (NetworkGameManager.Instance != null)
+        if (LobbyManager.Instance != null)
         {
-            NetworkGameManager.Instance.OnDisconnected -= HandleDisconnected;
+            LobbyManager.Instance.OnLobbyFound -= HandleLobbyFound;
+            LobbyManager.Instance.OnLobbyNotFound -= HandleLobbyNotFound;
+            LobbyManager.Instance.OnError -= HandleError;
         }
     }
 
@@ -46,17 +55,45 @@ public class JoinGameUINetwork : MonoBehaviour
             return;
         }
 
-        string address = string.IsNullOrWhiteSpace(addressInputField.text)
-            ? "127.0.0.1"
-            : addressInputField.text;
+        string code = addressInputField.text.Trim().ToUpper();
+        if (string.IsNullOrEmpty(code))
+        {
+            SetStatus("Enter a room code");
+            return;
+        }
 
-        Debug.Log($"Connecting to {address}...");
-        NetworkGameManager.Instance.JoinGame(address);
-        Debug.Log($"[UI] After JoinGame: IsClient={NetworkManager.Singleton.IsClient}");
+        if (LobbyManager.Instance == null)
+        {
+            SetStatus("Lobby manager not available");
+            return;
+        }
+
+        connectButton.interactable = false;
+        SetStatus($"Looking up lobby {code}...");
+        LobbyManager.Instance.FindLobby(code);
     }
 
-    private void HandleDisconnected(DisconnectReason reason)
+    private void HandleLobbyFound(int port)
     {
-        Debug.LogWarning($"Connection failed: {reason}");
+        SetStatus($"Connecting to port {port}...");
+        NetworkGameManager.Instance.JoinGameAtAddress(LobbyManager.Instance.ServerAddress, (ushort)port);
+    }
+
+    private void HandleLobbyNotFound(string code)
+    {
+        connectButton.interactable = true;
+        SetStatus($"Lobby {code} not found");
+    }
+
+    private void HandleError(string error)
+    {
+        connectButton.interactable = true;
+        SetStatus($"Error: {error}");
+    }
+
+    private void SetStatus(string message)
+    {
+        if (statusText != null)
+            statusText.text = message;
     }
 }

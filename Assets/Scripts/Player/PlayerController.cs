@@ -39,6 +39,11 @@ public class PlayerController : MonoBehaviour
     private float _coyoteTimer;
     private bool _isFirstPerson;
 
+#if !ENABLE_INPUT_SYSTEM
+    private Vector2 _fallbackMoveInput = Vector2.zero;
+    private bool _fallbackJumpPressed = false;
+#endif
+
     public void SetFirstPersonLock(bool locked)
     {
         _isFirstPerson = locked;
@@ -62,8 +67,13 @@ public class PlayerController : MonoBehaviour
         // Ghost flight — ghosts skip all normal movement
         if (_ghost != null && _ghost.IsGhostActive)
         {
+            #if ENABLE_INPUT_SYSTEM
             bool up = Keyboard.current?.spaceKey.isPressed == true;
             bool down = Keyboard.current?.leftCtrlKey.isPressed == true;
+            #else
+            bool up = Input.GetKey(KeyCode.Space);
+            bool down = Input.GetKey(KeyCode.LeftControl);
+            #endif
             _ghost.HandleGhostMovement(_input.MoveInput, up, down);
             _input.ConsumeJump();
             UpdateAnimator(0f);

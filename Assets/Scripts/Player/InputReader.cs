@@ -1,4 +1,5 @@
 using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 
 public class InputReader : MonoBehaviour, PlayerControls.IPlayerActions
@@ -35,3 +36,26 @@ public class InputReader : MonoBehaviour, PlayerControls.IPlayerActions
 
     public void ConsumeJump() => JumpPressed = false;
 }
+
+#else
+public class InputReader : MonoBehaviour
+{
+    public Vector2 MoveInput { get; private set; }
+    public Vector2 LookInput { get; private set; }
+    public bool IsRunning { get; private set; }
+    public bool JumpPressed { get; private set; }
+
+    private void Update()
+    {
+        MoveInput = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+        IsRunning = Input.GetKey(KeyCode.LeftShift);
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            JumpPressed = true;
+        }
+    }
+
+    public void ConsumeJump() => JumpPressed = false;
+}
+#endif
