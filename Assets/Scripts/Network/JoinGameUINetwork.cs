@@ -1,4 +1,3 @@
-using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,14 +8,19 @@ using Multiplayer;
 public class JoinGameUINetwork : MonoBehaviour
 {
     [SerializeField] private Button backButton;
-    [SerializeField] private TMP_InputField addressInputField;
     [SerializeField] private Button connectButton;
+    [SerializeField] private TMP_InputField addressInputField;
+    [SerializeField] private TMP_InputField roomCodeInputField;
+
     void Start()
     {
         backButton.onClick.AddListener(OnBackClicked);
         connectButton.onClick.AddListener(OnConnectClicked);
 
-        addressInputField.text = "127.0.0.1";
+        if (addressInputField != null)
+            addressInputField.text = "127.0.0.1";
+        if (roomCodeInputField != null)
+            roomCodeInputField.text = "";
 
         NetworkGameManager.Instance.OnDisconnected += HandleDisconnected;
     }
@@ -27,9 +31,7 @@ public class JoinGameUINetwork : MonoBehaviour
         connectButton?.onClick.RemoveListener(OnConnectClicked);
 
         if (NetworkGameManager.Instance != null)
-        {
             NetworkGameManager.Instance.OnDisconnected -= HandleDisconnected;
-        }
     }
 
     private void OnBackClicked()
@@ -46,13 +48,22 @@ public class JoinGameUINetwork : MonoBehaviour
             return;
         }
 
-        string address = string.IsNullOrWhiteSpace(addressInputField.text)
+        // Relay join: room code takes priority
+        if (roomCodeInputField != null && !string.IsNullOrWhiteSpace(roomCodeInputField.text))
+        {
+            string code = roomCodeInputField.text.Trim().ToUpper();
+            Debug.Log($"[Relay] Joining room {code}...");
+            NetworkGameManager.Instance.JoinRelayGame(code);
+            return;
+        }
+
+        // Direct join: IP address
+        string address = string.IsNullOrWhiteSpace(addressInputField != null ? addressInputField.text : "")
             ? "127.0.0.1"
             : addressInputField.text;
 
-        Debug.Log($"Connecting to {address}...");
+        Debug.Log($"Connecting directly to {address}...");
         NetworkGameManager.Instance.JoinGame(address);
-        Debug.Log($"[UI] After JoinGame: IsClient={NetworkManager.Singleton.IsClient}");
     }
 
     private void HandleDisconnected(DisconnectReason reason)

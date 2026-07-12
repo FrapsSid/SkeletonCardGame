@@ -65,14 +65,17 @@ namespace Multiplayer
             NetworkManager.Singleton.OnClientConnectedCallback -= HandleClientConnected;
         }
 
+        // ── Direct connect (existing) ──────────────────────────────────
+
         public void HostGame()
         {
+            EnsureTransport<UnityTransport>();
             NetworkManager.Singleton.StartHost();
         }
 
         public void JoinGame(string address)
         {
-            var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+            var transport = EnsureTransport<UnityTransport>();
             if (transport != null)
             {
                 transport.ConnectionData.Address = address;
@@ -80,6 +83,41 @@ namespace Multiplayer
             }
             NetworkManager.Singleton.StartClient();
         }
+
+        // ── Relay connect (new) ────────────────────────────────────────
+
+        public void HostRelayGame()
+        {
+            var relay = EnsureTransport<RelayTransport>();
+            relay.OnRoomCodeReceived += code =>
+                Debug.Log($"[NGM] Relay room code: {code}");
+            NetworkManager.Singleton.StartHost();
+        }
+
+        public void JoinRelayGame(string roomCode)
+        {
+            var relay = EnsureTransport<RelayTransport>();
+            relay.SetRoomCode(roomCode);
+            NetworkManager.Singleton.StartClient();
+        }
+
+        // ── Transport helper ───────────────────────────────────────────
+
+        private T EnsureTransport<T>() where T : NetworkTransport
+        {
+            var nm = NetworkManager.Singleton;
+            var existing = nm.GetComponent<T>();
+            if (existing != null)
+            {
+                nm.NetworkConfig.NetworkTransport = existing;
+                return existing;
+            }
+            var added = nm.gameObject.AddComponent<T>();
+            nm.NetworkConfig.NetworkTransport = added;
+            return added;
+        }
+
+        // ── Disconnect / shutdown ──────────────────────────────────────
 
         public void Disconnect()
         {
@@ -152,7 +190,7 @@ namespace Multiplayer
             _connectedClients.Add(clientId);
             OnClientConnected?.Invoke(clientId);
         }
-        
+
         public void CustomGameStarted()
         {
             if (!NetworkManager.Singleton.IsServer) return;
