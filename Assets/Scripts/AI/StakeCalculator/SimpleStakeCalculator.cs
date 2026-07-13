@@ -10,53 +10,42 @@ public class SimpleStakeCalculator : BaseStakeCalculator
 
     [Tooltip("Если риск ниже этого значения, бот не будет повышать")]
     public float shouldRaiseThreshold = 0.4f;
-    protected override int CalculateTradeActionPrice(float risk, SkeletonBody skeletonBody)
+    protected override int CalculateRaisePrice(float risk, List<StakeAsset> availableAssets)
     {
-        if (skeletonBody == null) return 0;
+        if (availableAssets == null) return 0;
 
         if (risk < shouldRaiseThreshold) return 0;
 
-        List<BodyPart> allowedParts = SelectOrderedBodypartsByPrice(0, skeletonBody);
+        List<StakeAsset> allowedParts = availableAssets.Where(asset => asset != null && asset.bodyPart.Type != BodyPartType.Soul).ToList();
 
         int totalValueWithoutSoul = allowedParts
-            .Where(part => part.Type != BodyPartType.Soul)
-            .Sum(part => BodyPartExtensions.GetBodyPartCost(part));
+            .Sum(part => part.stakeValue);
 
         int calculatedPrice = Mathf.RoundToInt(totalValueWithoutSoul * (risk- shouldRaiseThreshold));
 
         return Mathf.Max(0, calculatedPrice);
     }
 
-    public override List<BodyPart> SelectBodypartsForTradeAction(float risk, SkeletonBody skeletonBody, int price = 0)
+    public override List<StakeAsset> SelectBodypartsForTradeAction(float risk, List<StakeAsset> availableAssets, int price = 0)
     {
-        if (risk < shouldFoldThreshold || skeletonBody == null) return null;
+        if (risk < shouldFoldThreshold || availableAssets == null) return null;
 
-        int requiredPrice = price == 0 ? CalculateTradeActionPrice(risk, skeletonBody) : price;
+        int requiredPrice = price == 0 ? CalculateRaisePrice(risk, availableAssets) : price;
 
         if (requiredPrice == 0) return null;
 
-        List<BodyPart> availableParts = SelectOrderedBodypartsByPrice(requiredPrice, skeletonBody);
+        List<StakeAsset> partsToStake = new List<StakeAsset>();
 
-        List<BodyPart> partsToStake = new List<BodyPart>();
         int currentAccumulatedPrice = 0;
 
-        foreach (var part in availableParts)
+        foreach (var part in availableAssets)
         {
             if (currentAccumulatedPrice >= requiredPrice) break;
 
             partsToStake.Add(part);
-            currentAccumulatedPrice += BodyPartExtensions.GetBodyPartCost(part);
+            currentAccumulatedPrice += part.stakeValue;
         }
 
         return partsToStake.Count > 0 ? partsToStake : null;
-    }
-
-    protected override List<BodyPart> SelectOrderedBodypartsByPrice(float price, SkeletonBody skeletonBody)
-    {
-        if (skeletonBody == null) return new List<BodyPart>();
-
-        return skeletonBody.GetAttachedParts()
-            .OrderBy(part => BodyPartExtensions.GetBodyPartCost(part))
-            .ToList();
     }
 }

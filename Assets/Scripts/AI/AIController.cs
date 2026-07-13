@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using static CardGame;
 
@@ -74,7 +75,7 @@ public class AIController
         snapshot.RoundCombinations = _aiData.RoundCombinations;
 
         // Ссылки на физическое тело и заявку текущего бота (Own)
-        snapshot.OwnBody = player.Body;
+        snapshot.AvailableAssets = new List<StakeAsset>(player.team.Assets.Where(asset => asset != null && player.Body.GetAttachedParts().Contains(asset.bodyPart)).ToList());
         snapshot.OwnTarget = _aiData.OwnTarget;
         snapshot.OwnCommittedValue = _aiData.OwnCommittedValue;
 

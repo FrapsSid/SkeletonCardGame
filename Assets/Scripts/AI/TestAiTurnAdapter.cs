@@ -150,7 +150,7 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
             case AIActionType.ChangeCombination:
                 if(response.ChosenTarget.HasValue)
                 {
-                    TryMatchCurrentPrice(round, player, response.ChosenTarget.Value);
+                    TryMatchCurrentPrice(round, player, response);
                     CompleteTurn(player);
                 } else
                 {
@@ -174,7 +174,7 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
             case AIActionType.CheckCall:
                 if (response.ChosenTarget.HasValue)
                 {
-                    TryMatchCurrentPrice(round, player, response.ChosenTarget.Value);
+                    TryMatchCurrentPrice(round, player, response);
                 }
                 else
                 {
@@ -217,11 +217,11 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
             round.EndTurn(player);
     }
 
-    private void TryMatchCurrentPrice(CardGameRound round, Skeleton player, DeclaredCombinationTier combination)
+    private void TryMatchCurrentPrice(CardGameRound round, Skeleton player, AIResponsePackage responsePackage)
     {
-        List<StakeAsset> assets = player.team.Assets
-            .Where(asset => asset != null && player.team.OwnsAsset(asset))
-            .ToList();
+        DeclaredCombinationTier combination = responsePackage.ChosenTarget.HasValue ? responsePackage.ChosenTarget.Value : DeclaredCombinationTier.Easy;
+
+        List<StakeAsset> assets = new List<StakeAsset>(responsePackage.PutOnStakeParts);
 
         if (round.CanCall(player, assets, combination))
         {

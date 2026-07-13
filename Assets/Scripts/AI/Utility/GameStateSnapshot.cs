@@ -8,7 +8,7 @@ public struct GameStateSnapshot
 
     public AIDeck _AIDeck;
 
-    public SkeletonBody OwnBody;
+    public List<StakeAsset> AvailableAssets;
     public List<CardData> OwnHand;
     public DeclaredCombinationTier? OwnTarget;
     public int OwnCommittedValue;
