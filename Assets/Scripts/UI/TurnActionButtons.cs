@@ -129,17 +129,44 @@ public class TurnActionButtons : MonoBehaviour
 
     public void SkipTurn()
     {
-        TryRunAction("skip turn", CanSkipTurn, (round, localPlayer) => round.EndTurn(localPlayer));
+        if (gameManager != null && gameManager.IsNetworkMode)
+        {
+            if (!TryGetActionContext(out _, out _)) { RefreshButtons(); return; }
+            gameManager.RequestSkipTurn();
+            RefreshButtons();
+        }
+        else
+        {
+            TryRunAction("skip turn", CanSkipTurn, (round, localPlayer) => round.EndTurn(localPlayer));
+        }
     }
 
     public void TakeCard()
     {
-        TryRunAction("take card", CanTakeCard, (round, localPlayer) => round.TakeCard(localPlayer));
+        if (gameManager != null && gameManager.IsNetworkMode)
+        {
+            if (!TryGetActionContext(out _, out _)) { RefreshButtons(); return; }
+            gameManager.RequestTakeCard();
+            RefreshButtons();
+        }
+        else
+        {
+            TryRunAction("take card", CanTakeCard, (round, localPlayer) => round.TakeCard(localPlayer));
+        }
     }
 
     public void Pass()
     {
-        TryRunAction("pass", CanPass, (round, localPlayer) => round.Fold(localPlayer));
+        if (gameManager != null && gameManager.IsNetworkMode)
+        {
+            if (!TryGetActionContext(out _, out _)) { RefreshButtons(); return; }
+            gameManager.RequestFold();
+            RefreshButtons();
+        }
+        else
+        {
+            TryRunAction("pass", CanPass, (round, localPlayer) => round.Fold(localPlayer));
+        }
     }
 
     private void TryRunAction(string actionName, Func<CardGameRound, Skeleton, bool> canRun, Action<CardGameRound, Skeleton> action)

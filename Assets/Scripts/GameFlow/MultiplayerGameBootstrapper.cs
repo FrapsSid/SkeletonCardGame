@@ -55,15 +55,19 @@ public class MultiplayerGameBootstrapper : MonoBehaviour
         
         if (networkPlayers.Length == 0)
         {
-            Debug.LogError("[MultiplayerBootstrapper] Не найдено ни одного NetworkPlayer.");
+            Debug.LogError("[MultiplayerBootstrapper] No NetworkPlayers found.");
             return;
         }
 
-        Debug.Log($"[MultiplayerBootstrapper] Найдено {networkPlayers.Length} игроков.");
+        System.Array.Sort(networkPlayers, (a, b) => a.ClientId.CompareTo(b.ClientId));
+
+        Debug.Log($"[MultiplayerBootstrapper] Found {networkPlayers.Length} players.");
 
         var teams = new List<Team>();
         var players = new List<Skeleton>();
         PlayerPresentationRegistry presentationRegistry = PlayerPresentationRegistry.EnsureDefaultFor(gameManager);
+        ulong localClientId = NetworkManager.Singleton.LocalClientId;
+        Skeleton localPlayer = null;
 
         foreach (NetworkPlayer networkPlayer in networkPlayers)
         {
@@ -80,24 +84,35 @@ public class MultiplayerGameBootstrapper : MonoBehaviour
             if (body != null)
             {
                 SkeletonStakeLinker.RegisterBodyAssets(team, skeleton, body);
-                Debug.Log($"[MultiplayerBootstrapper] Игрок {networkPlayer.ClientId} - зарегистрировано {team.Assets.Count} активов из тела.");
+                skeleton.SetBody(body);
+                PlayerInventoryOwner inventoryOwner = body.GetComponent<PlayerInventoryOwner>();
+                if (inventoryOwner != null)
+                    inventoryOwner.AssignSkeleton(skeleton);
+                Debug.Log($"[MultiplayerBootstrapper] Player {networkPlayer.ClientId} - registered {team.Assets.Count} assets.");
             }
             else
             {
-                Debug.LogWarning($"[MultiplayerBootstrapper] У игрока {networkPlayer.ClientId} нет SkeletonBody.");
+                Debug.LogWarning($"[MultiplayerBootstrapper] Player {networkPlayer.ClientId} has no SkeletonBody.");
             }
+
+            if (networkPlayer.ClientId == localClientId)
+                localPlayer = skeleton;
 
             _playerToSkeleton[networkPlayer] = skeleton;
 
-            Debug.Log($"[MultiplayerBootstrapper] Игрок (ID: {networkPlayer.ClientId}) зарегистрирован.");
+            Debug.Log($"[MultiplayerBootstrapper] Player (ID: {networkPlayer.ClientId}) registered.");
         }
 
-        Skeleton localPlayer = players[0];
+        if (localPlayer == null)
+        {
+            Debug.LogError("[MultiplayerBootstrapper] Could not find local player!");
+            localPlayer = players[0];
+        }
 
         gameManager.EnableNetworkMode(networkGameState);
         gameManager.StartGame(teams, players, localPlayer);
 
-        Debug.Log($"[MultiplayerBootstrapper] Игра запущена: {teams.Count} команд, {players.Count} игроков");
+        Debug.Log($"[MultiplayerBootstrapper] Game started: {teams.Count} teams, {players.Count} players");
     }
 
     public Skeleton GetSkeletonForPlayer(NetworkPlayer networkPlayer)

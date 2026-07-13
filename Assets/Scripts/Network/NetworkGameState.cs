@@ -107,5 +107,13 @@ namespace Multiplayer
         {
             SetCurrentTurn(NoCurrentTurnPlayerIndex, NoCurrentTurnClientId);
         }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SubmitTurnActionServerRpc(int actionType)
+        {
+            if (!IsServer) return;
+            var gm = FindFirstObjectByType<GameManager>();
+            gm?.ProcessNetworkTurnAction(actionType);
+        }
     }
 }

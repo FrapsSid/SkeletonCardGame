@@ -46,6 +46,12 @@ public class CardGame
         public Player CurrentPlayer => _game.players[_currentPlayerIndex];
         public IReadOnlyList<Team>? Winners => Result?.winners;
         public RoundResult? Result { get; private set; }
+
+        internal void SetCurrentPlayerIndex(int index)
+        {
+            _currentPlayerIndex = index;
+        }
+
         public enum PlayerTurnState
         {
             None,
@@ -491,6 +497,40 @@ public class CardGame
     public event Action<GamePhase>? OnPhaseChanged;
     public event Action<Round>? OnRoundStarted;
     public event Action<Round>? OnBettingRoundStarted;
+
+    internal void SyncPhase(GamePhase newPhase)
+    {
+        if (_phase != newPhase)
+            phase = newPhase;
+    }
+
+    internal void SyncTurn(int playerIndex)
+    {
+        if (round == null || playerIndex < 0 || playerIndex >= players.Count)
+            return;
+
+        var previousPlayer = round.CurrentPlayer;
+        round.SetCurrentPlayerIndex(playerIndex);
+        if (previousPlayer != null && previousPlayer != players[playerIndex])
+            OnTurnEnded?.Invoke(previousPlayer);
+        RaiseTurnStarted(players[playerIndex]);
+    }
+
+    internal void ResetRoundForClient()
+    {
+        foreach (var player in players)
+        {
+            foreach (var card in player.Hand.GetCards())
+                player.Hand.RemoveCard(card);
+        }
+        round = null;
+    }
+
+    internal void NotifyRoundStarted()
+    {
+        if (round != null)
+            RaiseRoundStarted(round);
+    }
     public event Action<Round>? OnBettingRoundEnded;
     public event Action<RoundResult>? OnRoundEnded;
     public event Action<Player, DeclaredCombinationTier>? OnTargetDeclared;

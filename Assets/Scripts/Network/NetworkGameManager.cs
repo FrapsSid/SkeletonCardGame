@@ -205,7 +205,7 @@ namespace Multiplayer
             }
             NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += SpawnPlayersOnSceneLoad;
 
-            NetworkManager.Singleton.SceneManager.LoadScene("MultiplayerGameTest", UnityEngine.SceneManagement.LoadSceneMode.Single);
+            NetworkManager.Singleton.SceneManager.LoadScene("RelayPlay", UnityEngine.SceneManagement.LoadSceneMode.Single);
         }
         private void OnCustomGameStartedReceived(ulong senderId, FastBufferReader reader)
         {
@@ -214,7 +214,7 @@ namespace Multiplayer
 
         private void SpawnPlayersOnSceneLoad(string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
         {
-            if (sceneName != "MultiplayerGameTest") return;
+            if (sceneName != "RelayPlay") return;
 
             NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= SpawnPlayersOnSceneLoad;
 

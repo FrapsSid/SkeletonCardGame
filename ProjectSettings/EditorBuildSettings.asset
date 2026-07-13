@@ -35,6 +35,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/UI/Tutorial.unity
     guid: 1c375d805b298be438c071b5cc1d63a5
+  - enabled: 1
+    path: Assets/Scenes/RelayPlay.unity
+    guid: 8b69e6b6d3ce34e49a9900e5ba4ec464
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

@@ -4608,6 +4608,11 @@ MonoBehaviour:
   leftLegBone: {fileID: 6681495020954043169}
   rightLegBone: {fileID: 7243400788397327224}
   torsoBone: {fileID: 6532062886486661108}
+  headMeshFolder: {fileID: 0}
+  leftArmMeshFolder: {fileID: 0}
+  rightArmMeshFolder: {fileID: 0}
+  leftLegMeshFolder: {fileID: 0}
+  rightLegMeshFolder: {fileID: 0}
 --- !u!114 &130212196484287129
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4679,8 +4684,8 @@ MonoBehaviour:
   playerController: {fileID: 8614010433827452616}
   uiStateController: {fileID: 0}
   _skeletonBody: {fileID: 6575116593684982007}
-  skullRenderer: {fileID: 0}
   thirdPersonFilterFeature: {fileID: -3625499942535467462, guid: f288ae1f4751b564a96ac7587541f7a2, type: 2}
+  hiddenRenderersInFirstPerson: []
 --- !u!114 &5563274828838346152
 MonoBehaviour:
   m_ObjectHideFlags: 0

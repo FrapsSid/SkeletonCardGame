@@ -42,27 +42,24 @@ public class NetworkCardDealerSync : NetworkBehaviour
 {
     [SerializeField] private CardDealer? cardDealer;
 
+    private bool _initialDealSent;
+
     public override void OnNetworkSpawn()
     {
         ResolveCardDealer();
-        Debug.Log($"[NetworkCardDealerSync] OnNetworkSpawn: IsServer={IsServer}, IsHost={IsHost}, IsClient={IsClient}, cardDealer={cardDealer != null}");
+        _initialDealSent = false;
 
         if (!IsServer)
             return;
 
         var gm = FindFirstObjectByType<GameManager>();
-        Debug.Log($"[NetworkCardDealerSync] GameManager found: {gm != null}, CardGame exists: {gm?.CardGame != null}");
         if (gm == null)
             return;
 
         if (gm.CardGame != null)
-        {
             HandleGameCreated(gm.CardGame);
-        }
         else
-        {
             gm.OnGameCreated += HandleGameCreated;
-        }
     }
 
     public override void OnNetworkDespawn()
@@ -74,28 +71,40 @@ public class NetworkCardDealerSync : NetworkBehaviour
         if (gm != null)
         {
             gm.OnGameCreated -= HandleGameCreated;
-            gm.OnCardDealCompleted -= HandleCardDealCompleted;
+            gm.OnCardDealCompleted -= HandleInitialDealCompleted;
+            if (gm.CardGame != null)
+            {
+                gm.CardGame.OnTableCardsDealt -= HandleTableCardsDealt;
+                gm.CardGame.OnCardTaken -= HandleCardTaken;
+            }
         }
     }
 
     private void HandleGameCreated(CardGame game)
     {
-        Debug.Log("[NetworkCardDealerSync] Subscribing to table card deal events");
         game.OnTableCardsDealt += HandleTableCardsDealt;
+        game.OnCardTaken += HandleCardTaken;
 
         var gm = FindFirstObjectByType<GameManager>();
         if (gm != null)
-            gm.OnCardDealCompleted += HandleCardDealCompleted;
+            gm.OnCardDealCompleted += HandleInitialDealCompleted;
+
+        _initialDealSent = false;
     }
 
-    private void HandleCardDealCompleted()
+    private void HandleInitialDealCompleted()
     {
         if (!IsServer)
+            return;
+
+        if (_initialDealSent)
             return;
 
         var gm = FindFirstObjectByType<GameManager>();
         if (gm?.CardGame == null)
             return;
+
+        _initialDealSent = true;
 
         var allData = new List<PlayerCardsData>();
         var playersList = new List<Skeleton>(gm.Players);
@@ -110,8 +119,33 @@ public class NetworkCardDealerSync : NetworkBehaviour
             allData.Add(new PlayerCardsData { PlayerIndex = i, Cards = netCards });
         }
 
-        Debug.Log($"[NetworkCardDealerSync] Sending cards to {allData.Count} players");
+        Debug.Log($"[NetworkCardDealerSync] Initial deal: sending {allData.Count} player hands");
         ShowPlayerCardsClientRpc(allData.ToArray());
+    }
+
+    private void HandleCardTaken(Skeleton player, CardData card)
+    {
+        if (!IsServer)
+            return;
+
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm == null)
+            return;
+
+        int playerIndex = -1;
+        for (int i = 0; i < gm.Players.Count; i++)
+        {
+            if (gm.Players[i] == player)
+            {
+                playerIndex = i;
+                break;
+            }
+        }
+        if (playerIndex < 0)
+            return;
+
+        Debug.Log($"[NetworkCardDealerSync] Player {playerIndex} took a card, sending incremental update");
+        DealTakenCardClientRpc(playerIndex, new CardNetworkData(card));
     }
 
     [ClientRpc]
@@ -129,6 +163,8 @@ public class NetworkCardDealerSync : NetworkBehaviour
 
         var playersList = new List<Skeleton>(gm.Players);
 
+        cardDealer.ClearPlayerCards();
+
         int cardsPerPlayer = 0;
         foreach (var data in playerCards)
         {
@@ -136,6 +172,7 @@ public class NetworkCardDealerSync : NetworkBehaviour
                 continue;
 
             var skeleton = playersList[data.PlayerIndex];
+            skeleton.Hand.Clear();
             foreach (var card in data.Cards)
                 skeleton.Hand.AddCard(card.ToCardData());
 
@@ -146,12 +183,37 @@ public class NetworkCardDealerSync : NetworkBehaviour
         cardDealer.DealCardsToPlayers(playersList, cardsPerPlayer);
     }
 
+    [ClientRpc]
+    private void DealTakenCardClientRpc(int playerIndex, CardNetworkData card)
+    {
+        ResolveCardDealer();
+        if (IsHost)
+            return;
+        if (cardDealer == null)
+            return;
+
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm?.CardGame == null)
+            return;
+
+        var playersList = new List<Skeleton>(gm.Players);
+        if (playerIndex >= playersList.Count)
+            return;
+
+        var skeleton = playersList[playerIndex];
+        var cardData = card.ToCardData();
+        skeleton.Hand.AddCard(cardData);
+
+        Debug.Log($"[NetworkCardDealerSync] Client: player {playerIndex} took a card, dealing incrementally");
+        cardDealer.DealCardToPlayer(skeleton, cardData);
+    }
+
     private void HandleTableCardsDealt(IReadOnlyList<CardData> cards)
     {
         if (!IsServer)
             return;
 
-        Debug.Log($"[NetworkCardDealerSync] Server dealt {cards.Count} table cards, sending ClientRpc");
+        Debug.Log($"[NetworkCardDealerSync] Table cards dealt: {cards.Count}, sending to clients");
 
         var networkCards = new CardNetworkData[cards.Count];
         for (int i = 0; i < cards.Count; i++)
@@ -164,22 +226,19 @@ public class NetworkCardDealerSync : NetworkBehaviour
     private void ShowTableCardsClientRpc(CardNetworkData[] cards)
     {
         ResolveCardDealer();
-        Debug.Log($"[NetworkCardDealerSync] Client received {cards.Length} cards: IsHost={IsHost}, cardDealer={cardDealer != null}");
-
         if (IsHost)
             return;
-        if (cardDealer == null)
-        {
-            Debug.LogWarning("[NetworkCardDealerSync] cardDealer is null.");
+
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm == null)
             return;
-        }
 
         var cardDataList = new List<CardData>(cards.Length);
         for (int i = 0; i < cards.Length; i++)
             cardDataList.Add(cards[i].ToCardData());
 
-        Debug.Log($"[NetworkCardDealerSync] Calling CardDealer.DealCardsToTable with {cardDataList.Count} cards");
-        cardDealer.DealCardsToTable(cardDataList);
+        Debug.Log($"[NetworkCardDealerSync] Client: dealing {cardDataList.Count} table cards");
+        gm.ClientDealTableCards(cardDataList);
     }
 
     private void ResolveCardDealer()

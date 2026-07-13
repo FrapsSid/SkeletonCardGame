@@ -124,30 +124,40 @@ namespace Multiplayer
         {
             var buf = new byte[65536];
             var sb = new StringBuilder();
+            var pingCts = new CancellationTokenSource();
             try
             {
                 while (_connected && _socket.State == WebSocketState.Open)
                 {
-                    var task = _socket.ReceiveAsync(new ArraySegment<byte>(buf), _cts.Token);
-                    if (!task.Wait(TimeSpan.FromSeconds(30)))
+                    try
                     {
-                        SendRaw(new JObject { ["type"] = "ping" });
-                        continue;
-                    }
-                    var result = task.Result;
-                    if (result.MessageType == WebSocketMessageType.Close)
-                    {
-                        _connected = false;
-                        break;
-                    }
-                    if (result.MessageType == WebSocketMessageType.Text)
-                    {
-                        sb.Append(Encoding.UTF8.GetString(buf, 0, result.Count));
-                        if (result.EndOfMessage)
+                        pingCts.CancelAfter(TimeSpan.FromSeconds(30));
+                        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token, pingCts.Token);
+                        var result = _socket.ReceiveAsync(new ArraySegment<byte>(buf), linkedCts.Token).GetAwaiter().GetResult();
+                        pingCts.Cancel();
+                        pingCts.Dispose();
+                        pingCts = new CancellationTokenSource();
+
+                        if (result.MessageType == WebSocketMessageType.Close)
                         {
-                            ProcessMessage(sb.ToString());
-                            sb.Clear();
+                            _connected = false;
+                            break;
                         }
+                        if (result.MessageType == WebSocketMessageType.Text)
+                        {
+                            sb.Append(Encoding.UTF8.GetString(buf, 0, result.Count));
+                            if (result.EndOfMessage)
+                            {
+                                ProcessMessage(sb.ToString());
+                                sb.Clear();
+                            }
+                        }
+                    }
+                    catch (OperationCanceledException) when (pingCts.IsCancellationRequested && !_cts.IsCancellationRequested)
+                    {
+                        pingCts.Dispose();
+                        pingCts = new CancellationTokenSource();
+                        SendRaw(new JObject { ["type"] = "ping" });
                     }
                 }
             }
@@ -158,6 +168,7 @@ namespace Multiplayer
             }
             finally
             {
+                pingCts?.Dispose();
                 _connected = false;
                 _events.Enqueue(new TransportEvent { Type = NetworkEvent.Disconnect, ClientId = ServerClientId });
             }
