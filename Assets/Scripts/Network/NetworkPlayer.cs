@@ -85,7 +85,11 @@ namespace Multiplayer
 
                 if (_playerName.Value.IsEmpty)
                 {
-                    _playerName.Value = new FixedString64Bytes($"Player {OwnerClientId}");
+                    string nickname = AuthManager.Instance != null ? AuthManager.Instance.PlayerNickname : null;
+                    if (!string.IsNullOrEmpty(nickname))
+                        _playerName.Value = new FixedString64Bytes(nickname);
+                    else
+                        _playerName.Value = new FixedString64Bytes($"Player {OwnerClientId}");
                 }
             }
             if (IsServer && _playerIndex.Value == -1)
