@@ -16,6 +16,7 @@ public class SkeletonBody : MonoBehaviour
     public Transform leftLegBone;
     public Transform rightLegBone;
     public Transform torsoBone;
+    public Transform soul;
 
     [Header("Visible Mesh Folders")]
     public Transform headMeshFolder;
@@ -23,6 +24,7 @@ public class SkeletonBody : MonoBehaviour
     public Transform rightArmMeshFolder;
     public Transform leftLegMeshFolder;
     public Transform rightLegMeshFolder;
+    public Transform soulMeshFolder;
 
     public Transform? GetMeshFolderForType(BodyPartType type)
     {
@@ -33,6 +35,7 @@ public class SkeletonBody : MonoBehaviour
             BodyPartType.RightArm => rightArmMeshFolder,
             BodyPartType.LeftLeg => leftLegMeshFolder,
             BodyPartType.RightLeg => rightLegMeshFolder,
+            BodyPartType.Soul => soulMeshFolder,
             _ => null
         };
     }
@@ -44,6 +47,7 @@ public class SkeletonBody : MonoBehaviour
         SetMeshFolderVisible(BodyPartType.RightArm, HasPart(BodyPartType.RightArm));
         SetMeshFolderVisible(BodyPartType.LeftLeg, HasPart(BodyPartType.LeftLeg));
         SetMeshFolderVisible(BodyPartType.RightLeg, HasPart(BodyPartType.RightLeg));
+        SetMeshFolderVisible(BodyPartType.Soul, HasPart(BodyPartType.Soul));
     }
     private void SetMeshFolderVisible(BodyPartType type, bool visible)
     {
@@ -136,6 +140,7 @@ public class SkeletonBody : MonoBehaviour
             BodyPartType.LeftLeg => leftLegBone,
             BodyPartType.RightLeg => rightLegBone,
             BodyPartType.Torso => torsoBone,
+            BodyPartType.Soul => soul,
             _ => transform
         };
     }
