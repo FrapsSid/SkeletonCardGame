@@ -1,0 +1,23 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.3/staging' branch; Version is '6000.3.9f1 (7a9955a4f2fa) revision 8034645'; Using compiler version '194234433'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) Professional' Language: 'ru' Physical Memory: 16077 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-kocha" at "2026-07-12T16:43:06.7999406Z"
+Process architecture: x64
+Date: 2026-07-12T16:43:06Z
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.3.9f1\Editor\Unity.exe
+-batchmode
+-nographics
+-projectPath
+C:\Capstone 2026\SkeletonCardGame
+-executeMethod
+BuildScript.BuildWindowsClientCLI
+-quit
+-logFile
+C:\Capstone 2026\SkeletonCardGame\server\build_log.txt
+Successfully changed project path to: C:\Capstone 2026\SkeletonCardGame
+C:/Capstone 2026/SkeletonCardGame
+Exiting without the bug reporter. Application will terminate with return code 1
