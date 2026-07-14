@@ -220,11 +220,6 @@ public class SkeletonBody : MonoBehaviour
     public BodyPart? RemovePart(BodyPartType type)
     {
         print("удалена часть тела");
-        if (type == BodyPartType.Torso)
-        {
-            Debug.LogWarning("Невозможно отделить торс");
-            return null;
-        }
 
         if (_attachedParts.TryGetValue(type, out BodyPart part))
         {

@@ -729,16 +729,14 @@ public sealed class GameManager : MonoBehaviour
     {
         if (CardGame?.round == null) return;
 
+        ProcessNetworkBetFromTypes(partTypes, tier);
+
         if (_isNetworkMode && !IsServer())
         {
             int[] partTypeValues = new int[partTypes.Count];
             for (int i = 0; i < partTypes.Count; i++)
                 partTypeValues[i] = (int)partTypes[i];
             networkGameState.SubmitBetServerRpc(partTypeValues, (int)tier);
-        }
-        else
-        {
-            ProcessNetworkBetFromTypes(partTypes, tier);
         }
     }
 
@@ -785,6 +783,9 @@ public sealed class GameManager : MonoBehaviour
                 round.Raise(player, assets, tier);
             else
                 round.Call(player, assets, tier);
+
+            if (_isNetworkMode && networkGameState != null)
+                networkGameState.SetParticipationPrice(round.currentParticipationPrice);
         }
         catch (Exception e)
         {

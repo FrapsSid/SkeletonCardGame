@@ -388,36 +388,53 @@ public class NetworkCardDealerSync : NetworkBehaviour
             return;
         }
 
-        var playerIndices = new List<int>();
-        var bodyPartTypes = new List<int>();
+        var loserIndices = new List<int>();
+        var loserBodyPartTypes = new List<int>();
+        var winnerTeamIndices = new List<int>();
 
         foreach (var asset in resolvedAssets)
         {
-            Debug.Log($"[NetworkCardDealerSync] Checking asset: bodyPart={asset.bodyPart != null}, sourceOwner={asset.sourceOwner != null}, bodyPart.Item={asset.bodyPart?.Item != null}");
-            if (asset.bodyPart != null && asset.sourceOwner != null && asset.bodyPart.Item != null)
+            if (asset.bodyPart == null || asset.sourceOwner == null || asset.bodyPart.Item == null)
+                continue;
+            if (asset.bodyPart.State != BodyPartState.Detached)
+                continue;
+
+            int playerIndex = -1;
+            for (int i = 0; i < gm.Players.Count; i++)
             {
-                int playerIndex = -1;
-                for (int i = 0; i < gm.Players.Count; i++)
+                if (gm.Players[i] == asset.sourceOwner)
                 {
-                    if (gm.Players[i] == asset.sourceOwner)
+                    playerIndex = i;
+                    break;
+                }
+            }
+            if (playerIndex < 0) continue;
+
+            int winnerTeamIndex = -1;
+            if (winners.Count > 0)
+            {
+                for (int t = 0; t < gm.Teams.Count; t++)
+                {
+                    if (gm.Teams[t] == winners[0])
                     {
-                        playerIndex = i;
+                        winnerTeamIndex = t;
                         break;
                     }
                 }
-                if (playerIndex >= 0)
-                {
-                    playerIndices.Add(playerIndex);
-                    bodyPartTypes.Add((int)asset.bodyPart.Item.Type);
-                    Debug.Log($"[NetworkCardDealerSync] Found body part to remove: player {playerIndex}, type {asset.bodyPart.Item.Type}");
-                }
             }
+
+            loserIndices.Add(playerIndex);
+            loserBodyPartTypes.Add((int)asset.bodyPart.Item.Type);
+            winnerTeamIndices.Add(winnerTeamIndex);
         }
 
-        if (playerIndices.Count > 0)
+        if (loserIndices.Count > 0)
         {
-            Debug.Log($"[NetworkCardDealerSync] Syncing {playerIndices.Count} body part removals");
-            SyncBodyPartRemovalsClientRpc(playerIndices.ToArray(), bodyPartTypes.ToArray());
+            Debug.Log($"[NetworkCardDealerSync] Broadcasting flying limbs + removals for {loserIndices.Count} parts");
+            BroadcastFlyingLimbAndRemovalClientRpc(
+                loserIndices.ToArray(),
+                loserBodyPartTypes.ToArray(),
+                winnerTeamIndices.ToArray());
         }
         else
         {
@@ -426,41 +443,86 @@ public class NetworkCardDealerSync : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void SyncBodyPartRemovalsClientRpc(int[] playerIndices, int[] bodyPartTypes)
+    private void BroadcastFlyingLimbAndRemovalClientRpc(int[] loserIndices, int[] bodyPartTypes, int[] winnerTeamIndices)
     {
-        Debug.Log($"[NetworkCardDealerSync] SyncBodyPartRemovalsClientRpc: IsHost={IsHost}, playerIndices.Length={playerIndices.Length}");
-        if (IsHost) return;
-
         var gm = FindFirstObjectByType<GameManager>();
         if (gm == null)
         {
-            Debug.LogWarning("[NetworkCardDealerSync] SyncBodyPartRemovalsClientRpc: GameManager not found");
+            Debug.LogWarning("[NetworkCardDealerSync] BroadcastFlyingLimbClientRpc: GameManager not found");
             return;
         }
 
-        for (int i = 0; i < playerIndices.Length; i++)
+        for (int i = 0; i < loserIndices.Length; i++)
         {
-            int playerIndex = playerIndices[i];
-            int bodyPartType = bodyPartTypes[i];
+            int loserIdx = loserIndices[i];
+            int bpt = bodyPartTypes[i];
+            int winnerTeamIdx = winnerTeamIndices[i];
 
-            if (playerIndex >= gm.Players.Count)
-            {
-                Debug.LogWarning($"[NetworkCardDealerSync] SyncBodyPartRemovalsClientRpc: playerIndex {playerIndex} out of range");
+            if (loserIdx >= gm.Players.Count)
                 continue;
+
+            var loserSkeleton = gm.Players[loserIdx];
+            var loserBody = loserSkeleton.Body;
+            if (loserBody == null) continue;
+
+            Transform targetPos = null;
+            if (winnerTeamIdx >= 0 && winnerTeamIdx < gm.Teams.Count)
+            {
+                var winnerTeam = gm.Teams[winnerTeamIdx];
+                if (winnerTeam.Skeletons.Count > 0 && winnerTeam.Skeletons[0].Body != null)
+                    targetPos = winnerTeam.Skeletons[0].Body.transform;
             }
 
-            var skeleton = gm.Players[playerIndex];
-            var body = skeleton.Body;
-            if (body != null)
+            var detachedPart = loserBody.GetAttachedParts().Find(p => p != null && p.Item != null && p.Item.Type == (BodyPartType)bpt);
+            if (detachedPart == null)
             {
-                Debug.Log($"[NetworkCardDealerSync] Client: removing body part {(BodyPartType)bodyPartType} from player {playerIndex}");
-                body.RemovePart((BodyPartType)bodyPartType);
+                var go = loserBody.gameObject;
+                Collider col = null;
+                foreach (var c in go.GetComponentsInChildren<Collider>())
+                {
+                    if (c.GetComponent<BodyPart>() != null)
+                    {
+                        col = c;
+                        break;
+                    }
+                }
+                if (col != null) detachedPart = col.GetComponent<BodyPart>();
+            }
+
+            if (detachedPart != null)
+            {
+                var partGo = detachedPart.gameObject;
+                partGo.transform.SetParent(null);
+
+                if (targetPos != null)
+                {
+                    float delay = i * 0.15f;
+                    StartCoroutine(FlyingLimbSequence(partGo, targetPos, loserBody, (BodyPartType)bpt, delay));
+                }
+                else
+                {
+                    loserBody.RemovePart((BodyPartType)bpt);
+                }
             }
             else
             {
-                Debug.LogWarning($"[NetworkCardDealerSync] SyncBodyPartRemovalsClientRpc: skeleton.Body is null for player {playerIndex}");
+                Debug.LogWarning($"[NetworkCardDealerSync] Could not find body part {(BodyPartType)bpt} on player {loserIdx} for flying effect");
             }
         }
+    }
+
+    private System.Collections.IEnumerator FlyingLimbSequence(GameObject partGo, Transform target, SkeletonBody loserBody, BodyPartType partType, float delay)
+    {
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+
+        var effect = FlyingLimbEffect.Create(partGo, target, 0.8f, () =>
+        {
+            loserBody.RemovePart(partType);
+        });
+
+        while (effect != null)
+            yield return null;
     }
 
     private void HandleMatchEnded(MatchEndResult result)

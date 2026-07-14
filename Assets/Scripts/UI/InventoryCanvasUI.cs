@@ -235,6 +235,14 @@ public class InventoryCanvasUI : MonoBehaviour
             return true;
         }
 
+        GameManager gm = FindFirstObjectByType<GameManager>();
+        if (gm != null && gm.LocalPlayer != null && gm.LocalPlayer.InventoryOwner != null)
+        {
+            inventoryOwner = gm.LocalPlayer.InventoryOwner;
+            inventory = inventoryOwner.Inventory != null ? inventoryOwner.Inventory : inventoryOwner.GetComponent<Inventory>();
+            return inventory != null;
+        }
+
         PlayerInventoryOwner? foundOwner = FindFirstObjectByType<PlayerInventoryOwner>();
         if (foundOwner != null)
         {

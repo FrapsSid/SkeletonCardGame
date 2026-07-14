@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Multiplayer;
 
 using CardGameRound = CardGame.Round;
 
@@ -35,6 +37,11 @@ public class BettingCanvasUI : MonoBehaviour
 
     [Header("Buttons")]
     [SerializeField] private Button openButton = null;
+
+    [Header("Bet Info Display")]
+    [SerializeField] private TMP_Text currentBetText;
+    [SerializeField] private TMP_Text matchAmountText;
+    [SerializeField] private TMP_Text totalPotText;
 
     [Header("State")]
     [SerializeField] private bool closeOnStart = true;
@@ -87,6 +94,10 @@ public class BettingCanvasUI : MonoBehaviour
         RegisterButtonListeners();
         SubscribeToManager(gameManager);
         RefreshControls();
+
+        var ngs = Multiplayer.NetworkGameState.Instance;
+        if (ngs != null)
+            ngs.OnParticipationPriceChanged += HandleNetworkPriceChanged;
     }
 
     private void OnDisable()
@@ -94,6 +105,10 @@ public class BettingCanvasUI : MonoBehaviour
         UnregisterButtonListeners();
         UnsubscribeFromManager();
         SubscribeToBody(null);
+
+        var ngs = Multiplayer.NetworkGameState.Instance;
+        if (ngs != null)
+            ngs.OnParticipationPriceChanged -= HandleNetworkPriceChanged;
     }
 
     public void Open()
@@ -239,6 +254,67 @@ public class BettingCanvasUI : MonoBehaviour
 
         RefreshTierButtons(round, localPlayer, hasContext);
         RefreshBodyPartButtons(hasContext);
+        RefreshBetInfo(round, localPlayer, hasContext);
+    }
+
+    private void RefreshBetInfo(CardGameRound round, Skeleton localPlayer, bool hasContext)
+    {
+        int selectedValue = CalculateSelectedValue();
+        int needAmount = 0;
+        int totalPot = 0;
+
+        if (hasContext && round != null)
+        {
+            int currentPrice = round.currentParticipationPrice;
+            if (gameManager != null && gameManager.IsNetworkMode)
+            {
+                var ngs = Multiplayer.NetworkGameState.Instance;
+                if (ngs != null)
+                    currentPrice = ngs.CurrentParticipationPrice;
+            }
+
+            if (localPlayer != null && round.playerStates.TryGetValue(localPlayer, out PlayerBetState state))
+            {
+                needAmount = Mathf.Max(0, currentPrice - state.committedValue);
+            }
+            else
+            {
+                needAmount = currentPrice;
+            }
+
+            totalPot = CalculateTotalPot(round);
+        }
+
+        SetText(currentBetText, $"Your Bet: {selectedValue}");
+        SetText(matchAmountText, needAmount > 0 ? $"Need: {needAmount}" : "Ready");
+        SetText(totalPotText, $"Pot: {totalPot}");
+    }
+
+    private int CalculateSelectedValue()
+    {
+        int value = 0;
+        foreach (BodyPartType partType in selectedParts)
+        {
+            value += partType.BodyPartCost();
+        }
+        return value;
+    }
+
+    private static int CalculateTotalPot(CardGameRound round)
+    {
+        int total = 0;
+        foreach (var state in round.playerStates.Values)
+        {
+            total += state.committedValue;
+        }
+        return total;
+    }
+
+    private static void SetText(TMP_Text textComponent, string value)
+    {
+        if (textComponent == null) return;
+        textComponent.text = value;
+        textComponent.gameObject.SetActive(true);
     }
 
     private void RefreshTierButtons(CardGameRound round, Skeleton localPlayer, bool hasContext)
@@ -724,6 +800,11 @@ public class BettingCanvasUI : MonoBehaviour
     }
 
     private void HandleBodyChanged()
+    {
+        RefreshControls();
+    }
+
+    private void HandleNetworkPriceChanged(int newPrice)
     {
         RefreshControls();
     }

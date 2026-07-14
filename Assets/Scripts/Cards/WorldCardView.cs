@@ -173,7 +173,16 @@ public sealed class WorldCardView : MonoBehaviour
     {
         if (cardAtlas == null) return null;
         
-        if (!_isFirstPerson && cardAtlas.GetCensoredSprite() != null)
+        bool isLocalGhost = false;
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm?.LocalPlayer?.Body != null)
+        {
+            GhostMode ghost = gm.LocalPlayer.Body.GetComponent<GhostMode>();
+            if (ghost != null && ghost.IsGhost)
+                isLocalGhost = true;
+        }
+
+        if (isLocalGhost || (!_isFirstPerson && cardAtlas.GetCensoredSprite() != null))
         {
             return cardAtlas.GetCensoredSprite();
         }

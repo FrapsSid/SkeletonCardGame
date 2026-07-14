@@ -29,12 +29,20 @@ namespace Multiplayer
             NetworkVariableWritePermission.Server
         );
 
+        private readonly NetworkVariable<int> _currentParticipationPrice = new(
+            0,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server
+        );
+
         public CardGame.GamePhase CurrentPhase => _currentPhase.Value;
         public int CurrentTurnPlayerIndex => _currentTurnPlayerIndex.Value;
         public ulong CurrentTurnClientId => _currentTurnClientId.Value;
+        public int CurrentParticipationPrice => _currentParticipationPrice.Value;
 
         public event System.Action<CardGame.GamePhase> OnPhaseChanged;
         public event System.Action<int, ulong> OnCurrentTurnChanged;
+        public event System.Action<int> OnParticipationPriceChanged;
 
         private void Awake()
         {
@@ -51,6 +59,7 @@ namespace Multiplayer
             _currentPhase.OnValueChanged += HandlePhaseChanged;
             _currentTurnPlayerIndex.OnValueChanged += HandleCurrentTurnPlayerIndexChanged;
             _currentTurnClientId.OnValueChanged += HandleCurrentTurnClientIdChanged;
+            _currentParticipationPrice.OnValueChanged += HandleParticipationPriceChanged;
         }
 
         public override void OnNetworkDespawn()
@@ -58,6 +67,7 @@ namespace Multiplayer
             _currentPhase.OnValueChanged -= HandlePhaseChanged;
             _currentTurnPlayerIndex.OnValueChanged -= HandleCurrentTurnPlayerIndexChanged;
             _currentTurnClientId.OnValueChanged -= HandleCurrentTurnClientIdChanged;
+            _currentParticipationPrice.OnValueChanged -= HandleParticipationPriceChanged;
         }
 
         private void HandlePhaseChanged(CardGame.GamePhase oldValue, CardGame.GamePhase newValue)
@@ -73,6 +83,11 @@ namespace Multiplayer
         private void HandleCurrentTurnClientIdChanged(ulong oldValue, ulong newValue)
         {
             OnCurrentTurnChanged?.Invoke(_currentTurnPlayerIndex.Value, newValue);
+        }
+
+        private void HandleParticipationPriceChanged(int oldValue, int newValue)
+        {
+            OnParticipationPriceChanged?.Invoke(newValue);
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -107,6 +122,15 @@ namespace Multiplayer
         public void ClearCurrentTurn()
         {
             SetCurrentTurn(NoCurrentTurnPlayerIndex, NoCurrentTurnClientId);
+        }
+
+        public void SetParticipationPrice(int price)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+            _currentParticipationPrice.Value = price;
         }
 
         [ServerRpc(RequireOwnership = false)]

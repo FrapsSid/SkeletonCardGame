@@ -280,8 +280,37 @@ public class PlayerInteractor : MonoBehaviour
             return;
         }
 
-        ItemUtils.DropItem(item, hand.transform.position, hand.transform.rotation);
-        hand.SetItem(null);
+        Vector3 dropPos = hand.transform.position;
+        Quaternion dropRot = hand.transform.rotation;
+        int handIndex = interactionType == InteractionType.LeftHand ? 0 : 1;
+
+        NetworkPickupableSync? sync = NetworkPickupableSync.Instance;
+        bool isNetworkMode = sync != null && sync.IsSpawned;
+
+        Skeleton? skeleton = _inventoryOwner.OwnerSkeleton;
+        int playerIndex = -1;
+        if (skeleton != null)
+        {
+            var gm = FindFirstObjectByType<GameManager>();
+            if (gm != null)
+                playerIndex = new List<Skeleton>(gm.Players).IndexOf(skeleton);
+        }
+
+        if (isNetworkMode && sync!.IsServer)
+        {
+            ItemUtils.DropItem(item, dropPos, dropRot);
+            hand.SetItem(null);
+            sync.BroadcastItemDropped(item, dropPos, dropRot, playerIndex, handIndex);
+        }
+        else if (isNetworkMode)
+        {
+            sync!.RequestDropServerRpc(item.Name, playerIndex, handIndex, dropPos, dropRot);
+        }
+        else
+        {
+            ItemUtils.DropItem(item, dropPos, dropRot);
+            hand.SetItem(null);
+        }
     }
 
     private bool TryGetFirstPersonInteractable(out IInteractable? interactable)
