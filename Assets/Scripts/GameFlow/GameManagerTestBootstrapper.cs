@@ -44,15 +44,21 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
         teams.Add(secondTeam);
 
         Skeleton firstPlayer = CreatePlayer(firstTeam);
-        Skeleton secondPlayer = CreatePlayer(secondTeam);
+        Skeleton secondPlayer = CreatePlayer(firstTeam);
+        Skeleton thirdPlayer = CreatePlayer(secondTeam);
+        Skeleton fourthPlayer = CreatePlayer(secondTeam);
 
         players.Add(firstPlayer);
         players.Add(secondPlayer);
+        players.Add(thirdPlayer);
+        players.Add(fourthPlayer);
 
         if (!useRealBodies)
         {
             RegisterTestAssets(firstTeam, firstPlayer);
-            RegisterTestAssets(secondTeam, secondPlayer);
+            RegisterTestAssets(firstTeam, secondPlayer);
+            RegisterTestAssets(secondTeam, thirdPlayer);
+            RegisterTestAssets(secondTeam, fourthPlayer);
         }
 
         EnsureTestAiTurnAdapter();
@@ -61,7 +67,9 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
         if (useRealBodies)
         {
             SpawnAndLinkBody(firstTeam, firstPlayer, isAI: false);
-            SpawnAndLinkBody(secondTeam, secondPlayer, isAI: true);
+            SpawnAndLinkBody(firstTeam, secondPlayer, isAI: true);
+            SpawnAndLinkBody(secondTeam, thirdPlayer, isAI: true);
+            SpawnAndLinkBody(secondTeam, fourthPlayer, isAI: true);
         }
 
     }

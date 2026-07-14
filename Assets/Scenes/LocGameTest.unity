@@ -8873,6 +8873,8 @@ MonoBehaviour:
   seatPositions:
   - {fileID: 478265713}
   - {fileID: 1758833194}
+  - {fileID: 2124321321}
+  - {fileID: 1348566835}
 --- !u!114 &1158992801
 MonoBehaviour:
   m_ObjectHideFlags: 0

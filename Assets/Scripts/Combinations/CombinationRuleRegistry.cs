@@ -25,39 +25,34 @@ namespace Combinations
             // === ЛЕГКИЙ УРОВЕНЬ ===
             var easy = new List<CombinationRule>
             {
-                // Последовательности
                 new ThreeInARow(),      // Три Подряд
                 new FourInARow(),       // Четыре Подряд
-                new FiveInARow(),       // Пять Подряд
 
-                // Мастные последовательности
                 new SuitedLadder3(),    // Мастная Лестница-3
                 new SuitedLadder4(),    // Мастная Лестница-4
-                new StraightFlush(),    // Стрит-Флеш
 
-                // Простые группы рангов
                 new ThreeOfAKind(),     // Тройка
-                new TwoPair(),          // Две Пары
-                new FullHouse()         // Фулл
+                new TwoPair()          // Две Пары
             };
             EasyRules = easy.AsReadOnly();
 
             // === СРЕДНИЙ УРОВЕНЬ ===
             var medium = new List<CombinationRule>
             {
-                // Ступенчатые пары
                 new DoubleStep(),       // Двойная Ступень
                 new TripleStep(),       // Тройная Ступень
 
-                // Сложные формы с последовательностями
                 new DrawBridge(),       // Разводной Мост
                 new BrokenSeal(),       // Сломанная Печать
                 new SkewTower(),        // Косая Башня
                 new DoubleFork(),       // Двойная Вилка
 
-                // Цветовые комбинации
                 new RedBlackCastle(),   // Красно-Черный Замок
-                new TwoMasks()          // Две Маски
+                new TwoMasks(),          // Две Маски
+
+                new FiveInARow(),       // Пять Подряд
+
+                new FullHouse()         // Фулл
             };
             MediumRules = medium.AsReadOnly();
 
@@ -68,7 +63,8 @@ namespace Combinations
                 new Pincers(),          // Клещи
                 new TwoPairSplit(),     // Две Пары С Расколом
                 new SuitCross(),        // Перекрест Мастей
-                new Reflection()        // Отражение
+                new Reflection(),        // Отражение
+                new StraightFlush()    // Стрит-Флеш
             };
             HardRules = hard.AsReadOnly();
 

@@ -1,46 +1,67 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using static CardGame;
 
-public class AIController : MonoBehaviour
+public class AIController
 {
     // --- Поля архитектуры ИИ ---
+    public Skeleton player { get; private set; }
     private AIData _aiData;
     private BaseAIDecisionStrategy _decisionStrategy;
 
-    private bool _isThinking;
+    private TestAiTurnAdapter aiTurnAdapter;
 
     /// Инициализация контроллера ИИ. Сюда передается конкретная стратегия (Эвристика или MCTS).
-    public void Initialize(BaseAIDecisionStrategy strategy)
+    public AIController(BaseAIDecisionStrategy strategy, TestAiTurnAdapter testAiTurnAdapter, Skeleton player)
     {
         _decisionStrategy = strategy ?? throw new ArgumentNullException(nameof(strategy));
 
-        _aiData = new AIData(null);
+        aiTurnAdapter = testAiTurnAdapter;
 
-        _isThinking = false;
+        this.player = player;
 
-        SubscribeToEvents();
+        _aiData = new AIData();
     }
 
-    private void OnDestroy()
-    {
-        UnsubscribeFromEvents();
-    }
-
-    /// Главный метод выполнения хода. Вызывается Игровым Менеджером, когда наступает очередь этого бота.
-    public void ExecuteTurn()
-    {
-    }
 
     /// Внутренний рабочий цикл размышления бота.
-    private IEnumerator ExecuteTurnRoutine(bool isBettingPhase)
+    public void ExecuteTurn(Round round)
     {
-        _isThinking = true;
+        if (round == null || round.CurrentPlayer != player)
+            return;
 
-        _isThinking = false;
+        _aiData.UpdateBettingInfo(round.currentParticipationPrice);
 
-        yield break;
+        _aiData.SetRoundCombinations(round.Combinations);
+
+        if(round.playerStates[player].declaredTarget.HasValue)
+            _aiData.UpdateOwnTarget(round.playerStates[player].declaredTarget.Value);
+
+        GameStateSnapshot snapshot = CreateSnapshotFromAIData();
+
+        AIResponsePackage cardActionResponse;
+
+        if (!round.HasMatchedBet(player))
+        {
+            AIResponsePackage bettingResponse = _decisionStrategy.ChooseBettingAction(snapshot);
+
+            aiTurnAdapter.ExecuteBettingAction(bettingResponse, player);
+
+            if (bettingResponse.Action != AIActionType.Fold)
+            {
+                cardActionResponse = _decisionStrategy.ChooseCardAction(snapshot);
+
+                aiTurnAdapter.ExecuteCardAction(cardActionResponse, player);
+            }
+        } else
+        {
+            cardActionResponse = _decisionStrategy.ChooseCardAction(snapshot);
+
+            aiTurnAdapter.ExecuteCardAction(cardActionResponse, player);
+        }  
     }
 
     /// Создает и полностью детерминирует GameStateSnapshot на основе данных из AIData.
@@ -51,32 +72,26 @@ public class AIController : MonoBehaviour
         GameStateSnapshot snapshot = new GameStateSnapshot();
 
         // 2. Переносим все базовые открытые параметры раунда и стола прямиком из AIData
-        snapshot.CurrentIteration = _aiData.CurrentIteration;
         snapshot.RoundCombinations = _aiData.RoundCombinations;
-        snapshot.CurrentParticipationPrice = _aiData.CurrentParticipationPrice;
 
         // Ссылки на физическое тело и заявку текущего бота (Own)
-        snapshot.OwnBody = _aiData.OwnBody;
+        snapshot.AvailableAssets = new List<StakeAsset>(player.team.Assets.Where(asset => asset != null && player.Body.GetAttachedParts().Contains(asset.bodyPart)).ToList());
         snapshot.OwnTarget = _aiData.OwnTarget;
         snapshot.OwnCommittedValue = _aiData.OwnCommittedValue;
 
         // Переносим общие карты стола (создавая новый независимый список)
         snapshot.TableCards = new List<CardData>(_aiData.TableCards);
 
-        snapshot.PotSize = _aiData.PotSize;
-        snapshot.AllyTarget = _aiData.AllyTarget;
-        snapshot.Enemy1Target = _aiData.Enemy1Target;
-        snapshot.Enemy2Target = _aiData.Enemy2Target;
+        snapshot.CurrentParticipationPrice = _aiData.CurrentParticipationPrice;
 
-        // 3. Синхронизируем симуляционную колоду ИИ с текущими известными данными стола
-        // Метод SyncWithAIData внутри себя очистит колоду от карт ИИ, стола и видимого союзника
-        _aiData._AIDeck.SyncWithAIData(_aiData);
+        AIDeck aIDeck = new AIDeck();
 
-        snapshot._AIDeck = _aiData._AIDeck;
+        aIDeck.SyncWithAIData(_aiData);
+
+        snapshot._AIDeck = aIDeck;
 
         // --- 4. ДЕТЕРМИНИЗАЦИЯ РУК ИГРОКОВ (Заполнение скрытых зон) ---
         snapshot.OwnHand = FillHand(_aiData.HandCards, snapshot._AIDeck);
-        snapshot.AllyHand = FillHand(_aiData.AllyCards, snapshot._AIDeck);
 
         // snapshot.Enemy1Hand = FillHand(new List<CardData>(Enemy 1 hand count), snapshot._AIDeck);
         // snapshot.Enemy1Hand = FillHand(new List<CardData>(Enemy 2 hand count), snapshot._AIDeck);
@@ -110,46 +125,22 @@ public class AIController : MonoBehaviour
         return generatedHand;
     }
 
-    /// Передает выбранное торговое решение в Player.
-    private void ExecuteBettingAction(AIResponsePackage response)
+
+    public void OnHandCardDealt(CardData card)
     {
-        switch (response.Action)
+        _aiData.AddHandCard(card);
+    }
+
+    public void OnTableCardsDealt(IReadOnlyList<CardData> cards)
+    {
+        foreach(CardData card in cards)
         {
-            case AIActionType.Fold:
-                break;
-            case AIActionType.CheckCall:
-                break;
-            case AIActionType.Raise:
-                break;
+            _aiData.AddTableCard(card);
         }
     }
 
-    /// Передает выбранное действие с картами в Player.
-    private void ExecuteCardAction(AIResponsePackage response)
+    public void OnRoundEnded()
     {
-        switch (response.Action)
-        {
-            case AIActionType.DrawCard:
-                break;
-            case AIActionType.ChangeCombination:
-                break;
-            case AIActionType.Pass:
-                break;
-        }
-    }
-
-    // --- Система подписок на события ---
-
-    private void SubscribeToEvents()
-    {
-    }
-
-    private void UnsubscribeFromEvents()
-    {
-    }
-
-    private void HandleNewRound()
-    {
-        _aiData?.ClearForNewRound();
+        _aiData.ClearForNewRound();
     }
 }
