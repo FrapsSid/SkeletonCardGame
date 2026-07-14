@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -23,6 +24,10 @@ public class RoundCombinationDisplayUI : MonoBehaviour
     [SerializeField] private bool autoCreateTextUnderFieldRoots = true;
     [SerializeField] private bool includeDescriptions = true;
     [SerializeField] private string emptyText = "-";
+
+    [Header("Highlighting")]
+    [SerializeField] private Color satisfiedColor = new Color(0.4f, 1f, 0.4f);
+    [SerializeField] private Color defaultColor = Color.white;
 
     private GameManager subscribedManager = null;
     private CardGame subscribedGame = null;
@@ -60,6 +65,27 @@ public class RoundCombinationDisplayUI : MonoBehaviour
         SetText(mediumText, FormatCombination("Medium", combinations != null ? combinations.mediumCombination : null));
         SetText(hardText, FormatCombination("Hard", combinations != null ? combinations.hardCombination : null));
         SetText(antiText, FormatCombination("Anti", combinations != null ? combinations.antiCombination : null));
+        var personalPool = BuildPersonalPool();
+        ApplyHighlight(easyText, combinations?.easyCombination, personalPool);
+    }
+    private List<CardWithPool> BuildPersonalPool() {
+        var pool = new List<CardWithPool>();
+        if (gameManager == null || gameManager.LocalPlayer == null || gameManager.CardGame?.round == null)
+            return pool;
+
+        foreach (var card in gameManager.LocalPlayer.Hand.GetCards())
+            pool.Add(new CardWithPool(card, CardPool.Player1Hand));
+
+        foreach (var card in gameManager.CardGame.round.TableCards)
+            pool.Add(new CardWithPool(card, CardPool.Table));
+
+        return pool;
+    }
+
+    private void ApplyHighlight(TMP_Text text, Combination combination, List<CardWithPool> pool) {
+        if (text == null) return;
+        bool satisfied = combination != null && combination.IsSatisfied(pool);
+        text.color = satisfied ? satisfiedColor : defaultColor;
     }
 
     private string FormatCombination(string label, Combination combination)
@@ -190,6 +216,8 @@ public class RoundCombinationDisplayUI : MonoBehaviour
         subscribedGame.OnRoundStarted += HandleRoundChanged;
         subscribedGame.OnBettingRoundStarted += HandleRoundChanged;
         subscribedGame.OnBettingRoundEnded += HandleRoundChanged;
+        subscribedGame.OnCardTaken += HandleCardsChanged;
+        subscribedGame.OnTableCardsDealt += HandleTableCardsDealt;
     }
 
     private void UnsubscribeFromGame()
@@ -201,8 +229,13 @@ public class RoundCombinationDisplayUI : MonoBehaviour
         subscribedGame.OnRoundStarted -= HandleRoundChanged;
         subscribedGame.OnBettingRoundStarted -= HandleRoundChanged;
         subscribedGame.OnBettingRoundEnded -= HandleRoundChanged;
+        subscribedGame.OnCardTaken -= HandleCardsChanged;
+        subscribedGame.OnTableCardsDealt -= HandleTableCardsDealt;
         subscribedGame = null;
     }
+
+    private void HandleCardsChanged(Skeleton player, CardData card) => Refresh();
+    private void HandleTableCardsDealt(IReadOnlyList<CardData> cards) => Refresh();
 
     private void HandleGameCreated(CardGame game)
     {
