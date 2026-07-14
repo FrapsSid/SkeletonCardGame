@@ -14,7 +14,7 @@ public class NetworkPickupableSync : NetworkBehaviour
     {
         if (_instance != null && _instance != this)
         {
-            Destroy(gameObject);
+            enabled = false;
             return;
         }
         _instance = this;

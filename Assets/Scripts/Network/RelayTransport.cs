@@ -21,7 +21,7 @@ namespace Multiplayer
         private readonly ConcurrentQueue<TransportEvent> _events = new();
         private bool _isHost;
         private string _roomCode;
-        private bool _connected;
+        private volatile bool _connected;
 
         public string RoomCode => _roomCode;
         public event Action<string> OnRoomCodeReceived;
@@ -124,19 +124,19 @@ namespace Multiplayer
         {
             var buf = new byte[65536];
             var sb = new StringBuilder();
-            var pingCts = new CancellationTokenSource();
+            var keepaliveCts = new CancellationTokenSource();
             try
             {
                 while (_connected && _socket.State == WebSocketState.Open)
                 {
                     try
                     {
-                        pingCts.CancelAfter(TimeSpan.FromSeconds(30));
-                        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token, pingCts.Token);
+                        keepaliveCts.CancelAfter(TimeSpan.FromSeconds(5));
+                        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token, keepaliveCts.Token);
                         var result = _socket.ReceiveAsync(new ArraySegment<byte>(buf), linkedCts.Token).GetAwaiter().GetResult();
-                        pingCts.Cancel();
-                        pingCts.Dispose();
-                        pingCts = new CancellationTokenSource();
+                        keepaliveCts.Cancel();
+                        keepaliveCts.Dispose();
+                        keepaliveCts = new CancellationTokenSource();
 
                         if (result.MessageType == WebSocketMessageType.Close)
                         {
@@ -153,10 +153,10 @@ namespace Multiplayer
                             }
                         }
                     }
-                    catch (OperationCanceledException) when (pingCts.IsCancellationRequested && !_cts.IsCancellationRequested)
+                    catch (OperationCanceledException) when (keepaliveCts.IsCancellationRequested && !_cts.IsCancellationRequested)
                     {
-                        pingCts.Dispose();
-                        pingCts = new CancellationTokenSource();
+                        keepaliveCts.Dispose();
+                        keepaliveCts = new CancellationTokenSource();
                         SendRaw(new JObject { ["type"] = "ping" });
                     }
                 }
@@ -168,7 +168,7 @@ namespace Multiplayer
             }
             finally
             {
-                pingCts?.Dispose();
+                keepaliveCts?.Dispose();
                 _connected = false;
                 _events.Enqueue(new TransportEvent { Type = NetworkEvent.Disconnect, ClientId = ServerClientId });
             }

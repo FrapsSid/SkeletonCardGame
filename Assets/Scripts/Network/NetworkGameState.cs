@@ -48,7 +48,7 @@ namespace Multiplayer
         {
             if (Instance != null && Instance != this)
             {
-                Destroy(gameObject);
+                enabled = false;
                 return;
             }
             Instance = this;
