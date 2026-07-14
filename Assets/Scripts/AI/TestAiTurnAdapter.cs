@@ -13,12 +13,12 @@ using CardGameRound = CardGame.Round;
 public sealed class TestAiTurnAdapter : MonoBehaviour
 {
     [SerializeField]
-    private float actionDelaySeconds = 0.25f;
+    private float actionDelaySeconds = 0.5f;
 
     private GameManager? gameManager;
     private CardGameModel? subscribedGame;
     private Coroutine? pendingTurn;
-    private readonly List<Skeleton> subscribedPlayers = new List<Skeleton>();
+    private readonly List<AIController> subscribedAI = new List<AIController>();
 
     private void Awake()
     {
@@ -32,7 +32,6 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
             return;
 
         gameManager.OnGameCreated += HandleGameCreated;
-        Attach(gameManager.CardGame);
     }
 
     private void OnDisable()
@@ -60,6 +59,10 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
         if (subscribedGame == null || gameManager == null)
             return;
 
+        subscribedGame.OnCardTaken += OnPlayerCardDealt;
+        subscribedGame.OnTableCardsDealt += OnTableCardsDealt;
+        subscribedGame.OnRoundEnded += OnRoundEnded;
+
         foreach (Skeleton player in gameManager.Players)
         {
             if (gameManager.LocalPlayer == player)
@@ -68,7 +71,7 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
             if (subscribedGame.TurnStartedByPlayer.TryGetValue(player, out CardGameModel.PlayerTurnEvent turnStarted))
             {
                 turnStarted.Fired += HandleTurnStarted;
-                subscribedPlayers.Add(player);
+                subscribedAI.Add(new AIController(new HeuristicDecisionStrategy(), this, player));
             }
         }
     }
@@ -77,14 +80,19 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
     {
         if (subscribedGame != null)
         {
-            foreach (Skeleton player in subscribedPlayers)
+            foreach (AIController AI in subscribedAI)
             {
-                if (subscribedGame.TurnStartedByPlayer.TryGetValue(player, out CardGameModel.PlayerTurnEvent turnStarted))
+                if (subscribedGame.TurnStartedByPlayer.TryGetValue(AI.player, out CardGameModel.PlayerTurnEvent turnStarted))
                     turnStarted.Fired -= HandleTurnStarted;
             }
+
+            subscribedGame.OnCardTaken -= OnPlayerCardDealt;
+            subscribedGame.OnTableCardsDealt -= OnTableCardsDealt;
+            subscribedGame.OnRoundEnded -= OnRoundEnded;
         }
 
-        subscribedPlayers.Clear();
+
+        subscribedAI.Clear();
         subscribedGame = null;
     }
 
@@ -105,33 +113,74 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
             yield return null;
 
         pendingTurn = null;
-        ExecuteAiTurn(player);
+        foreach (AIController AI in subscribedAI)
+        {
+            if (AI.player == player)
+            {
+                AI.ExecuteTurn(subscribedGame?.round);
+            }
+        }
     }
 
-    private void ExecuteAiTurn(Skeleton player)
+
+    /// Передает выбранное торговое решение в Player.
+    public void ExecuteCardAction(AIResponsePackage response, Skeleton player)
     {
         CardGameRound? round = subscribedGame?.round;
         if (round == null || round.CurrentPlayer != player || gameManager == null || player == gameManager.LocalPlayer)
             return;
 
-        try
+        switch (response.Action)
         {
-            if (round.CanTakeCard(player))
-            {
-                round.TakeCard(player);
+            case AIActionType.Fold:
+                TryFold(round, player);
+                return;
+            case AIActionType.Pass:
+                TryPass(round, player);
+                return;
+            case AIActionType.DrawCard:
+                TryDrawCard(round, player);
                 if (gameManager.IsCardDealInProgress)
                 {
                     pendingTurn = StartCoroutine(CompleteTurnAfterCardDeal(player));
                     return;
                 }
-            }
-
-            CompleteTurn(player);
+                CompleteTurn(player);
+                return;
+            case AIActionType.ChangeCombination:
+                if(response.ChosenTarget.HasValue)
+                {
+                    TryMatchCurrentPrice(round, player, response);
+                    CompleteTurn(player);
+                } else
+                {
+                    TryFold(round, player);
+                }
+                return;
         }
-        catch (Exception exception)
+    }
+
+    public void ExecuteBettingAction(AIResponsePackage response, Skeleton player)
+    {
+        CardGameRound? round = subscribedGame?.round;
+        if (round == null || round.CurrentPlayer != player || gameManager == null || player == gameManager.LocalPlayer)
+            return;
+
+        switch (response.Action)
         {
-            Debug.LogWarning($"[Test AI] {PlayerLabel(player)} could not complete a turn: {exception.Message}", this);
-            TryFold(round, player);
+            case AIActionType.Fold:
+                TryFold(round, player);
+                break;
+            case AIActionType.CheckCall:
+                if (response.ChosenTarget.HasValue)
+                {
+                    TryMatchCurrentPrice(round, player, response);
+                }
+                else
+                {
+                    TryFold(round, player);
+                }
+                break;
         }
     }
 
@@ -164,28 +213,25 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
         if (round == null || round.CurrentPlayer != player)
             return;
 
-        if (!round.HasMatchedBet(player))
-            MatchCurrentPrice(round, player);
-
         if (round.CurrentPlayer == player && round.HasMatchedBet(player))
             round.EndTurn(player);
     }
 
-    private void MatchCurrentPrice(CardGameRound round, Skeleton player)
+    private void TryMatchCurrentPrice(CardGameRound round, Skeleton player, AIResponsePackage responsePackage)
     {
-        List<StakeAsset> assets = player.team.Assets
-            .Where(asset => asset != null && player.team.OwnsAsset(asset))
-            .ToList();
+        DeclaredCombinationTier combination = responsePackage.ChosenTarget.HasValue ? responsePackage.ChosenTarget.Value : DeclaredCombinationTier.Easy;
 
-        if (round.CanCall(player, assets, DeclaredCombinationTier.Easy))
+        List<StakeAsset> assets = new List<StakeAsset>(responsePackage.PutOnStakeParts);
+
+        if (round.CanCall(player, assets, combination))
         {
-            round.Call(player, assets, DeclaredCombinationTier.Easy);
+            round.Call(player, assets, combination);
             return;
         }
 
-        if (round.CanAllIn(player, DeclaredCombinationTier.Easy))
+        if (round.CanAllIn(player, combination))
         {
-            round.AllIn(player, DeclaredCombinationTier.Easy);
+            round.AllIn(player, combination);
             return;
         }
 
@@ -196,7 +242,7 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
     {
         try
         {
-            if (round.CurrentPlayer == player && round.ActivePlayers.Count > 1)
+            if (round.ActivePlayers.Count > 1)
                 round.Fold(player);
         }
         catch (Exception exception)
@@ -204,6 +250,40 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
             Debug.LogWarning($"[Test AI] {PlayerLabel(player)} could not fold: {exception.Message}", this);
         }
     }
+
+    private void TryPass(CardGameRound round, Skeleton player)
+    {
+        try
+        {
+            CompleteTurn(player);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"[Test AI] {PlayerLabel(player)} could not skip: {exception.Message}", this);
+        }
+    }
+
+    private void TryDrawCard(CardGameRound round, Skeleton player)
+    {
+        if(gameManager == null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (round.CanTakeCard(player))
+            {
+                round.TakeCard(player);
+            }
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"[Test AI] {PlayerLabel(player)} could not complete a turn: {exception.Message}", this);
+            TryFold(round, player);
+        }
+    }
+
 
     private void StopPendingTurn()
     {
@@ -229,5 +309,32 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
         }
 
         return -1;
+    }
+
+    private void OnPlayerCardDealt(Skeleton player, CardData card)
+    {
+        foreach(AIController AI in subscribedAI)
+        {
+            if(AI.player == player)
+            {
+                AI.OnHandCardDealt(card);
+            }
+        }
+    }
+
+    private void OnTableCardsDealt(IReadOnlyList<CardData> cards)
+    {
+        foreach (AIController AI in subscribedAI)
+        {
+            AI.OnTableCardsDealt(cards);
+        }
+    }
+
+    private void OnRoundEnded(RoundResult roundResult)
+    {
+        foreach (AIController AI in subscribedAI)
+        {
+            AI.OnRoundEnded();
+        }
     }
 }

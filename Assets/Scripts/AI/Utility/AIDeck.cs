@@ -101,6 +101,5 @@ public class AIDeck
 
         RemoveCards(aiData.HandCards);
         RemoveCards(aiData.TableCards);
-        RemoveCards(aiData.AllyCards);
     }
 }
