@@ -12,7 +12,7 @@ public class AuthManager : MonoBehaviour
 {
     public static AuthManager Instance { get; private set; }
 
-    public string ApiBaseUrl { get; set; } = "http://10.93.27.48:8000";
+    public string ApiBaseUrl { get; set; } = "https://skeletongame.necr0manth.dev";
 
     public string Token { get; private set; }
     public string PlayerNickname { get; private set; }
