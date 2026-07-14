@@ -4,29 +4,18 @@ using Combinations;
 
 public class AIData
 {
-    public SkeletonBody OwnBody { get; private set; }
-
-    // --- Поля зрения (карты и состояние стола) ---
+    // --- Поля зрения  ---
     public List<CardData> HandCards { get; private set; }
-    public List<CardData> AllyCards { get; private set; }
     public List<CardData> TableCards { get; private set; }
 
     // --- Состояние текущей фазы и ставок ---
     public RoundCombinationSet RoundCombinations { get; private set; }
     public int CurrentParticipationPrice { get; private set; }
-    public int PotSize { get; private set; }
     public int OwnCommittedValue { get; private set; }
     public DeclaredCombinationTier? OwnTarget { get; private set; }
-    public DeclaredCombinationTier? AllyTarget { get; private set; }
-    public DeclaredCombinationTier? Enemy1Target { get; private set; }
-    public DeclaredCombinationTier? Enemy2Target { get; private set; }
-    public int CurrentIteration { get; private set; }
-    public AIDeck _AIDeck { get; private set; }
 
-    public AIData(SkeletonBody body)
+    public AIData()
     {
-        OwnBody = body ?? throw new ArgumentNullException(nameof(body), "ИИ-данные не могут быть созданы без ссылки на SkeletonBody.");
-
         ClearForNewRound();
     }
 
@@ -58,35 +47,6 @@ public class AIData
         }
     }
 
-
-    // --- Методы обновления карт союзника (AllyVisibleCards) ---
-
-    /// Полностью заменяет видимый список карт напарника.
-    public void UpdateAllyCardsList(List<CardData> newCards)
-    {
-        if (newCards == null)
-        {
-            AllyCards = new List<CardData>();
-            return;
-        }
-
-        AllyCards = new List<CardData>(newCards);
-    }
-
-    /// Добавляет карту союзника в поле зрения ИИ. 
-    /// Если передан null — список расширяется на один пустой слот (ИИ увидел факт добора карты напарником).
-    public void AddAllyCard(CardData card = null)
-    {
-        if (card != null)
-        {
-            AllyCards.Add(card);
-        }
-        else
-        {
-            AllyCards.Add(null);
-        }
-    }
-
     /// Вызывается когда открывается новая карта на столе.
     public void AddTableCard(CardData card)
     {
@@ -96,43 +56,30 @@ public class AIData
 
     /// Обновить информацию о текущем состоянии ставок и фазы перед принятием решения.
     public void UpdateBettingInfo(
-        int currentPrice,
-        int potSize,
-        DeclaredCombinationTier? ownTarget,
-        DeclaredCombinationTier? allyTarget,
-        DeclaredCombinationTier? enemy1arget,
-        DeclaredCombinationTier? enemy2Target,
-        int ownCommitted,
-        int currentIteration,
-        RoundCombinationSet currentCombinations)
+        int currentParticipationPrice)
     {
-        CurrentParticipationPrice = currentPrice;
-        PotSize = potSize;
-        OwnTarget = ownTarget;
-        AllyTarget = allyTarget;
-        Enemy1Target = enemy1arget;
-        Enemy2Target = enemy2Target;
-        OwnCommittedValue = ownCommitted;
-        CurrentIteration = currentIteration;
-        RoundCombinations = currentCombinations;
+        CurrentParticipationPrice = currentParticipationPrice;
+    }
+
+    public void UpdateOwnTarget(DeclaredCombinationTier declaredCombinationTier)
+    {
+        OwnTarget = declaredCombinationTier;
+    }
+
+    public void SetRoundCombinations(RoundCombinationSet roundCombinationSet)
+    {
+        RoundCombinations = roundCombinationSet;
     }
 
     /// Очистить изменяемые поля зрения для нового раунда.
     public void ClearForNewRound()
     {
         HandCards = new List<CardData>();
-        AllyCards = new List<CardData>();
         TableCards = new List<CardData>();
 
-        _AIDeck = new AIDeck();
         RoundCombinations = default;
-        CurrentParticipationPrice = 0;
         OwnTarget = null;
-        AllyTarget = null;
-        Enemy1Target = null;
-        Enemy2Target = null;
         OwnCommittedValue = 0;
-        CurrentIteration = 0;
-        PotSize = 0;
+        CurrentParticipationPrice = 0;
     }
 }

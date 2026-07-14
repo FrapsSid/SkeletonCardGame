@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Interactions;
 using UnityEngine;
@@ -8,6 +9,8 @@ using UnityEngine;
 public class Pickupable : MonoBehaviour, IInteractable
 {
     public const string InteractionText = "Pickup";
+
+    public static event Action<Pickupable, Skeleton>? OnPickupRequested;
 
     [Header("Item")] 
     public IItem? Item;
@@ -32,9 +35,18 @@ public class Pickupable : MonoBehaviour, IInteractable
     public void Pickup(PlayerInventoryOwner player, InteractionType interactionType)
     {
         if (player == null || Item == null)
-        {
             return;
-        }
+
+        Skeleton? skeleton = player.OwnerSkeleton;
+
+        NetworkPickupableSync? sync = NetworkPickupableSync.Instance;
+        bool isNetworkMode = sync != null && sync.IsSpawned;
+
+        if (skeleton != null)
+            OnPickupRequested?.Invoke(this, skeleton);
+
+        if (isNetworkMode && !sync!.IsServer)
+            return;
 
         bool pickedUp = interactionType switch
         {
@@ -46,6 +58,10 @@ public class Pickupable : MonoBehaviour, IInteractable
         if (pickedUp)
         {
             PlayPickupSound(Item);
+
+            if (isNetworkMode && sync!.IsServer)
+                sync.BroadcastPickupComplete(this, player);
+
             Destroy(gameObject);
         }
     }
@@ -53,9 +69,7 @@ public class Pickupable : MonoBehaviour, IInteractable
     public IList<Interaction> GetInteractions(Skeleton player)
     {
         if (!CanPickup(player))
-        {
             return new List<Interaction>();
-        }
 
         return new List<Interaction>
         {
@@ -66,9 +80,7 @@ public class Pickupable : MonoBehaviour, IInteractable
     private void EnsureDiscoveryCollider()
     {
         if (!addTriggerColliderIfMissing || GetComponentInChildren<Collider>() != null)
-        {
             return;
-        }
 
         SphereCollider discoveryCollider = gameObject.AddComponent<SphereCollider>();
         discoveryCollider.isTrigger = true;
@@ -84,8 +96,21 @@ public class Pickupable : MonoBehaviour, IInteractable
     private bool CanPickup(Skeleton player)
     {
         if (player?.InventoryOwner == null || Item == null || !IsPlayerInRange(player.InventoryOwner))
-        {
             return false;
+
+        if (Item is BodyPartItem bodyPartItem)
+        {
+            BodyPart? bodyPart = bodyPartItem.CurrentBodyPart;
+            if (bodyPart != null)
+            {
+                GameObject? holder = bodyPart.currentHolder;
+                if (holder != null)
+                {
+                    GhostMode? ghost = holder.GetComponent<GhostMode>();
+                    if (ghost != null && ghost.IsGhost)
+                        return false;
+                }
+            }
         }
 
         PlayerInventoryOwner owner = player.InventoryOwner;
@@ -102,9 +127,7 @@ public class Pickupable : MonoBehaviour, IInteractable
     private bool TrySetHand(PlayerHand hand)
     {
         if (!IsFree(hand) || Item == null)
-        {
             return false;
-        }
 
         hand.SetItem(Item);
         return true;
@@ -138,17 +161,13 @@ public class Pickupable : MonoBehaviour, IInteractable
     private static bool HasFreeInventorySlot(Inventory inventory)
     {
         if (inventory == null)
-        {
             return false;
-        }
 
         IItem?[] items = inventory.Items;
         for (int i = 0; i < items.Length; i++)
         {
             if (items[i] == null)
-            {
                 return true;
-            }
         }
 
         return false;

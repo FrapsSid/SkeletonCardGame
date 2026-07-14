@@ -293,16 +293,17 @@ public class CardGame
                 throw new InvalidOperationException("Pot can only be resolved at round end");
             if (Result == null)
                 throw new InvalidOperationException("Winners must be determined before resolving the pot");
-            if (Result.assetDistribution.Count == 0)
-                throw new InvalidOperationException("Asset distribution must be calculated before resolving the pot");
 
             List<StakeAsset> resolvedAssets = new List<StakeAsset>();
-            foreach (var pair in Result.assetDistribution)
+            if (Result.assetDistribution.Count > 0)
             {
-                foreach (StakeAsset asset in pair.Value)
+                foreach (var pair in Result.assetDistribution)
                 {
-                    asset.TransferOwnership(pair.Key);
-                    resolvedAssets.Add(asset);
+                    foreach (StakeAsset asset in pair.Value)
+                    {
+                        asset.TransferOwnership(pair.Key);
+                        resolvedAssets.Add(asset);
+                    }
                 }
             }
 
@@ -417,7 +418,16 @@ public class CardGame
                 .Where(team => team != null && team.Skeletons.Any(_activePlayers.Contains))
                 .ToList();
             Result = _game.RoundScorer.CalculateRoundResults(activeTeams, TableCards.ToList(), Combinations, playerStates);
-            Result.assetDistribution = SplitPotBetweenWinners(GetCommittedAssets(), Result.winners);
+
+            if (Result.winners.Count == 0 || Result.scores.Values.All(s => s == 0))
+            {
+                Result.winners.Clear();
+                Result.assetDistribution = new Dictionary<Team, List<StakeAsset>>();
+            }
+            else
+            {
+                Result.assetDistribution = SplitPotBetweenWinners(GetCommittedAssets(), Result.winners);
+            }
         }
 
         private List<StakeAsset> GetCommittedAssets()

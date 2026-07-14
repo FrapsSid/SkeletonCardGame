@@ -57,6 +57,12 @@ namespace Multiplayer
             if (inputReader != null) inputReader.enabled = isOwner;
             if (characterController != null) characterController.enabled = isOwner;
             if (cameraRig != null) cameraRig.SetActive(isOwner);
+
+            var interactor = GetComponentInChildren<PlayerInteractor>();
+            if (interactor != null) interactor.enabled = isOwner;
+
+            var highlighter = GetComponentInChildren<Interactions.InteractionHighlighter>();
+            if (highlighter != null) highlighter.enabled = isOwner;
             if (isOwner)
             {
                 Cursor.lockState = CursorLockMode.Locked;

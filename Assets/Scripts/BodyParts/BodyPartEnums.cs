@@ -36,7 +36,7 @@ public static class BodyPartTypeExtensions
             case BodyPartType.Soul:
                 return 6;
             case BodyPartType.Torso:
-                return 1;
+                return 6;
             default:
                 return 1;
         }
