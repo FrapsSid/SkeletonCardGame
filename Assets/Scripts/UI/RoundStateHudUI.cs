@@ -199,6 +199,31 @@ public sealed class RoundStateHudUI : MonoBehaviour
         textObject.transform.SetParent(parent, false);
 
         TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+
+        TMP_FontAsset customFont = Resources.Load<TMP_FontAsset>("Fonts/PlayfairDisplaySC-Regular SDF");
+        if (customFont == null)
+        {
+            var allFonts = Resources.FindObjectsOfTypeAll<TMP_FontAsset>();
+            foreach (var font in allFonts)
+            {
+                if (font.name == "PlayfairDisplaySC-Regular SDF")
+                {
+                    customFont = font;
+                    break;
+                }
+            }
+        }
+
+        if (customFont != null)
+        {
+            text.font = customFont;
+            text.fontSharedMaterial = customFont.material; // критично: материал вместе со шрифтом
+        }
+        else
+        {
+            Debug.LogError("Font PlayfairDisplaySC-Regular SDF not found");
+        }
+
         text.alignment = TextAlignmentOptions.Center;
         text.enableAutoSizing = true;
         text.fontSizeMin = minSize;
@@ -216,6 +241,7 @@ public sealed class RoundStateHudUI : MonoBehaviour
         layout.minHeight = preferredHeight;
         layout.flexibleWidth = 1f;
 
+        text.ForceMeshUpdate(true);
         return text;
     }
 

@@ -59,6 +59,7 @@ public sealed class ParticipantHudEntryUI : MonoBehaviour
         ResolveReferences();
         BuildGeneratedView();
         ApplyGeneratedSizing();
+        ApplyCustomFont();
 
         if (nameText != null)
         {
@@ -151,7 +152,34 @@ public sealed class ParticipantHudEntryUI : MonoBehaviour
             nameText.overflowMode = TextOverflowModes.Ellipsis;
             nameText.raycastTarget = false;
             nameText.color = Color.white;
+        }
+    }
 
+    private void ApplyCustomFont()
+    {
+        if (nameText == null) return;
+        TMP_FontAsset customFont = Resources.Load<TMP_FontAsset>("Fonts/PlayfairDisplaySC-Regular SDF");
+        
+        if (customFont == null)
+        {
+            var allFonts = Resources.FindObjectsOfTypeAll<TMP_FontAsset>();
+            foreach (var font in allFonts)
+            {
+                if (font.name == "PlayfairDisplaySC-Regular SDF")
+                {
+                    customFont = font;
+                    break;
+                }
+            }
+        }
+
+        if (customFont != null)
+        {
+            nameText.font = customFont;
+        }
+        else
+        {
+            Debug.LogError("Font PlayfairDisplaySC-Regular SDF not found");
         }
     }
 
