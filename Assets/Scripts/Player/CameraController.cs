@@ -63,6 +63,7 @@ public class CameraController : MonoBehaviour
     private PlayerHand _playerHand;
     private BodyPartItem _firstPersonBodyPartItem;
     public bool IsFirstPerson => _isFirstPerson;
+    public Transform SkullViewpoint => GetFirstPersonViewpoint();
     public static event Action<bool> PerspectiveChanged;
     public static bool IsFirstPersonActive { get; private set; }
 

@@ -38,8 +38,9 @@ public sealed class WorldCardView : MonoBehaviour
     [SerializeField] private Material? materialTemplate;
     [SerializeField] private GameObject glitch;
 
-    private bool _isFirstPerson;
-    private bool _subscribedToPerspective;
+    private GameManager? _gameManager;
+    private CameraController? _localCameraController;
+    private bool _isHidden;
 
     private MeshFilter? _meshFilter;
     private MeshRenderer? _meshRenderer;
@@ -53,6 +54,11 @@ public sealed class WorldCardView : MonoBehaviour
     public Vector2 Size => size;
     public float Thickness => thickness;
 
+    private void Awake()
+    {
+        _gameManager = FindFirstObjectByType<GameManager>();
+    }
+
     private void Reset()
     {
         Refresh();
@@ -60,22 +66,25 @@ public sealed class WorldCardView : MonoBehaviour
 
     private void OnEnable()
     {
-        if (!_subscribedToPerspective)
-        {
-            CameraController.PerspectiveChanged += HandlePerspectiveChanged;
-            _subscribedToPerspective = true;
-        }
-
-        _isFirstPerson = CameraController.IsFirstPersonActive;
+        _isHidden = Application.isPlaying && ShouldHideCard();
         Refresh();
     }
-    private void OnDisable()
+
+    private void LateUpdate()
     {
-        if (_subscribedToPerspective)
+        if (!Application.isPlaying)
         {
-            CameraController.PerspectiveChanged -= HandlePerspectiveChanged;
-            _subscribedToPerspective = false;
+            return;
         }
+
+        bool shouldHide = ShouldHideCard();
+        if (_isHidden == shouldHide)
+        {
+            return;
+        }
+
+        _isHidden = shouldHide;
+        Refresh();
     }
 
     private void OnValidate()
@@ -161,33 +170,106 @@ public sealed class WorldCardView : MonoBehaviour
         ApplyMaterials(meshRenderer, faceSprite, backSprite);
         meshRenderer.enabled = true;
         if (glitch != null)
-            glitch.SetActive(!_isFirstPerson);
-    }
-    private void HandlePerspectiveChanged(bool isFirstPerson)
-    {
-        _isFirstPerson = isFirstPerson;
-        Refresh();
+            glitch.SetActive(_isHidden);
     }
 
     private Sprite? GetActiveFrontSprite()
     {
         if (cardAtlas == null) return null;
-        
-        bool isLocalGhost = false;
-        var gm = FindFirstObjectByType<GameManager>();
-        if (gm?.LocalPlayer?.Body != null)
+
+        return _isHidden && cardAtlas.GetCensoredSprite() != null
+            ? cardAtlas.GetCensoredSprite()
+            : cardAtlas.GetFaceSprite(suit, value);
+    }
+
+    private bool ShouldHideCard()
+    {
+        if (cardAtlas == null || cardAtlas.GetCensoredSprite() == null)
         {
-            GhostMode ghost = gm.LocalPlayer.Body.GetComponent<GhostMode>();
-            if (ghost != null && ghost.IsGhost)
-                isLocalGhost = true;
+            return false;
         }
 
-        if (isLocalGhost || (!_isFirstPerson && cardAtlas.GetCensoredSprite() != null))
+        SkeletonBody? localBody = _gameManager?.LocalPlayer?.Body;
+        if (localBody == null)
         {
-            return cardAtlas.GetCensoredSprite();
+            return true;
         }
 
-        return cardAtlas.GetFaceSprite(suit, value);
+        GhostMode? ghost = localBody.GetComponent<GhostMode>();
+        if (ghost != null && ghost.IsGhost)
+        {
+            return true;
+        }
+
+        if (_localCameraController == null)
+        {
+            _localCameraController = localBody.GetComponent<CameraController>();
+        }
+
+        if (_localCameraController == null)
+        {
+            return true;
+        }
+
+        if (IsHeldWithSkullInOtherHand(localBody, _localCameraController))
+        {
+            return false;
+        }
+
+        return !IsVisibleFromSkull(_localCameraController);
+    }
+
+    private bool IsHeldWithSkullInOtherHand(SkeletonBody localBody, CameraController cameraController)
+    {
+        PlayerInventoryOwner? inventoryOwner = localBody.GetComponent<PlayerInventoryOwner>();
+        Transform skullViewpoint = cameraController.SkullViewpoint;
+        BodyPart? skull = skullViewpoint != null ? skullViewpoint.GetComponent<BodyPart>() : null;
+        if (inventoryOwner == null || skull == null)
+        {
+            return false;
+        }
+
+        MeshRenderer cardRenderer = GetRequiredMeshRenderer();
+        return IsHeldCardsAndSkull(inventoryOwner.leftHand, inventoryOwner.rightHand, cardRenderer, skull.Item) ||
+               IsHeldCardsAndSkull(inventoryOwner.rightHand, inventoryOwner.leftHand, cardRenderer, skull.Item);
+    }
+
+    private static bool IsHeldCardsAndSkull(
+        PlayerHand? cardsHand,
+        PlayerHand? skullHand,
+        Renderer cardRenderer,
+        BodyPartItem skullItem)
+    {
+        return cardsHand != null && cardsHand.Item is CardsItem &&
+               cardsHand.ContainsHeldItemRenderer(cardRenderer) &&
+               skullHand != null && ReferenceEquals(skullHand.Item, skullItem);
+    }
+
+    private bool IsVisibleFromSkull(CameraController cameraController)
+    {
+        Transform skull = cameraController.SkullViewpoint;
+        if (skull == null || cameraController.firstPersonCam == null ||
+            cameraController.brain == null || cameraController.brain.OutputCamera == null)
+        {
+            return false;
+        }
+
+        Vector3 skullToCard = transform.position - skull.position;
+        float forwardDistance = Vector3.Dot(skullToCard, skull.forward);
+        if (forwardDistance <= 0f)
+        {
+            return false;
+        }
+
+        float verticalHalfAngle = 80 * Mathf.Deg2Rad;
+        float pyramidHalfHeight = forwardDistance * Mathf.Tan(verticalHalfAngle);
+        float pyramidHalfWidth = pyramidHalfHeight;
+        float horizontalDistance = Mathf.Abs(Vector3.Dot(skullToCard, skull.right));
+        float verticalDistance = Mathf.Abs(Vector3.Dot(skullToCard, skull.up));
+
+        bool isInsideViewPyramid = horizontalDistance <= pyramidHalfWidth &&
+                                   verticalDistance <= pyramidHalfHeight;
+        return isInsideViewPyramid;
     }
 
     private MeshFilter GetRequiredMeshFilter()
