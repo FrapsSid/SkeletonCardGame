@@ -697,8 +697,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ecf048dbe9754d6eb91cfecd78fc2591, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SceneButtonLoader
-  targetScene: {fileID: 102900000, guid: 6e0920f2630962648ba0f6d5a4cee300, type: 3}
-  scenePath: Assets/Scenes/GameTest.unity
+  targetScene: {fileID: 102900000, guid: c40294e5d78837e409c954fe45e8dd24, type: 3}
+  scenePath: Assets/Scenes/LocGameTest.unity
   loadMode: 0
   button: {fileID: 562554371}
   registerButtonClick: 1
