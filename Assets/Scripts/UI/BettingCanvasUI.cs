@@ -184,11 +184,18 @@ public class BettingCanvasUI : MonoBehaviour
 
         try
         {
-            int selectedValue = CalculateStakeValue(assets);
-            if (selectedValue > round.currentParticipationPrice && round.CanRaise(localPlayer, assets, selectedTier))
-                round.Raise(localPlayer, assets, selectedTier);
+            if (gameManager != null && gameManager.IsNetworkMode)
+            {
+                gameManager.RequestBet(new List<BodyPartType>(selectedParts), selectedTier);
+            }
             else
-                round.Call(localPlayer, assets, selectedTier);
+            {
+                int selectedValue = CalculateStakeValue(assets);
+                if (selectedValue > round.currentParticipationPrice && round.CanRaise(localPlayer, assets, selectedTier))
+                    round.Raise(localPlayer, assets, selectedTier);
+                else
+                    round.Call(localPlayer, assets, selectedTier);
+            }
 
             Close();
         }

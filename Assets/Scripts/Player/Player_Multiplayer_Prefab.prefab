@@ -1735,6 +1735,8 @@ MonoBehaviour:
     m_Bits: 64
   cameraTransform: {fileID: 5181734070924347594}
   uiStateController: {fileID: 0}
+  animator: {fileID: 0}
+  speedDampTime: 0.15
 --- !u!114 &9028237068948762141
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1765,6 +1767,11 @@ MonoBehaviour:
   leftLegBone: {fileID: 8206756919823707610}
   rightLegBone: {fileID: 7334134682577525372}
   torsoBone: {fileID: 0}
+  headMeshFolder: {fileID: 0}
+  leftArmMeshFolder: {fileID: 0}
+  rightArmMeshFolder: {fileID: 0}
+  leftLegMeshFolder: {fileID: 0}
+  rightLegMeshFolder: {fileID: 0}
 --- !u!114 &2895883223395822063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1792,8 +1799,8 @@ MonoBehaviour:
   playerController: {fileID: 8026099588838218639}
   uiStateController: {fileID: 0}
   _skeletonBody: {fileID: 3373874798751653687}
-  skullRenderer: {fileID: 6444711269335853091}
   thirdPersonFilterFeature: {fileID: -3625499942535467462, guid: f288ae1f4751b564a96ac7587541f7a2, type: 2}
+  hiddenRenderersInFirstPerson: []
 --- !u!114 &7214920530447955435
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,3 +1,4 @@
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -109,11 +110,61 @@ namespace Multiplayer
         }
 
         [ServerRpc(RequireOwnership = false)]
-        public void SubmitTurnActionServerRpc(int actionType)
+        public void SubmitBetServerRpc(int[] bodyPartTypeValues, int tierValue, ServerRpcParams rpcParams = default)
+        {
+            if (!IsServer) return;
+
+            ulong senderClientId = rpcParams.Receive.SenderClientId;
+            ulong currentTurnClientId = _currentTurnClientId.Value;
+
+            if (senderClientId != currentTurnClientId)
+            {
+                Debug.LogWarning($"[NetworkGameState] SubmitBet rejected: sender {senderClientId} != currentTurn {currentTurnClientId}");
+                return;
+            }
+
+            var gm = FindFirstObjectByType<GameManager>();
+            gm?.ProcessNetworkBet(bodyPartTypeValues, tierValue);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SubmitTurnActionServerRpc(int actionType, ServerRpcParams rpcParams = default)
         {
             if (!IsServer) return;
             var gm = FindFirstObjectByType<GameManager>();
-            gm?.ProcessNetworkTurnAction(actionType);
+            if (gm == null) return;
+
+            ulong senderClientId = rpcParams.Receive.SenderClientId;
+            ulong currentTurnClientId = _currentTurnClientId.Value;
+
+            // Primary validation: sender must be the current player
+            if (senderClientId == currentTurnClientId)
+            {
+                gm?.ProcessNetworkTurnAction(actionType);
+                return;
+            }
+
+            // Fallback: check if NetworkGameState is out of sync but GameManager knows the correct current player
+            if (currentTurnClientId == NoCurrentTurnClientId && gm.CardGame?.round != null)
+            {
+                var currentPlayer = gm.CardGame.round.CurrentPlayer;
+                if (currentPlayer != null && currentPlayer.HasNetworkClientId && currentPlayer.NetworkClientId == senderClientId)
+                {
+                    Debug.LogWarning($"[NetworkGameState] Turn action allowed via fallback: sender {senderClientId} matches GameManager current player {senderClientId}");
+                    gm.ProcessNetworkTurnAction(actionType);
+                    return;
+                }
+            }
+
+            // Debug: log all player NetworkClientIds for debugging
+            if (gm.CardGame?.round != null)
+            {
+                Debug.LogWarning($"[NetworkGameState] Turn action REJECTED: sender={senderClientId}, currentTurnClientId={currentTurnClientId}, playerIndex={_currentTurnPlayerIndex.Value}. Players: {string.Join(", ", gm.Players.Select(p => $"{p.NetworkClientId}(hasId:{p.HasNetworkClientId})"))}");
+            }
+            else
+            {
+                Debug.LogWarning($"[NetworkGameState] Turn action REJECTED: sender={senderClientId}, currentTurnClientId={currentTurnClientId}, playerIndex={_currentTurnPlayerIndex.Value}, round=null");
+            }
         }
     }
 }
