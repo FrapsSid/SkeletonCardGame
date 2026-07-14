@@ -26,33 +26,27 @@ namespace Combinations
             var easy = new List<CombinationRule>
             {
                 new ThreeInARow(),      // Три Подряд
+                new TwoPair(),          // Две Пары
+                new TwoPairSplit(),     // Две Пары С Расколом
                 new FourInARow(),       // Четыре Подряд
-
-                new SuitedLadder3(),    // Мастная Лестница-3
-                new SuitedLadder4(),    // Мастная Лестница-4
-
-                new ThreeOfAKind(),     // Тройка
-                new TwoPair()          // Две Пары
+                new Pincers(),          // Клещи
+                new ThreeOfAKind()      // Тройка
             };
             EasyRules = easy.AsReadOnly();
 
             // === СРЕДНИЙ УРОВЕНЬ ===
             var medium = new List<CombinationRule>
             {
+                new SuitedLadder3(),    // Мастная Лестница-3
+                new SuitCross(),        // Перекрест Мастей
                 new DoubleStep(),       // Двойная Ступень
-                new TripleStep(),       // Тройная Ступень
-
-                new DrawBridge(),       // Разводной Мост
-                new BrokenSeal(),       // Сломанная Печать
-                new SkewTower(),        // Косая Башня
-                new DoubleFork(),       // Двойная Вилка
-
-                new RedBlackCastle(),   // Красно-Черный Замок
-                new TwoMasks(),          // Две Маски
-
                 new FiveInARow(),       // Пять Подряд
-
-                new FullHouse()         // Фулл
+                new FullHouse(),        // Фулл
+                new BrokenSeal(),       // Сломанная Печать
+                new DoubleFork(),       // Двойная Вилка
+                new SkewTower(),        // Косая Башня
+                new DrawBridge(),       // Разводной Мост
+                new SuitedLadder4()     // Мастная Лестница-4
             };
             MediumRules = medium.AsReadOnly();
 
@@ -60,11 +54,11 @@ namespace Combinations
             var hard = new List<CombinationRule>
             {
                 new Hinge(),            // Шарнир
-                new Pincers(),          // Клещи
-                new TwoPairSplit(),     // Две Пары С Расколом
-                new SuitCross(),        // Перекрест Мастей
-                new Reflection(),        // Отражение
-                new StraightFlush()    // Стрит-Флеш
+                new TwoMasks(),         // Две Маски
+                new RedBlackCastle(),   // Красно-Черный Замок
+                new TripleStep(),       // Тройная Ступень
+                new Reflection(),       // Отражение
+                new StraightFlush()     // Стрит-Флеш
             };
             HardRules = hard.AsReadOnly();
 
