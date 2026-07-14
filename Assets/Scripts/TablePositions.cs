@@ -4,6 +4,10 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 [ExecuteAlways]
 [DisallowMultipleComponent]
 public sealed class TablePositions : MonoBehaviour
@@ -22,6 +26,13 @@ public sealed class TablePositions : MonoBehaviour
 
     [SerializeField, HideInInspector] private List<Transform> playerPositions = new();
     [SerializeField, HideInInspector] private List<Transform> playerDealCardPositions = new();
+
+    [Header("Gizmos")]
+    [SerializeField] private bool showGizmos = true;
+    [SerializeField] private float gizmoSize = 0.2f;
+    [SerializeField] private Color playerPositionColor = new(0.2f, 0.8f, 0.2f, 0.5f);
+    [SerializeField] private Color dealCardPositionColor = new(0.2f, 0.5f, 0.9f, 0.5f);
+    [SerializeField] private Color tableCardPositionColor = new(0.9f, 0.8f, 0.2f, 0.5f);
 
     private readonly Dictionary<Skeleton, int> _playerIndices = new();
 
@@ -45,6 +56,8 @@ public sealed class TablePositions : MonoBehaviour
     public IReadOnlyList<Transform> PlayerPositions => playerPositions;
 
     public IReadOnlyList<Transform> PlayerDealCardPositions => playerDealCardPositions;
+
+    private bool _isRebuilding;
 
     private void OnEnable()
     {
@@ -177,16 +190,27 @@ public sealed class TablePositions : MonoBehaviour
 
     private void RebuildCalculatedPositions()
     {
-        playerCount = Mathf.Max(MinimumPlayerCount, playerCount);
-        int requiredCount = playerCount;
-        EnsureMarkerCount(playerPositions, requiredCount, "Player Position");
-        EnsureMarkerCount(playerDealCardPositions, requiredCount, "Player Deal Card Position");
+        if (_isRebuilding)
+            return;
 
-        for (int i = 0; i < requiredCount; i++)
+        _isRebuilding = true;
+        try
         {
-            Vector3 direction = GetDirectionForPlayer(i, requiredCount);
-            ApplyMarkerTransform(playerPositions[i], direction, playerPositionRadius);
-            ApplyDealCardMarkerTransform(playerDealCardPositions[i], direction, dealPositionRadius);
+            playerCount = Mathf.Max(MinimumPlayerCount, playerCount);
+            int requiredCount = playerCount;
+            EnsureMarkerCount(playerPositions, requiredCount, "Player Position");
+            EnsureMarkerCount(playerDealCardPositions, requiredCount, "Player Deal Card Position");
+
+            for (int i = 0; i < requiredCount; i++)
+            {
+                Vector3 direction = GetDirectionForPlayer(i, requiredCount);
+                ApplyMarkerTransform(playerPositions[i], direction, playerPositionRadius);
+                ApplyDealCardMarkerTransform(playerDealCardPositions[i], direction, dealPositionRadius);
+            }
+        }
+        finally
+        {
+            _isRebuilding = false;
         }
     }
 
@@ -338,4 +362,112 @@ public sealed class TablePositions : MonoBehaviour
             DestroyImmediate(target);
         }
     }
+
+    private void OnDrawGizmos()
+    {
+        if (!showGizmos) return;
+
+        // Позиции игроков — зелёные сферы
+        Gizmos.color = playerPositionColor;
+        for (int i = 0; i < playerPositions.Count; i++)
+        {
+            Transform? pos = playerPositions[i];
+            if (pos != null)
+            {
+                Gizmos.DrawSphere(pos.position, gizmoSize);
+                Gizmos.DrawWireSphere(pos.position, gizmoSize);
+            }
+        }
+
+        // Позиции раздачи карт — синие кубы
+        Gizmos.color = dealCardPositionColor;
+        for (int i = 0; i < playerDealCardPositions.Count; i++)
+        {
+            Transform? pos = playerDealCardPositions[i];
+            if (pos != null)
+            {
+                Vector3 size = Vector3.one * gizmoSize * 1.4f;
+                Gizmos.DrawCube(pos.position, size);
+                Gizmos.DrawWireCube(pos.position, size);
+            }
+        }
+
+        // Общие карты на столе — жёлтые кубы
+        Gizmos.color = tableCardPositionColor;
+        for (int i = 0; i < tableCardPositions.Length; i++)
+        {
+            Transform? pos = tableCardPositions[i];
+            if (pos != null)
+            {
+                Vector3 size = Vector3.one * gizmoSize * 1.2f;
+                Gizmos.DrawCube(pos.position, size);
+                Gizmos.DrawWireCube(pos.position, size);
+            }
+        }
+
+        // Линии от игрока к его позиции карт
+        Gizmos.color = new Color(1f, 1f, 1f, 0.25f);
+        for (int i = 0; i < playerPositions.Count && i < playerDealCardPositions.Count; i++)
+        {
+            Transform? player = playerPositions[i];
+            Transform? deal = playerDealCardPositions[i];
+            if (player != null && deal != null)
+            {
+                Gizmos.DrawLine(player.position, deal.position);
+            }
+        }
+    }
+
+    #if UNITY_EDITOR
+    private void OnDrawGizmosSelected()
+    {
+        if (!showGizmos) return;
+
+        GUIStyle style = new(GUI.skin.label)
+        {
+            fontSize = 12,
+            fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.UpperCenter
+        };
+
+        // Подписи позиций игроков
+        style.normal.textColor = new Color(0.2f, 0.8f, 0.2f);
+        for (int i = 0; i < playerPositions.Count; i++)
+        {
+            Transform? pos = playerPositions[i];
+            if (pos != null)
+            {
+                Handles.Label(
+                    pos.position + Vector3.up * (gizmoSize + 0.15f),
+                    $"Player {i + 1}", style);
+            }
+        }
+
+        // Подписи позиций раздачи
+        style.normal.textColor = new Color(0.2f, 0.5f, 0.9f);
+        for (int i = 0; i < playerDealCardPositions.Count; i++)
+        {
+            Transform? pos = playerDealCardPositions[i];
+            if (pos != null)
+            {
+                Handles.Label(
+                    pos.position + Vector3.up * (gizmoSize + 0.15f),
+                    $"Deal {i + 1}", style);
+            }
+        }
+
+        // Подписи общих карт
+        style.normal.textColor = new Color(0.8f, 0.7f, 0.2f);
+        for (int i = 0; i < tableCardPositions.Length; i++)
+        {
+            Transform? pos = tableCardPositions[i];
+            if (pos != null)
+            {
+                Handles.Label(
+                    pos.position + Vector3.up * (gizmoSize + 0.15f),
+                    $"Table {i + 1}", style);
+            }
+        }
+    }
+    #endif
 }

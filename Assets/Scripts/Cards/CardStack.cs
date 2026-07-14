@@ -222,7 +222,7 @@ public sealed class CardStack : MonoBehaviour
                 instance.transform.localPosition = new Vector3(
                     Mathf.Sin(angleRad) * fanRadius,
                     Mathf.Cos(angleRad) * fanRadius - fanRadius,
-                    instanceCount * 0.01f - 0.01f * i
+                    instanceCount * 0.002f - 0.002f * i
                 );
                 instance.transform.localRotation = Quaternion.Euler(0f, 0, -angleDeg);
             }

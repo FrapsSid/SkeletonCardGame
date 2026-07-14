@@ -11,6 +11,7 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
     [SerializeField] private SkeletonBody? skeletonBodyPrefab;
     [SerializeField] private SkeletonBody? AIskeletonBodyPrefab;
     [SerializeField] private Transform[] seatPositions = new Transform[0];
+    [SerializeField] private float aiSpawnOffsetY = -0.2f;
 
     private GameManager? gameManager;
     private int _nextSeatIndex;
@@ -104,9 +105,15 @@ public sealed class GameManagerTestBootstrapper : MonoBehaviour
         Transform? seat = _nextSeatIndex < seatPositions.Length ? seatPositions[_nextSeatIndex] : null;
         _nextSeatIndex++;
 
-        return seat != null
-            ? Instantiate(prefab, seat.position, seat.rotation)
-            : Instantiate(prefab);
+        if (seat == null)
+            return Instantiate(prefab);
+        Vector3 position = seat.position;
+        Quaternion rotation = seat.rotation;
+        if (isAI)
+        {
+            position += Vector3.up * aiSpawnOffsetY;
+        }
+        return Instantiate(prefab, position, rotation);
     }
 
     private static void RegisterTestAssets(Team team, Skeleton player)

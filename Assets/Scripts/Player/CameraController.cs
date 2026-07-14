@@ -30,6 +30,14 @@ public class CameraController : MonoBehaviour
     [Header("First Person Look Limits")]
     public float firstPersonMinPitch = -80f;
     public float firstPersonMaxPitch = 80f;
+    [Header("First Person FOV")]
+    public float minFirstPersonFov = 30f;
+    public float maxFirstPersonFov = 80f;
+    public float fovScrollSpeed = 10f;
+    public float fovSmoothTime = 0.1f;
+    private float _defaultFirstPersonFov = 80f;
+    private float _targetFov = 80f;
+    private float _fovVelocity;
 
     [Header("Player Control")]
     public PlayerController playerController;
@@ -67,6 +75,11 @@ public class CameraController : MonoBehaviour
 
     private void Awake()
     {
+        if (firstPersonCam != null)
+        {
+            _defaultFirstPersonFov = firstPersonCam.Lens.FieldOfView;
+            _targetFov = _defaultFirstPersonFov;
+        }
         if (uiStateController == null)
         {
             uiStateController = FindFirstObjectByType<UIStateController>();
@@ -211,6 +224,20 @@ public class CameraController : MonoBehaviour
         {
             viewpoint.localRotation = Quaternion.Euler(_fpCurrentPitch, 0f, 0f);
         }
+
+        if (firstPersonCam != null && Mouse.current != null)
+        {
+            Vector2 scroll = Mouse.current.scroll.ReadValue();
+            if (scroll.y != 0f)
+            {
+                _targetFov -= scroll.y * fovScrollSpeed * 0.01f;
+                _targetFov = Mathf.Clamp(_targetFov, minFirstPersonFov, maxFirstPersonFov);
+            }
+
+            float currentFov = firstPersonCam.Lens.FieldOfView;
+            currentFov = Mathf.SmoothDamp(currentFov, _targetFov, ref _fovVelocity, fovSmoothTime);
+            firstPersonCam.Lens.FieldOfView = currentFov;
+        }
     }
 
     private void SetFirstPerson(bool enable)
@@ -244,6 +271,12 @@ public class CameraController : MonoBehaviour
 
         if (enable)
         {
+            if (firstPersonCam != null)
+            {
+                _targetFov = _defaultFirstPersonFov;
+                _fovVelocity = 0f;
+                firstPersonCam.Lens.FieldOfView = _defaultFirstPersonFov;
+            }
             Transform viewpoint = UpdateFirstPersonViewpoint();
             _fpYaw = playerController != null ? playerController.transform.eulerAngles.y : transform.eulerAngles.y;
             _fpPitch = 0f;
