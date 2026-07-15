@@ -36,9 +36,11 @@ public class SimpleStakeCalculator : BaseStakeCalculator
 
         List<StakeAsset> partsToStake = new List<StakeAsset>();
 
+        List<StakeAsset> orderedParts = OrderBodyparts(availableAssets);
+
         int currentAccumulatedPrice = 0;
 
-        foreach (var part in availableAssets)
+        foreach (var part in orderedParts)
         {
             if (currentAccumulatedPrice >= requiredPrice) break;
 
@@ -47,5 +49,12 @@ public class SimpleStakeCalculator : BaseStakeCalculator
         }
 
         return partsToStake.Count > 0 ? partsToStake : null;
+    }
+
+    protected override List<StakeAsset> OrderBodyparts(List<StakeAsset> availableAssets)
+    {
+        List<StakeAsset> orderedParts = availableAssets.OrderBy(part => part.stakeValue).ToList();
+
+        return orderedParts;
     }
 }
