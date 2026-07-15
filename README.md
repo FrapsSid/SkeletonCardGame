@@ -289,7 +289,6 @@ Assets/
 | Document | Link |
 |---|---|
 | Figma UI & Design | https://www.figma.com/design/nSY2k25bwaS6qqZ3E67lHs/ |
-| Project Backlog | https://github.com/users/FrapsSid/projects/2 |
 
 ---
 
