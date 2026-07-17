@@ -456,6 +456,8 @@ MonoBehaviour:
   autoCreateTextUnderFieldRoots: 1
   includeDescriptions: 1
   emptyText: '-'
+  satisfiedColor: {r: 0.4, g: 1, b: 0.4, a: 1}
+  defaultColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &33552871
 GameObject:
   m_ObjectHideFlags: 0
@@ -887,11 +889,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 17753117597761410, guid: a931634432d7da64089a729473374385, type: 3}
       propertyPath: m_LocalScale.x
-      value: 153.85
+      value: 105.6
       objectReference: {fileID: 0}
     - target: {fileID: 17753117597761410, guid: a931634432d7da64089a729473374385, type: 3}
       propertyPath: m_LocalScale.y
       value: 124.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 17753117597761410, guid: a931634432d7da64089a729473374385, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.06
+      objectReference: {fileID: 0}
+    - target: {fileID: 17753117597761410, guid: a931634432d7da64089a729473374385, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.083
+      objectReference: {fileID: 0}
+    - target: {fileID: 17753117597761410, guid: a931634432d7da64089a729473374385, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.55
       objectReference: {fileID: 0}
     - target: {fileID: 6539269247516546056, guid: a931634432d7da64089a729473374385, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4308,6 +4322,11 @@ MonoBehaviour:
   - {fileID: 2135038393}
   - {fileID: 1508755683}
   - {fileID: 1282533229}
+  showGizmos: 1
+  gizmoSize: 0.2
+  playerPositionColor: {r: 0.2, g: 0.8, b: 0.2, a: 0.5}
+  dealCardPositionColor: {r: 0.2, g: 0.5, b: 0.9, a: 0.5}
+  tableCardPositionColor: {r: 0.9, g: 0.8, b: 0.2, a: 0.5}
 --- !u!4 &476322909
 Transform:
   m_ObjectHideFlags: 0
@@ -8888,6 +8907,7 @@ MonoBehaviour:
   seatPositions:
   - {fileID: 1984572562}
   - {fileID: 648166579}
+  aiSpawnOffsetY: -0.2
 --- !u!114 &1158992801
 MonoBehaviour:
   m_ObjectHideFlags: 0
