@@ -66,10 +66,12 @@ public class CameraController : MonoBehaviour
     private float _fpYawVelocity;
     private float _fpPitchVelocity;
     private bool _isFirstPerson;
+    private bool _forceThirdPerson;
     private readonly List<Renderer> _hiddenBodyRenderers = new();
     private PlayerHand _playerHand;
     private BodyPartItem _firstPersonBodyPartItem;
     public bool IsFirstPerson => _isFirstPerson;
+    public Transform SkullViewpoint => GetFirstPersonViewpoint();
     public static event Action<bool> PerspectiveChanged;
     public static bool IsFirstPersonActive { get; private set; }
 
@@ -137,6 +139,7 @@ public class CameraController : MonoBehaviour
     {
         if (Keyboard.current != null && Keyboard.current.hKey.wasPressedThisFrame)
         {
+            if (_forceThirdPerson) return;
             if (!_isFirstPerson && !HasFirstPersonViewpoint())
             {
                 return;
@@ -297,6 +300,13 @@ public class CameraController : MonoBehaviour
             _fpYawVelocity = 0f;
             _fpPitchVelocity = 0f;
         }
+    }
+
+    public void SetForceThirdPerson(bool force)
+    {
+        _forceThirdPerson = force;
+        if (force && _isFirstPerson)
+            SetFirstPerson(false);
     }
 
     private bool IsAnyUiOpen()

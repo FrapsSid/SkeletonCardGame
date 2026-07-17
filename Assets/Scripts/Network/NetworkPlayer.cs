@@ -57,6 +57,12 @@ namespace Multiplayer
             if (inputReader != null) inputReader.enabled = isOwner;
             if (characterController != null) characterController.enabled = isOwner;
             if (cameraRig != null) cameraRig.SetActive(isOwner);
+
+            var interactor = GetComponentInChildren<PlayerInteractor>();
+            if (interactor != null) interactor.enabled = isOwner;
+
+            var highlighter = GetComponentInChildren<Interactions.InteractionHighlighter>();
+            if (highlighter != null) highlighter.enabled = isOwner;
             if (isOwner)
             {
                 Cursor.lockState = CursorLockMode.Locked;
@@ -79,7 +85,11 @@ namespace Multiplayer
 
                 if (_playerName.Value.IsEmpty)
                 {
-                    _playerName.Value = new FixedString64Bytes($"Player {OwnerClientId}");
+                    string nickname = AuthManager.Instance != null ? AuthManager.Instance.PlayerNickname : null;
+                    if (!string.IsNullOrEmpty(nickname))
+                        _playerName.Value = new FixedString64Bytes(nickname);
+                    else
+                        _playerName.Value = new FixedString64Bytes($"Player {OwnerClientId}");
                 }
             }
             if (IsServer && _playerIndex.Value == -1)

@@ -183,7 +183,7 @@ public sealed class CardDealer : MonoBehaviour
                     List<CardData> handCards = player.Hand.GetCards();
                     if (cardIndex >= handCards.Count)
                     {
-                        throw new InvalidOperationException("Player does not have enough cards in hand to deal.");
+                        continue;
                     }
 
                     yield return DealCardToPlayerRoutine(player, handCards[cardIndex], false);

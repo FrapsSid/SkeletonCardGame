@@ -46,6 +46,12 @@ public class CardGame
         public Player CurrentPlayer => _game.players[_currentPlayerIndex];
         public IReadOnlyList<Team>? Winners => Result?.winners;
         public RoundResult? Result { get; private set; }
+
+        internal void SetCurrentPlayerIndex(int index)
+        {
+            _currentPlayerIndex = index;
+        }
+
         public enum PlayerTurnState
         {
             None,
@@ -287,16 +293,17 @@ public class CardGame
                 throw new InvalidOperationException("Pot can only be resolved at round end");
             if (Result == null)
                 throw new InvalidOperationException("Winners must be determined before resolving the pot");
-            if (Result.assetDistribution.Count == 0)
-                throw new InvalidOperationException("Asset distribution must be calculated before resolving the pot");
 
             List<StakeAsset> resolvedAssets = new List<StakeAsset>();
-            foreach (var pair in Result.assetDistribution)
+            if (Result.assetDistribution.Count > 0)
             {
-                foreach (StakeAsset asset in pair.Value)
+                foreach (var pair in Result.assetDistribution)
                 {
-                    asset.TransferOwnership(pair.Key);
-                    resolvedAssets.Add(asset);
+                    foreach (StakeAsset asset in pair.Value)
+                    {
+                        asset.TransferOwnership(pair.Key);
+                        resolvedAssets.Add(asset);
+                    }
                 }
             }
 
@@ -411,7 +418,16 @@ public class CardGame
                 .Where(team => team != null && team.Skeletons.Any(_activePlayers.Contains))
                 .ToList();
             Result = _game.RoundScorer.CalculateRoundResults(activeTeams, TableCards.ToList(), Combinations, playerStates);
-            Result.assetDistribution = SplitPotBetweenWinners(GetCommittedAssets(), Result.winners);
+
+            if (Result.winners.Count == 0 || Result.scores.Values.All(s => s == 0))
+            {
+                Result.winners.Clear();
+                Result.assetDistribution = new Dictionary<Team, List<StakeAsset>>();
+            }
+            else
+            {
+                Result.assetDistribution = SplitPotBetweenWinners(GetCommittedAssets(), Result.winners);
+            }
         }
 
         private List<StakeAsset> GetCommittedAssets()
@@ -491,6 +507,40 @@ public class CardGame
     public event Action<GamePhase>? OnPhaseChanged;
     public event Action<Round>? OnRoundStarted;
     public event Action<Round>? OnBettingRoundStarted;
+
+    internal void SyncPhase(GamePhase newPhase)
+    {
+        if (_phase != newPhase)
+            phase = newPhase;
+    }
+
+    internal void SyncTurn(int playerIndex)
+    {
+        if (round == null || playerIndex < 0 || playerIndex >= players.Count)
+            return;
+
+        var previousPlayer = round.CurrentPlayer;
+        round.SetCurrentPlayerIndex(playerIndex);
+        if (previousPlayer != null && previousPlayer != players[playerIndex])
+            OnTurnEnded?.Invoke(previousPlayer);
+        RaiseTurnStarted(players[playerIndex]);
+    }
+
+    internal void ResetRoundForClient()
+    {
+        foreach (var player in players)
+        {
+            foreach (var card in player.Hand.GetCards())
+                player.Hand.RemoveCard(card);
+        }
+        round = null;
+    }
+
+    internal void NotifyRoundStarted()
+    {
+        if (round != null)
+            RaiseRoundStarted(round);
+    }
     public event Action<Round>? OnBettingRoundEnded;
     public event Action<RoundResult>? OnRoundEnded;
     public event Action<Player, DeclaredCombinationTier>? OnTargetDeclared;

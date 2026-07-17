@@ -22,6 +22,7 @@ public sealed class GameManager : MonoBehaviour
     private bool _waitingForTableDealAnimation;
     private readonly MatchEndEvaluator _matchEndEvaluator = new();
     private MatchEndResult? _matchEndResult;
+    private int _roundGeneration;
 
     public CardGame? CardGame { get; private set; }
     public Skeleton? LocalPlayer { get; private set; }
@@ -30,9 +31,12 @@ public sealed class GameManager : MonoBehaviour
     public bool IsCardDealInProgress => _activeCardDealerWaits > 0;
     public bool IsMatchEnded => _matchEndResult != null;
     public MatchEndResult? CurrentMatchEndResult => _matchEndResult;
+    public bool IsNetworkMode => _isNetworkMode;
+    public int RoundGeneration => _roundGeneration;
     public event Action<CardGame>? OnGameCreated;
     public event Action? OnCardDealCompleted;
     public event Action<MatchEndResult>? OnMatchEnded;
+    public event Action? OnRoundReset;
 
     [SerializeField] private Multiplayer.NetworkGameState networkGameState;
     [SerializeField] private bool autoInstallParticipantHud = true;
@@ -66,6 +70,7 @@ public sealed class GameManager : MonoBehaviour
         if (networkGameState != null)
         {
             networkGameState.OnPhaseChanged -= HandleNetworkPhaseChanged;
+            networkGameState.OnCurrentTurnChanged -= HandleNetworkTurnChanged;
         }
     }
 
@@ -178,15 +183,51 @@ public sealed class GameManager : MonoBehaviour
                 networkGameState.ClearCurrentTurn();
         }
 
+        ProcessPhaseLogic(phase);
+    }
+
+    private void ProcessPhaseLogic(GamePhase phase)
+    {
         CardGame? game = CardGame;
-        if (game?.round == null)
+        if (game == null)
+            return;
+
+    if (phase == GamePhase.DealingCards)
+    {
+        _roundResolved = false;
+        _waitingForTableDealAnimation = false;
+        Debug.Log($"[GameManager] ProcessClientPhase(DealingCards): IsServer={IsServer()}, players={_players.Count}, cardDealer={cardDealer != null}");
+        if (!IsServer() && _players.Count > 0)
+        {
+            foreach (var player in _players)
+                player.Hand.Clear();
+            game.ResetRoundForClient();
+            StopTableDeal(false);
+            StopTakenCardDeal();
+            if (cardDealer != null)
+            {
+                cardDealer.ClearPlayerCards();
+                cardDealer.ClearTable();
+                Debug.Log("[GameManager] Client: cleared hands, table stacks, and table cards");
+            }
+            _roundGeneration++;
+        }
+        return;
+    }
+
+        if (!IsServer())
+        {
+            ProcessClientPhase(phase, game);
+            return;
+        }
+
+        if (game.round == null)
             return;
 
         if (phase == GamePhase.BettingRoundStart)
         {
             if (_waitingForTableDealAnimation)
                 return;
-
             StartBettingDiscussion(game.round);
         }
         else if (phase == GamePhase.AddingCards)
@@ -197,8 +238,55 @@ public sealed class GameManager : MonoBehaviour
         else if (phase == GamePhase.End && !_roundResolved)
         {
             _roundResolved = true;
-            game.round.DetermineWinners();
-            game.round.ResolvePot();
+            Debug.Log($"[GameManager] ProcessPhaseLogic(End): IsServer={IsServer()}, round={game.round != null}");
+            if (game.round != null)
+            {
+                game.round.DetermineWinners();
+                game.round.ResolvePot();
+            }
+        }
+    }
+
+    private void ProcessClientPhase(GamePhase phase, CardGame game)
+    {
+        if (phase == GamePhase.ShowingCombinations)
+        {
+            if (game.round == null)
+                game.ShowCombinations();
+        }
+        else if (phase == GamePhase.RoundStart)
+        {
+            if (game.round != null && game.phase == GamePhase.RoundStart)
+                game.StartRound();
+        }
+        else if (phase == GamePhase.BettingRoundStart)
+        {
+            if (_waitingForTableDealAnimation)
+                return;
+            if (game.round == null)
+                game.ShowCombinations();
+            if (game.phase == GamePhase.RoundStart)
+                game.StartRound();
+            else if (game.round != null)
+                game.NotifyRoundStarted();
+            StartBettingDiscussion(game.round);
+        }
+        else if (phase == GamePhase.Betting)
+        {
+            _bettingDiscussionGate.StopDiscussion();
+            if (game.round != null && game.phase == GamePhase.BettingRoundStart)
+                game.StartBettingRound();
+        }
+        else if (phase == GamePhase.AddingCards)
+        {
+            _waitingForTableDealAnimation = true;
+        }
+        else if (phase == GamePhase.End && !_roundResolved)
+        {
+            _roundResolved = true;
+            Debug.Log($"[GameManager] ProcessClientPhase(End): round={game.round != null}");
+            // Client does NOT call DetermineWinners() or ResolvePot()
+            // Server will send body part removals and match end via RPC
         }
     }
     private void HandleRoundEnded(RoundResult result)
@@ -252,6 +340,7 @@ public sealed class GameManager : MonoBehaviour
 
     private void HandleTableCardsDealt(IReadOnlyList<CardData> cards)
     {
+        Debug.Log($"[GameManager] HandleTableCardsDealt called with {cards.Count} cards, cardDealer={cardDealer != null}");
         StopTableDeal(false);
         _tableDealCoroutine = StartCoroutine(DealTableCardsThenStartDiscussion(cards));
     }
@@ -277,6 +366,8 @@ public sealed class GameManager : MonoBehaviour
             yield break;
 
         game.ResetRound();
+        _roundGeneration++;
+        OnRoundReset?.Invoke();
         _roundResolved = false;
         StartRoundFlow(game);
     }
@@ -328,6 +419,17 @@ public sealed class GameManager : MonoBehaviour
         _bettingDiscussionGate.StopDiscussion();
         ClearNetworkCurrentTurn();
         OnMatchEnded?.Invoke(result);
+    }
+
+    public void ClientCompleteMatch(int winningTeamIndex)
+    {
+        if (IsServer()) return;
+
+        Team winner = winningTeamIndex >= 0 && winningTeamIndex < _teams.Count
+            ? _teams[winningTeamIndex]
+            : null;
+        var result = new MatchEndResult(winner, new List<Team>(), new List<Team>());
+        CompleteMatch(result);
     }
 
     private void PrepareCardDealerForRound()
@@ -503,6 +605,13 @@ public sealed class GameManager : MonoBehaviour
             : Multiplayer.NetworkGameState.NoCurrentTurnClientId;
 
         networkGameState.SetCurrentTurn(playerIndex, clientId);
+
+        // Also send explicit sync RPC for reliability
+        var sync = FindFirstObjectByType<NetworkCardDealerSync>();
+        if (sync != null)
+        {
+            sync.SyncTurnClientRpc(playerIndex, clientId);
+        }
     }
 
     private void ClearNetworkCurrentTurn()
@@ -517,11 +626,8 @@ public sealed class GameManager : MonoBehaviour
     {
         _isNetworkMode = true;
         networkGameState = gameState;
-        
-        if (IsNetworkClient())
-        {
-            networkGameState.OnPhaseChanged += HandleNetworkPhaseChanged;
-        }
+        networkGameState.OnPhaseChanged += HandleNetworkPhaseChanged;
+        networkGameState.OnCurrentTurnChanged += HandleNetworkTurnChanged;
     }
 
     private bool IsNetworkClient()
@@ -531,17 +637,198 @@ public sealed class GameManager : MonoBehaviour
 
     private void HandleNetworkPhaseChanged(CardGame.GamePhase newPhase)
     {
+        Debug.Log($"[GameManager] HandleNetworkPhaseChanged: newPhase={newPhase}, IsServer={IsServer()}");
         if (CardGame == null) return;
         
         if (!IsServer())
         {
-            Debug.Log($"[GameManager] Network phase changed to {newPhase}");
+            CardGame.SyncPhase(newPhase);
+            ProcessPhaseLogic(newPhase);
+        }
+    }
+
+    private void HandleNetworkTurnChanged(int playerIndex, ulong clientId)
+    {
+        Debug.Log($"[GameManager] HandleNetworkTurnChanged: playerIndex={playerIndex}, clientId={clientId}, IsServer={IsServer()}");
+        if (IsServer()) return;
+        if (CardGame?.round == null) return;
+        if (playerIndex < 0 || playerIndex >= _players.Count) return;
+
+        CardGame.SyncTurn(playerIndex);
+    }
+
+    public void ClientDealTableCards(List<CardData> cards)
+    {
+        if (IsServer()) return;
+        StopTableDeal(false);
+        _tableDealCoroutine = StartCoroutine(ClientDealTableCardsRoutine(cards));
+    }
+
+    public void ClientSyncTurn(int playerIndex, ulong clientId)
+    {
+        if (IsServer()) return;
+        if (CardGame?.round == null) return;
+        if (playerIndex < 0 || playerIndex >= _players.Count) return;
+
+        CardGame.SyncTurn(playerIndex);
+        Debug.Log($"[GameManager] Client: synced turn to player {playerIndex} (clientId={clientId})");
+    }
+
+    public void AdvanceRoundGeneration(int generation)
+    {
+        if (generation > _roundGeneration)
+            _roundGeneration = generation;
+    }
+
+    public void ClientClearTable()
+    {
+        if (IsServer()) return;
+        if (cardDealer != null)
+        {
+            cardDealer.ClearTable();
+            Debug.Log("[GameManager] Client: cleared table (explicit)");
+        }
+    }
+
+    public void ClientClearTableAndDeal(List<CardData> cards)
+    {
+        if (IsServer()) return;
+        ClientClearTable();
+        ClientDealTableCards(cards);
+    }
+
+    private IEnumerator ClientDealTableCardsRoutine(List<CardData> cards)
+    {
+        Debug.Log($"[GameManager] ClientDealTableCardsRoutine: {cards.Count} cards");
+        CardDealer? dealer = cardDealer;
+        if (dealer != null)
+            yield return WaitForDealer(dealer, () => dealer.DealCardsToTable(cards));
+        else
+            Debug.LogWarning("[GameManager] ClientDealTableCardsRoutine: cardDealer is null");
+
+        _waitingForTableDealAnimation = false;
+        _tableDealCoroutine = null;
+        Debug.Log("[GameManager] ClientDealTableCardsRoutine: table deal complete");
+
+        CardGame? game = CardGame;
+        if (game?.round == null || game.phase != GamePhase.BettingRoundStart)
+        {
+            Debug.Log($"[GameManager] ClientDealTableCardsRoutine: skipping discussion (round={game?.round != null}, phase={game?.phase})");
+            yield break;
+        }
+
+        Debug.Log("[GameManager] ClientDealTableCardsRoutine: starting betting discussion");
+        StartBettingDiscussion(game.round);
+    }
+
+    public void RequestSkipTurn() => RequestTurnAction(0);
+    public void RequestTakeCard() => RequestTurnAction(1);
+    public void RequestFold() => RequestTurnAction(2);
+
+    public void RequestBet(List<BodyPartType> partTypes, DeclaredCombinationTier tier)
+    {
+        if (CardGame?.round == null) return;
+
+        ProcessNetworkBetFromTypes(partTypes, tier);
+
+        if (_isNetworkMode && !IsServer())
+        {
+            int[] partTypeValues = new int[partTypes.Count];
+            for (int i = 0; i < partTypes.Count; i++)
+                partTypeValues[i] = (int)partTypes[i];
+            networkGameState.SubmitBetServerRpc(partTypeValues, (int)tier);
+        }
+    }
+
+    public void ProcessNetworkBet(int[] bodyPartTypeValues, int tierValue)
+    {
+        if (!IsServer()) return;
+
+        var partTypes = new List<BodyPartType>();
+        foreach (int v in bodyPartTypeValues)
+            partTypes.Add((BodyPartType)v);
+
+        ProcessNetworkBetFromTypes(partTypes, (DeclaredCombinationTier)tierValue);
+    }
+
+    private void ProcessNetworkBetFromTypes(List<BodyPartType> partTypes, DeclaredCombinationTier tier)
+    {
+        var round = CardGame?.round;
+        if (round == null) return;
+        var player = round.CurrentPlayer;
+        if (player == null) return;
+
+        var assets = new List<StakeAsset>();
+        foreach (BodyPartType partType in partTypes)
+        {
+            foreach (var asset in player.team.Assets)
+            {
+                if (asset.bodyPart != null
+                    && asset.bodyPart.Item.Type == partType
+                    && asset.bodyPart.State == BodyPartState.Attached)
+                {
+                    assets.Add(asset);
+                    break;
+                }
+            }
+        }
+
+        int selectedValue = 0;
+        foreach (var asset in assets)
+            if (asset != null) selectedValue += asset.stakeValue;
+
+        try
+        {
+            if (selectedValue > round.currentParticipationPrice && round.CanRaise(player, assets, tier))
+                round.Raise(player, assets, tier);
+            else
+                round.Call(player, assets, tier);
+
+            if (_isNetworkMode && networkGameState != null)
+                networkGameState.SetParticipationPrice(round.currentParticipationPrice);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[GameManager] ProcessNetworkBet failed: {e.Message}");
+        }
+    }
+
+    private void RequestTurnAction(int actionType)
+    {
+        if (CardGame?.round == null) return;
+        if (_isNetworkMode && !IsServer())
+            networkGameState.SubmitTurnActionServerRpc(actionType);
+        else
+            ProcessNetworkTurnAction(actionType);
+    }
+
+    public void ProcessNetworkTurnAction(int actionType)
+    {
+        if (!IsServer()) return;
+        if (CardGame?.round == null) return;
+
+        var round = CardGame.round;
+        var player = round.CurrentPlayer;
+        if (player == null) return;
+
+        try
+        {
+            switch (actionType)
+            {
+                case 0: round.EndTurn(player); break;
+                case 1: round.TakeCard(player); break;
+                case 2: round.Fold(player); break;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[GameManager] Turn action {actionType} failed: {e.Message}");
         }
     }
 
     private bool IsServer()
     {
-        return networkGameState != null && networkGameState.IsServer;
+        return !_isNetworkMode || (networkGameState != null && networkGameState.IsServer);
     }
 // Сетевая часть>
 }

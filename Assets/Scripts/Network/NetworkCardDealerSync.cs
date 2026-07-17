@@ -1,5 +1,7 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -42,27 +44,26 @@ public class NetworkCardDealerSync : NetworkBehaviour
 {
     [SerializeField] private CardDealer? cardDealer;
 
+    private bool _initialDealSent;
+
     public override void OnNetworkSpawn()
     {
         ResolveCardDealer();
-        Debug.Log($"[NetworkCardDealerSync] OnNetworkSpawn: IsServer={IsServer}, IsHost={IsHost}, IsClient={IsClient}, cardDealer={cardDealer != null}");
+        _initialDealSent = false;
 
         if (!IsServer)
             return;
 
         var gm = FindFirstObjectByType<GameManager>();
-        Debug.Log($"[NetworkCardDealerSync] GameManager found: {gm != null}, CardGame exists: {gm?.CardGame != null}");
         if (gm == null)
             return;
 
         if (gm.CardGame != null)
-        {
             HandleGameCreated(gm.CardGame);
-        }
         else
-        {
             gm.OnGameCreated += HandleGameCreated;
-        }
+
+        gm.OnRoundReset += HandleRoundReset;
     }
 
     public override void OnNetworkDespawn()
@@ -74,28 +75,55 @@ public class NetworkCardDealerSync : NetworkBehaviour
         if (gm != null)
         {
             gm.OnGameCreated -= HandleGameCreated;
-            gm.OnCardDealCompleted -= HandleCardDealCompleted;
+            gm.OnCardDealCompleted -= HandleInitialDealCompleted;
+            gm.OnMatchEnded -= HandleMatchEnded;
+            gm.OnRoundReset -= HandleRoundReset;
+            if (gm.CardGame != null)
+            {
+                gm.CardGame.OnTableCardsDealt -= HandleTableCardsDealt;
+                gm.CardGame.OnCardTaken -= HandleCardTaken;
+                gm.CardGame.OnPotResolved -= HandlePotResolved;
+            }
         }
     }
 
     private void HandleGameCreated(CardGame game)
     {
-        Debug.Log("[NetworkCardDealerSync] Subscribing to table card deal events");
+        Debug.Log("[NetworkCardDealerSync] HandleGameCreated: subscribing to events");
         game.OnTableCardsDealt += HandleTableCardsDealt;
+        game.OnCardTaken += HandleCardTaken;
+        game.OnPotResolved += HandlePotResolved;
 
         var gm = FindFirstObjectByType<GameManager>();
         if (gm != null)
-            gm.OnCardDealCompleted += HandleCardDealCompleted;
+        {
+            gm.OnCardDealCompleted += HandleInitialDealCompleted;
+            gm.OnMatchEnded += HandleMatchEnded;
+            gm.OnRoundReset += HandleRoundReset;
+        }
+
+        _initialDealSent = false;
     }
 
-    private void HandleCardDealCompleted()
+    private void HandleRoundReset()
+    {
+        _initialDealSent = false;
+        Debug.Log("[NetworkCardDealerSync] Round reset, will resend initial deal");
+    }
+
+    private void HandleInitialDealCompleted()
     {
         if (!IsServer)
+            return;
+
+        if (_initialDealSent)
             return;
 
         var gm = FindFirstObjectByType<GameManager>();
         if (gm?.CardGame == null)
             return;
+
+        _initialDealSent = true;
 
         var allData = new List<PlayerCardsData>();
         var playersList = new List<Skeleton>(gm.Players);
@@ -110,8 +138,51 @@ public class NetworkCardDealerSync : NetworkBehaviour
             allData.Add(new PlayerCardsData { PlayerIndex = i, Cards = netCards });
         }
 
-        Debug.Log($"[NetworkCardDealerSync] Sending cards to {allData.Count} players");
+        Debug.Log($"[NetworkCardDealerSync] Initial deal: sending {allData.Count} player hands");
         ShowPlayerCardsClientRpc(allData.ToArray());
+        SyncAllPlayerHandsClientRpc(allData.ToArray());
+    }
+
+    private void HandleCardTaken(Skeleton player, CardData card)
+    {
+        if (!IsServer)
+            return;
+
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm == null)
+            return;
+
+        int playerIndex = -1;
+        for (int i = 0; i < gm.Players.Count; i++)
+        {
+            if (gm.Players[i] == player)
+            {
+                playerIndex = i;
+                break;
+            }
+        }
+        if (playerIndex < 0)
+            return;
+
+        Debug.Log($"[NetworkCardDealerSync] Player {playerIndex} took a card, sending incremental update");
+        DealTakenCardClientRpc(playerIndex, new CardNetworkData(card));
+    }
+
+    private void HandleTableCardsDealt(IReadOnlyList<CardData> cards)
+    {
+        if (!IsServer)
+            return;
+
+        Debug.Log($"[NetworkCardDealerSync] Table cards dealt: {cards.Count}, sending to clients");
+
+        var gm = FindFirstObjectByType<GameManager>();
+        int generation = gm != null ? gm.RoundGeneration : 0;
+
+        var networkCards = new CardNetworkData[cards.Count];
+        for (int i = 0; i < cards.Count; i++)
+            networkCards[i] = new CardNetworkData(cards[i]);
+
+        ShowTableCardsClientRpc(networkCards, generation);
     }
 
     [ClientRpc]
@@ -129,6 +200,8 @@ public class NetworkCardDealerSync : NetworkBehaviour
 
         var playersList = new List<Skeleton>(gm.Players);
 
+        cardDealer.ClearPlayerCards();
+
         int cardsPerPlayer = 0;
         foreach (var data in playerCards)
         {
@@ -136,6 +209,7 @@ public class NetworkCardDealerSync : NetworkBehaviour
                 continue;
 
             var skeleton = playersList[data.PlayerIndex];
+            skeleton.Hand.Clear();
             foreach (var card in data.Cards)
                 skeleton.Hand.AddCard(card.ToCardData());
 
@@ -146,40 +220,131 @@ public class NetworkCardDealerSync : NetworkBehaviour
         cardDealer.DealCardsToPlayers(playersList, cardsPerPlayer);
     }
 
-    private void HandleTableCardsDealt(IReadOnlyList<CardData> cards)
-    {
-        if (!IsServer)
-            return;
-
-        Debug.Log($"[NetworkCardDealerSync] Server dealt {cards.Count} table cards, sending ClientRpc");
-
-        var networkCards = new CardNetworkData[cards.Count];
-        for (int i = 0; i < cards.Count; i++)
-            networkCards[i] = new CardNetworkData(cards[i]);
-
-        ShowTableCardsClientRpc(networkCards);
-    }
-
     [ClientRpc]
-    private void ShowTableCardsClientRpc(CardNetworkData[] cards)
+    private void SyncAllPlayerHandsClientRpc(PlayerCardsData[] playerCards)
     {
         ResolveCardDealer();
-        Debug.Log($"[NetworkCardDealerSync] Client received {cards.Length} cards: IsHost={IsHost}, cardDealer={cardDealer != null}");
-
         if (IsHost)
             return;
         if (cardDealer == null)
+            return;
+
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm?.CardGame == null)
+            return;
+
+        var playersList = new List<Skeleton>(gm.Players);
+
+        cardDealer.ClearPlayerCards();
+
+        foreach (var data in playerCards)
         {
-            Debug.LogWarning("[NetworkCardDealerSync] cardDealer is null.");
+            if (data.PlayerIndex >= playersList.Count)
+                continue;
+
+            var skeleton = playersList[data.PlayerIndex];
+            skeleton.Hand.Clear();
+            foreach (var card in data.Cards)
+                skeleton.Hand.AddCard(card.ToCardData());
+        }
+
+        int cardsPerPlayer = playerCards.Length > 0 ? playerCards[0].Cards.Length : 0;
+        cardDealer.DealCardsToPlayers(playersList, cardsPerPlayer);
+        Debug.Log($"[NetworkCardDealerSync] Client: full hand sync received for {playerCards.Length} players");
+    }
+
+    [ClientRpc]
+    private void DealTakenCardClientRpc(int playerIndex, CardNetworkData card)
+    {
+        ResolveCardDealer();
+        if (IsHost)
+            return;
+        if (cardDealer == null)
+            return;
+
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm?.CardGame == null)
+            return;
+
+        var playersList = new List<Skeleton>(gm.Players);
+        if (playerIndex >= playersList.Count)
+            return;
+
+        var skeleton = playersList[playerIndex];
+        var cardData = card.ToCardData();
+        skeleton.Hand.AddCard(cardData);
+
+        Debug.Log($"[NetworkCardDealerSync] Client: player {playerIndex} took a card, dealing incrementally");
+        cardDealer.DealCardToPlayer(skeleton, cardData);
+    }
+
+    [ClientRpc]
+    private void ShowTableCardsClientRpc(CardNetworkData[] cards, int generation)
+    {
+        ResolveCardDealer();
+        if (IsHost)
+            return;
+
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm == null)
+            return;
+
+        if (gm.CardGame == null)
+            return;
+
+        if (!gm.IsNetworkMode)
+        {
+            var cardDataList = new List<CardData>(cards.Length);
+            for (int i = 0; i < cards.Length; i++)
+                cardDataList.Add(cards[i].ToCardData());
+            gm.ClientDealTableCards(cardDataList);
             return;
         }
 
-        var cardDataList = new List<CardData>(cards.Length);
-        for (int i = 0; i < cards.Length; i++)
-            cardDataList.Add(cards[i].ToCardData());
+        if (generation < gm.RoundGeneration)
+        {
+            Debug.LogWarning($"[NetworkCardDealerSync] Ignoring stale table cards RPC (gen={generation}, current={gm.RoundGeneration})");
+            return;
+        }
 
-        Debug.Log($"[NetworkCardDealerSync] Calling CardDealer.DealCardsToTable with {cardDataList.Count} cards");
-        cardDealer.DealCardsToTable(cardDataList);
+        bool generationAdvanced = generation > gm.RoundGeneration;
+        gm.AdvanceRoundGeneration(generation);
+
+        var dealCards = new List<CardData>(cards.Length);
+        for (int i = 0; i < cards.Length; i++)
+            dealCards.Add(cards[i].ToCardData());
+
+        if (generationAdvanced)
+        {
+            Debug.Log($"[NetworkCardDealerSync] Client: round advanced to gen {generation}, clearing table and dealing {dealCards.Count} table cards");
+            gm.ClientClearTableAndDeal(dealCards);
+        }
+        else
+        {
+            Debug.Log($"[NetworkCardDealerSync] Client: dealing {dealCards.Count} table cards (gen={generation})");
+            gm.ClientDealTableCards(dealCards);
+        }
+    }
+
+    [ClientRpc]
+    private void ClearTableClientRpc(int generation)
+    {
+        if (IsHost)
+            return;
+
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm == null || !gm.IsNetworkMode)
+            return;
+
+        if (generation < gm.RoundGeneration)
+        {
+            Debug.LogWarning($"[NetworkCardDealerSync] Ignoring stale clear table RPC (gen={generation}, current={gm.RoundGeneration})");
+            return;
+        }
+
+        gm.AdvanceRoundGeneration(generation);
+        gm.ClientClearTable();
+        Debug.Log($"[NetworkCardDealerSync] Client: cleared table for generation {generation}");
     }
 
     private void ResolveCardDealer()
@@ -210,4 +375,202 @@ public class NetworkCardDealerSync : NetworkBehaviour
     {
         return dealer != null && dealer.isActiveAndEnabled && dealer.gameObject.activeInHierarchy;
     }
-}
+
+    private void HandlePotResolved(IReadOnlyList<Team> winners, IReadOnlyList<StakeAsset> resolvedAssets)
+    {
+        Debug.Log($"[NetworkCardDealerSync] HandlePotResolved: IsServer={IsServer}, resolvedAssets.Count={resolvedAssets.Count}");
+        if (!IsServer) return;
+
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm == null)
+        {
+            Debug.LogWarning("[NetworkCardDealerSync] HandlePotResolved: GameManager not found");
+            return;
+        }
+
+        var loserIndices = new List<int>();
+        var loserBodyPartTypes = new List<int>();
+        var winnerTeamIndices = new List<int>();
+
+        foreach (var asset in resolvedAssets)
+        {
+            if (asset.bodyPart == null || asset.sourceOwner == null || asset.bodyPart.Item == null)
+                continue;
+            if (asset.bodyPart.State != BodyPartState.Detached)
+                continue;
+
+            int playerIndex = -1;
+            for (int i = 0; i < gm.Players.Count; i++)
+            {
+                if (gm.Players[i] == asset.sourceOwner)
+                {
+                    playerIndex = i;
+                    break;
+                }
+            }
+            if (playerIndex < 0) continue;
+
+            int winnerTeamIndex = -1;
+            if (winners.Count > 0)
+            {
+                for (int t = 0; t < gm.Teams.Count; t++)
+                {
+                    if (gm.Teams[t] == winners[0])
+                    {
+                        winnerTeamIndex = t;
+                        break;
+                    }
+                }
+            }
+
+            loserIndices.Add(playerIndex);
+            loserBodyPartTypes.Add((int)asset.bodyPart.Item.Type);
+            winnerTeamIndices.Add(winnerTeamIndex);
+        }
+
+        if (loserIndices.Count > 0)
+        {
+            Debug.Log($"[NetworkCardDealerSync] Broadcasting flying limbs + removals for {loserIndices.Count} parts");
+            BroadcastFlyingLimbAndRemovalClientRpc(
+                loserIndices.ToArray(),
+                loserBodyPartTypes.ToArray(),
+                winnerTeamIndices.ToArray());
+        }
+        else
+        {
+            Debug.Log("[NetworkCardDealerSync] No body parts to sync");
+        }
+    }
+
+    [ClientRpc]
+    private void BroadcastFlyingLimbAndRemovalClientRpc(int[] loserIndices, int[] bodyPartTypes, int[] winnerTeamIndices)
+    {
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm == null)
+        {
+            Debug.LogWarning("[NetworkCardDealerSync] BroadcastFlyingLimbClientRpc: GameManager not found");
+            return;
+        }
+
+        for (int i = 0; i < loserIndices.Length; i++)
+        {
+            int loserIdx = loserIndices[i];
+            int bpt = bodyPartTypes[i];
+            int winnerTeamIdx = winnerTeamIndices[i];
+
+            if (loserIdx >= gm.Players.Count)
+                continue;
+
+            var loserSkeleton = gm.Players[loserIdx];
+            var loserBody = loserSkeleton.Body;
+            if (loserBody == null) continue;
+
+            Transform targetPos = null;
+            if (winnerTeamIdx >= 0 && winnerTeamIdx < gm.Teams.Count)
+            {
+                var winnerTeam = gm.Teams[winnerTeamIdx];
+                if (winnerTeam.Skeletons.Count > 0 && winnerTeam.Skeletons[0].Body != null)
+                    targetPos = winnerTeam.Skeletons[0].Body.transform;
+            }
+
+            var detachedPart = loserBody.GetAttachedParts().Find(p => p != null && p.Item != null && p.Item.Type == (BodyPartType)bpt);
+            if (detachedPart == null)
+            {
+                var go = loserBody.gameObject;
+                Collider col = null;
+                foreach (var c in go.GetComponentsInChildren<Collider>())
+                {
+                    if (c.GetComponent<BodyPart>() != null)
+                    {
+                        col = c;
+                        break;
+                    }
+                }
+                if (col != null) detachedPart = col.GetComponent<BodyPart>();
+            }
+
+            if (detachedPart != null)
+            {
+                var partGo = detachedPart.gameObject;
+                partGo.transform.SetParent(null);
+
+                if (targetPos != null)
+                {
+                    float delay = i * 0.15f;
+                    StartCoroutine(FlyingLimbSequence(partGo, targetPos, loserBody, (BodyPartType)bpt, delay));
+                }
+                else
+                {
+                    loserBody.RemovePart((BodyPartType)bpt);
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[NetworkCardDealerSync] Could not find body part {(BodyPartType)bpt} on player {loserIdx} for flying effect");
+            }
+        }
+    }
+
+    private System.Collections.IEnumerator FlyingLimbSequence(GameObject partGo, Transform target, SkeletonBody loserBody, BodyPartType partType, float delay)
+    {
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+
+        var effect = FlyingLimbEffect.Create(partGo, target, 0.8f, () =>
+        {
+            loserBody.RemovePart(partType);
+        });
+
+        while (effect != null)
+            yield return null;
+    }
+
+    private void HandleMatchEnded(MatchEndResult result)
+    {
+        if (!IsServer) return;
+
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm == null) return;
+
+        int winningTeamIndex = -1;
+        if (result.WinningTeam != null)
+        {
+            for (int i = 0; i < gm.Teams.Count; i++)
+            {
+                if (gm.Teams[i] == result.WinningTeam)
+                {
+                    winningTeamIndex = i;
+                    break;
+                }
+            }
+        }
+
+        Debug.Log($"[NetworkCardDealerSync] Match ended, winner team: {winningTeamIndex}");
+        SyncMatchEndClientRpc(winningTeamIndex);
+    }
+
+    [ClientRpc]
+    internal void SyncTurnClientRpc(int playerIndex, ulong clientId)
+    {
+        if (IsHost) return;
+
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm == null) return;
+
+        Debug.Log($"[NetworkCardDealerSync] Client: sync turn to player {playerIndex} (clientId={clientId})");
+        gm.ClientSyncTurn(playerIndex, clientId);
+    }
+
+    [ClientRpc]
+    private void SyncMatchEndClientRpc(int winningTeamIndex)
+    {
+        if (IsHost) return;
+
+        var gm = FindFirstObjectByType<GameManager>();
+        if (gm == null) return;
+
+        Debug.Log($"[NetworkCardDealerSync] Client: match ended, winner team: {winningTeamIndex}");
+        gm.ClientCompleteMatch(winningTeamIndex);
+    }
+
+    }

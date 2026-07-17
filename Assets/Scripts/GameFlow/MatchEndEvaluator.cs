@@ -23,7 +23,7 @@ public sealed class MatchEndEvaluator
             if (team == null || team.Skeletons.Count == 0)
                 continue;
 
-            if (TeamRetainsAnySoul(team, allAssets))
+            if (TeamRetainsAnyRibcage(team, allAssets))
                 activeTeams.Add(team);
             else
                 eliminatedTeams.Add(team);
@@ -35,35 +35,35 @@ public sealed class MatchEndEvaluator
         return null;
     }
 
-    private static bool TeamRetainsAnySoul(Team team, IReadOnlyList<StakeAsset> allAssets)
+    private static bool TeamRetainsAnyRibcage(Team team, IReadOnlyList<StakeAsset> allAssets)
     {
-        bool foundKnownPlayerSoul = false;
-        bool hasPlayerWithoutSoulData = false;
+        bool foundKnownRibcage = false;
+        bool hasPlayerWithoutRibcageData = false;
 
         foreach (Skeleton player in team.Skeletons)
         {
-            StakeAsset playerSoul = FindPlayerSoul(player, allAssets);
-            if (playerSoul == null)
+            StakeAsset playerRibcage = FindPlayerRibcage(player, allAssets);
+            if (playerRibcage == null)
             {
-                hasPlayerWithoutSoulData = true;
+                hasPlayerWithoutRibcageData = true;
                 continue;
             }
 
-            foundKnownPlayerSoul = true;
-            if (playerSoul.owningTeam == team)
+            foundKnownRibcage = true;
+            if (playerRibcage.owningTeam == team)
                 return true;
         }
 
-        if (hasPlayerWithoutSoulData)
+        if (hasPlayerWithoutRibcageData)
             return true;
 
-        if (foundKnownPlayerSoul)
+        if (foundKnownRibcage)
             return false;
 
         return true;
     }
 
-    private static StakeAsset FindPlayerSoul(Skeleton player, IReadOnlyList<StakeAsset> allAssets)
+    private static StakeAsset FindPlayerRibcage(Skeleton player, IReadOnlyList<StakeAsset> allAssets)
     {
         if (player == null)
             return null;
@@ -71,7 +71,10 @@ public sealed class MatchEndEvaluator
         foreach (StakeAsset asset in allAssets)
         {
             if (asset != null
-                && asset.assetType == StakeAssetType.Soul
+                && asset.assetType == StakeAssetType.BodyPart
+                && asset.bodyPart != null
+                && asset.bodyPart.Item != null
+                && asset.bodyPart.Item.Type == BodyPartType.Torso
                 && asset.sourceOwner == player)
             {
                 return asset;

@@ -42,4 +42,10 @@ public class Hand
     {
         return new List<CardData>(_cards);
     }
+
+    public void Clear()
+    {
+        _cards.Clear();
+        OnHandChanged?.Invoke(new List<CardData>(_cards));
+    }
 }

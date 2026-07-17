@@ -6,26 +6,33 @@ namespace Multiplayer
     public class SpawnPointManager : MonoBehaviour
     {
         public static SpawnPointManager Instance { get; private set; }
- 
-        private readonly List<Transform> _spawnPoints = new List<Transform>();
+
+        [SerializeField] private Transform[] playerSpawnPoints;
+
         private int _nextIndex;
- 
+
         private void Awake()
         {
             Instance = this;
- 
-            var points = FindObjectsByType<SpawnPoint>(FindObjectsSortMode.None);
-            foreach (var p in points)
+
+            if (playerSpawnPoints == null || playerSpawnPoints.Length == 0)
             {
-                _spawnPoints.Add(p.transform);
+                var points = FindObjectsByType<SpawnPoint>(FindObjectsSortMode.None);
+                var list = new List<Transform>();
+                foreach (var p in points)
+                {
+                    if (p.gameObject.name.StartsWith("Spawn"))
+                        list.Add(p.transform);
+                }
+                playerSpawnPoints = list.ToArray();
             }
         }
- 
+
         public Transform GetNextSpawnPoint()
         {
-            if (_spawnPoints.Count == 0) return null;
- 
-            var point = _spawnPoints[_nextIndex % _spawnPoints.Count];
+            if (playerSpawnPoints == null || playerSpawnPoints.Length == 0) return null;
+
+            var point = playerSpawnPoints[_nextIndex % playerSpawnPoints.Length];
             _nextIndex++;
             return point;
         }

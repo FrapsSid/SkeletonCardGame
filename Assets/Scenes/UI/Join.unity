@@ -1016,7 +1016,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Enter text...
+  m_text: Room Code
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 523a66223dfa41c43bf25fcd5b17fd40, type: 2}
   m_sharedMaterial: {fileID: -1512927928662302109, guid: 523a66223dfa41c43bf25fcd5b17fd40, type: 2}
@@ -1126,8 +1126,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JoinGameUINetwork
   backButton: {fileID: 111435448}
-  addressInputField: {fileID: 1047822551}
   connectButton: {fileID: 783583836}
+  addressInputField: {fileID: 1047822551}
+  roomCodeInputField: {fileID: 1047822551}
 --- !u!4 &1003745547
 Transform:
   m_ObjectHideFlags: 0
