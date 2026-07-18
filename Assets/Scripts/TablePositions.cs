@@ -18,6 +18,9 @@ public sealed class TablePositions : MonoBehaviour
     [Header("Table Cards")]
     [SerializeField] private Transform?[] tableCardPositions = new Transform?[TableCardPositionCount];
 
+    [Header("Camera")]
+    [SerializeField] private Transform? cameraPosition;
+
     [Header("Players")]
     [SerializeField, Min(MinimumPlayerCount)] private int playerCount = 2;
     [SerializeField, Min(0f)] private float playerPositionRadius = 3f;
@@ -37,6 +40,8 @@ public sealed class TablePositions : MonoBehaviour
     private readonly Dictionary<Skeleton, int> _playerIndices = new();
 
     public IReadOnlyList<Transform?> TableCardPositions => tableCardPositions;
+    public Transform? CameraPosition => cameraPosition;
+
     public int PlayerCount
     {
         get => playerCount;

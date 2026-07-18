@@ -66,10 +66,12 @@ public class CameraController : MonoBehaviour
     private float _fpYawVelocity;
     private float _fpPitchVelocity;
     private bool _isFirstPerson;
+    private bool _isTableView;
     private bool _forceThirdPerson;
     private readonly List<Renderer> _hiddenBodyRenderers = new();
     private PlayerHand _playerHand;
     private BodyPartItem _firstPersonBodyPartItem;
+    private TablePositions _tablePositions;
     public bool IsFirstPerson => _isFirstPerson;
     public Transform SkullViewpoint => GetFirstPersonViewpoint();
     public static event Action<bool> PerspectiveChanged;
@@ -89,6 +91,7 @@ public class CameraController : MonoBehaviour
 
         _input = GetComponentInParent<InputReader>();
         _playerHand = GetComponentInParent<PlayerHand>();
+        _tablePositions = FindFirstObjectByType<TablePositions>();
         if (_skeletonBody == null)
         {
             _skeletonBody = GetComponentInParent<SkeletonBody>();
@@ -140,13 +143,39 @@ public class CameraController : MonoBehaviour
         if (Keyboard.current != null && Keyboard.current.hKey.wasPressedThisFrame)
         {
             if (_forceThirdPerson) return;
-            if (!_isFirstPerson && !HasFirstPersonViewpoint())
+
+            if (_isTableView)
             {
+                SetFirstPerson(false);
                 return;
             }
-            SetFirstPerson(!_isFirstPerson);
+
+            if (_isFirstPerson)
+            {
+                if (!TrySetTableView())
+                {
+                    SetFirstPerson(false);
+                }
+
+                return;
+            }
+
+            if (HasFirstPersonViewpoint())
+            {
+                SetFirstPerson(true);
+            }
+            else
+            {
+                TrySetTableView();
+            }
         }
+
         if (_isFirstPerson && !HasFirstPersonViewpoint())
+        {
+            SetFirstPerson(false);
+        }
+
+        if (_isTableView && !HasTableCameraPosition())
         {
             SetFirstPerson(false);
         }
@@ -160,6 +189,11 @@ public class CameraController : MonoBehaviour
         }
 
         if (_input == null)
+        {
+            return;
+        }
+
+        if (_isTableView)
         {
             return;
         }
@@ -245,6 +279,7 @@ public class CameraController : MonoBehaviour
 
     private void SetFirstPerson(bool enable)
     {
+        _isTableView = false;
         _isFirstPerson = enable;
         IsFirstPersonActive = enable;
         PerspectiveChanged?.Invoke(enable);
@@ -302,11 +337,39 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    private bool TrySetTableView()
+    {
+        Transform cameraPosition = _tablePositions != null ? _tablePositions.CameraPosition : null;
+        if (cameraPosition == null || firstPersonCam == null)
+        {
+            return false;
+        }
+
+        SetFirstPerson(false);
+        _isTableView = true;
+
+        firstPersonCam.Follow = cameraPosition;
+        firstPersonCam.Lens.FieldOfView = _defaultFirstPersonFov;
+        firstPersonCam.Priority = 10;
+
+        if (thirdPersonCam != null)
+        {
+            thirdPersonCam.Priority = 0;
+        }
+
+        return true;
+    }
+
     public void SetForceThirdPerson(bool force)
     {
         _forceThirdPerson = force;
-        if (force && _isFirstPerson)
+        if (force && (_isFirstPerson || _isTableView))
             SetFirstPerson(false);
+    }
+
+    private bool HasTableCameraPosition()
+    {
+        return _tablePositions != null && _tablePositions.CameraPosition != null;
     }
 
     private bool IsAnyUiOpen()
