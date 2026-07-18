@@ -22,6 +22,7 @@ public class JoinGameUINetwork : MonoBehaviour
     {
         backButton.onClick.AddListener(OnBackClicked);
         connectButton.onClick.AddListener(OnConnectClicked);
+        roomCodeInputField.onValidateInput += ConvertRoomCodeCharacterToUppercase;
 
         addressInputField.text = "127.0.0.1";
         roomCodeInputField.text = "";
@@ -35,6 +36,7 @@ public class JoinGameUINetwork : MonoBehaviour
     {
         backButton?.onClick.RemoveListener(OnBackClicked);
         connectButton?.onClick.RemoveListener(OnConnectClicked);
+        roomCodeInputField.onValidateInput -= ConvertRoomCodeCharacterToUppercase;
 
         if (NetworkGameManager.Instance != null)
             NetworkGameManager.Instance.OnDisconnected -= HandleDisconnected;
@@ -63,7 +65,7 @@ public class JoinGameUINetwork : MonoBehaviour
             // Relay join: room code takes priority
             if (!string.IsNullOrWhiteSpace(roomCodeInputField.text))
             {
-                string code = roomCodeInputField.text.Trim().ToUpper();
+                string code = roomCodeInputField.text.Trim().ToUpperInvariant();
                 Debug.Log($"[Relay] Joining room {code}...");
                 if (!NetworkGameManager.Instance.JoinRelayGame(code))
                     ShowConnectionError();
@@ -93,6 +95,11 @@ public class JoinGameUINetwork : MonoBehaviour
     }
 
     private void HandleTransportFailure() => ShowConnectionError();
+
+    private static char ConvertRoomCodeCharacterToUppercase(
+        string _,
+        int __,
+        char addedCharacter) => char.ToUpperInvariant(addedCharacter);
 
     private void ShowConnectionError() => connectionErrorText.text = ConnectionErrorMessage;
 }
