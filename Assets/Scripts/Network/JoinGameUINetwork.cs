@@ -1,3 +1,6 @@
+#nullable enable
+
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,22 +10,25 @@ using Multiplayer;
 
 public class JoinGameUINetwork : MonoBehaviour
 {
-    [SerializeField] private Button backButton;
-    [SerializeField] private Button connectButton;
-    [SerializeField] private TMP_InputField addressInputField;
-    [SerializeField] private TMP_InputField roomCodeInputField;
+    private const string ConnectionErrorMessage = "Connection failed";
+
+    [SerializeField] private Button backButton = null!;
+    [SerializeField] private Button connectButton = null!;
+    [SerializeField] private TMP_InputField addressInputField = null!;
+    [SerializeField] private TMP_InputField roomCodeInputField = null!;
+    [SerializeField] private TMP_Text connectionErrorText = null!;
 
     void Start()
     {
         backButton.onClick.AddListener(OnBackClicked);
         connectButton.onClick.AddListener(OnConnectClicked);
 
-        if (addressInputField != null)
-            addressInputField.text = "127.0.0.1";
-        if (roomCodeInputField != null)
-            roomCodeInputField.text = "";
+        addressInputField.text = "127.0.0.1";
+        roomCodeInputField.text = "";
 
+        connectionErrorText.text = string.Empty;
         NetworkGameManager.Instance.OnDisconnected += HandleDisconnected;
+        NetworkManager.Singleton.OnTransportFailure += HandleTransportFailure;
     }
 
     private void OnDestroy()
@@ -32,6 +38,8 @@ public class JoinGameUINetwork : MonoBehaviour
 
         if (NetworkGameManager.Instance != null)
             NetworkGameManager.Instance.OnDisconnected -= HandleDisconnected;
+        if (NetworkManager.Singleton != null)
+            NetworkManager.Singleton.OnTransportFailure -= HandleTransportFailure;
     }
 
     private void OnBackClicked()
@@ -41,6 +49,8 @@ public class JoinGameUINetwork : MonoBehaviour
 
     private void OnConnectClicked()
     {
+        connectionErrorText.text = string.Empty;
+
         if (NetworkManager.Singleton != null
             && (NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsListening))
         {
@@ -48,26 +58,41 @@ public class JoinGameUINetwork : MonoBehaviour
             return;
         }
 
-        // Relay join: room code takes priority
-        if (roomCodeInputField != null && !string.IsNullOrWhiteSpace(roomCodeInputField.text))
+        try
         {
-            string code = roomCodeInputField.text.Trim().ToUpper();
-            Debug.Log($"[Relay] Joining room {code}...");
-            NetworkGameManager.Instance.JoinRelayGame(code);
-            return;
+            // Relay join: room code takes priority
+            if (!string.IsNullOrWhiteSpace(roomCodeInputField.text))
+            {
+                string code = roomCodeInputField.text.Trim().ToUpper();
+                Debug.Log($"[Relay] Joining room {code}...");
+                if (!NetworkGameManager.Instance.JoinRelayGame(code))
+                    ShowConnectionError();
+                return;
+            }
+
+            // Direct join: IP address
+            string address = string.IsNullOrWhiteSpace(addressInputField.text)
+                ? "127.0.0.1"
+                : addressInputField.text;
+
+            Debug.Log($"Connecting directly to {address}...");
+            if (!NetworkGameManager.Instance.JoinGame(address))
+                ShowConnectionError();
         }
-
-        // Direct join: IP address
-        string address = string.IsNullOrWhiteSpace(addressInputField != null ? addressInputField.text : "")
-            ? "127.0.0.1"
-            : addressInputField.text;
-
-        Debug.Log($"Connecting directly to {address}...");
-        NetworkGameManager.Instance.JoinGame(address);
+        catch (Exception exception)
+        {
+            Debug.LogException(exception);
+            ShowConnectionError();
+        }
     }
 
     private void HandleDisconnected(DisconnectReason reason)
     {
         Debug.LogWarning($"Connection failed: {reason}");
+        ShowConnectionError();
     }
+
+    private void HandleTransportFailure() => ShowConnectionError();
+
+    private void ShowConnectionError() => connectionErrorText.text = ConnectionErrorMessage;
 }

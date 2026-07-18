@@ -73,7 +73,7 @@ namespace Multiplayer
             NetworkManager.Singleton.StartHost();
         }
 
-        public void JoinGame(string address)
+        public bool JoinGame(string address)
         {
             var transport = EnsureTransport<UnityTransport>();
             if (transport != null)
@@ -81,7 +81,7 @@ namespace Multiplayer
                 transport.ConnectionData.Address = address;
                 transport.ConnectionData.Port = defaultPort;
             }
-            NetworkManager.Singleton.StartClient();
+            return NetworkManager.Singleton.StartClient();
         }
 
         // ── Relay connect (new) ────────────────────────────────────────
@@ -94,11 +94,11 @@ namespace Multiplayer
             NetworkManager.Singleton.StartHost();
         }
 
-        public void JoinRelayGame(string roomCode)
+        public bool JoinRelayGame(string roomCode)
         {
             var relay = EnsureTransport<RelayTransport>();
             relay.SetRoomCode(roomCode);
-            NetworkManager.Singleton.StartClient();
+            return NetworkManager.Singleton.StartClient();
         }
 
         // ── Transport helper ───────────────────────────────────────────
