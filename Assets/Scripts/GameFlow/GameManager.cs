@@ -238,6 +238,7 @@ public sealed class GameManager : MonoBehaviour
         else if (phase == GamePhase.End && !_roundResolved)
         {
             _roundResolved = true;
+            ClearHeldCardItems();
             Debug.Log($"[GameManager] ProcessPhaseLogic(End): IsServer={IsServer()}, round={game.round != null}");
             if (game.round != null)
             {
@@ -816,7 +817,11 @@ public sealed class GameManager : MonoBehaviour
             switch (actionType)
             {
                 case 0: round.EndTurn(player); break;
-                case 1: round.TakeCard(player); break;
+                case 1: 
+                    round.TakeCard(player);
+                    if (round.HasMatchedBet(player))
+                        round.EndTurn(player);
+                    break;
                 case 2: round.Fold(player); break;
             }
         }

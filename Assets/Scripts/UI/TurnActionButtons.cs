@@ -151,7 +151,11 @@ public class TurnActionButtons : MonoBehaviour
         }
         else
         {
-            TryRunAction("take card", CanTakeCard, (round, localPlayer) => round.TakeCard(localPlayer));
+            TryRunAction("take card", CanTakeCard, (round, localPlayer) => {
+                round.TakeCard(localPlayer);
+                if (round.HasMatchedBet(localPlayer))
+                    round.EndTurn(localPlayer);
+                });
         }
     }
 

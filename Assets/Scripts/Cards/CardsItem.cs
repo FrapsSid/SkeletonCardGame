@@ -6,17 +6,22 @@ public class CardsItem : IItem
 {
     public readonly IReadOnlyList<CardData> Cards;
     private GameObject _cardStackPrefab;
+    private Skeleton? _owner;
 
-    public CardsItem(GameObject cardStackPrefab, IList<CardData> cards)
+    public CardsItem(GameObject cardStackPrefab, IList<CardData> cards, Skeleton? owner = null)
     {
         _cardStackPrefab = cardStackPrefab;
+        _owner = owner;
         Cards = cards.ToList().AsReadOnly();
     }
 
     private GameObject Create()
     {
         var obj = Object.Instantiate(_cardStackPrefab);
-        obj.GetComponent<CardStack>().SetCards(Cards);
+        var stack = obj.GetComponent<CardStack>();
+        if (stack != null)
+            stack.SetOwner(_owner);
+        stack.SetCards(Cards);
         return obj;
     }
 

@@ -62,6 +62,7 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
         subscribedGame.OnCardTaken += OnPlayerCardDealt;
         subscribedGame.OnTableCardsDealt += OnTableCardsDealt;
         subscribedGame.OnRoundEnded += OnRoundEnded;
+        subscribedGame.OnRoundStarted += OnRoundStarted;
 
         foreach (Skeleton player in gameManager.Players)
         {
@@ -89,11 +90,27 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
             subscribedGame.OnCardTaken -= OnPlayerCardDealt;
             subscribedGame.OnTableCardsDealt -= OnTableCardsDealt;
             subscribedGame.OnRoundEnded -= OnRoundEnded;
+            subscribedGame.OnRoundStarted -= OnRoundStarted;
         }
 
 
         subscribedAI.Clear();
         subscribedGame = null;
+    }
+
+    private void OnRoundStarted(CardGameRound round)
+    {
+        if (gameManager == null || gameManager.IsNetworkMode)
+            return;
+
+        var stacks = FindFirstObjectByType<PlayerTableCardStacks>();
+        if (stacks == null || stacks.CardStackPrefab == null)
+            return;
+
+        foreach (AIController ai in subscribedAI)
+        {
+            ai.TryPickupTableCards(stacks);
+        }
     }
 
     private void HandleTurnStarted(Skeleton player)
@@ -123,7 +140,7 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
     }
 
 
-    /// Передает выбранное торговое решение в Player.
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ Player.
     public void ExecuteCardAction(AIResponsePackage response, Skeleton player)
     {
         CardGameRound? round = subscribedGame?.round;
@@ -195,6 +212,19 @@ public sealed class TestAiTurnAdapter : MonoBehaviour
         CardGameRound? round = subscribedGame?.round;
         if (round == null || round.CurrentPlayer != player || gameManager == null || player == gameManager.LocalPlayer)
             yield break;
+
+        var stacks = FindFirstObjectByType<PlayerTableCardStacks>();
+        if (stacks != null)
+        {
+            foreach (AIController ai in subscribedAI)
+            {
+                if (ai.player == player)
+                {
+                    ai.TryPickupTableCards(stacks);
+                    break;
+                }
+            }
+        }
 
         try
         {

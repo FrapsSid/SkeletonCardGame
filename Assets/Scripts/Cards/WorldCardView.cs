@@ -182,6 +182,18 @@ public sealed class WorldCardView : MonoBehaviour
             : cardAtlas.GetFaceSprite(suit, value);
     }
 
+    private Skeleton? GetCardOwner()
+    {
+        PlayerInventoryOwner? inventoryOwner = GetComponentInParent<PlayerInventoryOwner>();
+        if (inventoryOwner != null)
+            return inventoryOwner.OwnerSkeleton;
+        
+        CardStack? stack = GetComponentInParent<CardStack>();
+        if (stack != null)
+            return stack.Owner;
+        
+        return null;
+    }
     private bool ShouldHideCard()
     {
         if (cardAtlas == null || cardAtlas.GetCensoredSprite() == null)
@@ -208,6 +220,23 @@ public sealed class WorldCardView : MonoBehaviour
 
         if (_localCameraController == null)
         {
+            return true;
+        }
+
+        Skeleton? owner = GetCardOwner();
+        Skeleton? localPlayer = _gameManager?.LocalPlayer;
+        if (owner != null && localPlayer != null)
+        {
+            if (owner == localPlayer)
+            {
+                if (IsHeldWithSkullInOtherHand(localBody, _localCameraController))
+                    return false;
+                return !IsVisibleFromSkull(_localCameraController);
+            }
+
+            if (owner.team == localPlayer.team)
+                return false;
+
             return true;
         }
 

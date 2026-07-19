@@ -202,6 +202,7 @@ public sealed class PlayerTableCardStacks : MonoBehaviour
 
         Transform parent = stackParent != null ? stackParent : transform;
         CardStack stack = Instantiate(cardStackPrefab, parent);
+        stack.SetOwner(player);
         stack.name = $"{cardStackPrefab.name} ({RequireTablePositions().GetPlayerIndex(player) + 1})";
         MoveStackToPlayerPosition(player, stack);
         return stack;

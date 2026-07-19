@@ -564,7 +564,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -1928204645961537321, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -1101,7 +1101,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 6552503254863439366, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -2030,7 +2030,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 212370497460711607, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -2237,7 +2237,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 4137455876009383503, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -3023,7 +3023,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 1244776425715413010, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -3824,7 +3824,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 4029899406377155429, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -3893,6 +3893,8 @@ GameObject:
   - component: {fileID: 1585007491355602930}
   - component: {fileID: 8394057630950746613}
   - component: {fileID: 8751840716711117536}
+  - component: {fileID: 5855320225509713378}
+  - component: {fileID: 2143699163910355256}
   m_Layer: 0
   m_Name: AIPlayerPrefab_v2
   m_TagString: Untagged
@@ -3999,6 +4001,33 @@ MonoBehaviour:
   leftLegMeshFolder: {fileID: 8381985578648977729}
   rightLegMeshFolder: {fileID: 2942154269399175176}
   soulMeshFolder: {fileID: 3525464998273709930}
+--- !u!114 &5855320225509713378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4696986240935336398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 260bde8f18d522743b08731600874633, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Inventory
+  maxSlots: 9
+--- !u!114 &2143699163910355256
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4696986240935336398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 763a365230b58be4ab49c2a25093c83f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInventoryOwner
+  leftHand: {fileID: 562191647547842404}
+  rightHand: {fileID: 7568440590736510599}
 --- !u!1 &4952977044967341911
 GameObject:
   m_ObjectHideFlags: 0
@@ -4081,7 +4110,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -3540850596194804248, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -4257,13 +4286,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5144518000385659830}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5469844, y: 0.5469845, z: -0.4481161, w: -0.4481161}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0.01510329, y: 0.96352166, z: 0.18032211, w: 0.19718497}
+  m_LocalPosition: {x: 0.00015, y: 0.00148, z: 0.00091}
   m_LocalScale: {x: 0.009042303, y: 0.009042301, z: 0.009042301}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8790141440067809052}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -20.698, y: -203.602, z: 2.574}
 --- !u!1 &5173443802217051090
 GameObject:
   m_ObjectHideFlags: 0
@@ -5588,7 +5617,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -6140042677033249474, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -5888,7 +5917,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 3447038591770236762, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -6090,7 +6119,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -606419294924500904, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -6260,7 +6289,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -6146871510574282191, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -6399,7 +6428,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -336103021598580943, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -6635,7 +6664,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 4711208715938537054, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -7093,7 +7122,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -7576355592890731366, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -7264,7 +7293,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 196288640622949635, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -7403,7 +7432,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: -6592957211005202357, guid: bc153d53bb2815242b758453dea754a2, type: 3}
   m_Bones:
@@ -7516,13 +7545,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9135299764185905334}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.7810357, y: 0.030437898, z: 0.6129747, w: 0.11540705}
-  m_LocalPosition: {x: -0.000208, y: 0.000943, z: 0.000612}
+  m_LocalRotation: {x: -0.03858499, y: -0.7559663, z: -0.12791115, w: 0.6408315}
+  m_LocalPosition: {x: 0.00071, y: 0.00184, z: 0.00014}
   m_LocalScale: {x: 0.009042302, y: 0.009042302, z: 0.009042301}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5009427114059885490}
-  m_LocalEulerAnglesHint: {x: -12.567, y: -103.14, z: 174.477}
+  m_LocalEulerAnglesHint: {x: -14.055, y: -98.653, z: -6.25}
 --- !u!1 &9177882748729465944
 GameObject:
   m_ObjectHideFlags: 0

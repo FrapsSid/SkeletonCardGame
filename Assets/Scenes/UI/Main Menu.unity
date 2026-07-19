@@ -1707,7 +1707,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Skeleton Card Game
+  m_text: Bet To The Bone
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 523a66223dfa41c43bf25fcd5b17fd40, type: 2}
   m_sharedMaterial: {fileID: -1512927928662302109, guid: 523a66223dfa41c43bf25fcd5b17fd40, type: 2}
@@ -1740,7 +1740,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
@@ -2164,7 +2164,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u2022  Quick game"
+  m_text: "\u2022  Solo game"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 523a66223dfa41c43bf25fcd5b17fd40, type: 2}
   m_sharedMaterial: {fileID: -1512927928662302109, guid: 523a66223dfa41c43bf25fcd5b17fd40, type: 2}
@@ -3597,7 +3597,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u2022  Quick game"
+  m_text: "\u2022  Solo game"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 523a66223dfa41c43bf25fcd5b17fd40, type: 2}
   m_sharedMaterial: {fileID: -1512927928662302109, guid: 523a66223dfa41c43bf25fcd5b17fd40, type: 2}

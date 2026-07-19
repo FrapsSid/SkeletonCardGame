@@ -108,7 +108,7 @@ public sealed class PlayerTableCardStackInteractable : MonoBehaviour, IInteracta
         }
 
         cards.AddRange(tableCards);
-        hand.SetItem(new CardsItem(playerTableCardStacks.CardStackPrefab.gameObject, cards));
+        hand.SetItem(new CardsItem(playerTableCardStacks.CardStackPrefab.gameObject, cards, owner));
     }
 
     private void PlaceCards(PlayerInventoryOwner inventoryOwner, InteractionType interactionType)

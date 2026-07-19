@@ -25,6 +25,7 @@ public sealed class CardStack : MonoBehaviour
     public IReadOnlyList<CardData> Cards => cards;
     public GameObject? CardPrefab => cardPrefab;
     public Vector3 CardStep => cardStep;
+    public Skeleton? Owner { get; private set; }
 
     private void OnEnable()
     {
@@ -45,6 +46,11 @@ public sealed class CardStack : MonoBehaviour
 
         cardPrefab = prefab;
         Refresh();
+    }
+
+    public void SetOwner(Skeleton? owner)
+    {
+        Owner = owner;
     }
 
     public void SetCards(IReadOnlyList<CardData> newCards)

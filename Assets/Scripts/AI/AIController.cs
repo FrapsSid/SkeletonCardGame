@@ -125,6 +125,41 @@ public class AIController
         return generatedHand;
     }
 
+    public void TryPickupTableCards(PlayerTableCardStacks stacks)
+    {
+        if (stacks == null || stacks.CardStackPrefab == null)
+            return;
+        if (player?.InventoryOwner == null)
+            return;
+        if (!stacks.HasCards(player))
+            return;
+
+        PlayerInventoryOwner inventoryOwner = player.InventoryOwner;
+        PlayerHand? targetHand = null;
+
+        if (inventoryOwner.leftHand != null && inventoryOwner.leftHand.Item is CardsItem)
+            targetHand = inventoryOwner.leftHand;
+        else if (inventoryOwner.rightHand != null && inventoryOwner.rightHand.Item is CardsItem)
+            targetHand = inventoryOwner.rightHand;
+        else if (inventoryOwner.leftHand != null && !inventoryOwner.leftHand.HasItem)
+            targetHand = inventoryOwner.leftHand;
+        else if (inventoryOwner.rightHand != null && !inventoryOwner.rightHand.HasItem)
+            targetHand = inventoryOwner.rightHand;
+
+        if (targetHand == null)
+            return; // Нет рук - увы
+
+        if (!stacks.TryTakeCards(player, out List<CardData> tableCards))
+            return;
+
+        var cards = new List<CardData>();
+        if (targetHand.Item is CardsItem heldCards)
+            cards.AddRange(heldCards.Cards);
+        cards.AddRange(tableCards);
+
+        targetHand.SetItem(new CardsItem(stacks.CardStackPrefab.gameObject, cards, player));
+    }
+
 
     public void OnHandCardDealt(CardData card)
     {

@@ -33,8 +33,15 @@ public class BodyPart : MonoBehaviour
             var item = hand?.Item;
             if (hand != null && item != null)
             {
-                ItemUtils.DropItem(item, hand.transform.position, Quaternion.identity);
-                hand.SetItem(null);
+                if (item is CardsItem)
+                {
+                    hand.SetItem(null);
+                }
+                else
+                {
+                    ItemUtils.DropItem(item, hand.transform.position, Quaternion.identity);
+                    hand.SetItem(null);
+                }
             }
 
             if (currentHolder != null)
