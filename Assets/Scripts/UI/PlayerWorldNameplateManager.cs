@@ -117,10 +117,35 @@ public sealed class PlayerWorldNameplateManager : MonoBehaviour
         {
             NameplateView view = GetOrCreateNameplate(player);
             PlayerPresentation presentation = presentationRegistry != null ? presentationRegistry.Resolve(player) : null;
-            view.Text.text = presentation != null ? presentation.DisplayName : string.Empty;
+
+            string displayName = presentation != null ? presentation.DisplayName : string.Empty;
+            string betInfo = ResolveBetInfo(player);
+
+            view.Text.text = string.IsNullOrEmpty(betInfo) 
+                ? displayName 
+                : $"{displayName}\n{betInfo}";
+                
             view.Text.color = presentation != null ? presentation.TeamColor : Color.white;
             view.Root.SetActive(true);
         }
+    }
+
+    private string ResolveBetInfo(Skeleton player)
+    {
+        CardGame game = gameManager != null ? gameManager.CardGame : null;
+        if (game == null || game.round == null)
+            return string.Empty;
+
+        if (!game.round.playerStates.TryGetValue(player, out PlayerBetState state))
+            return string.Empty;
+
+        if (state.hasFolded)
+            return "FOLD";
+
+        int betAmount = state.committedValue;
+        string tierText = state.declaredTarget.HasValue ? state.declaredTarget.Value.ToString() : "-";
+        
+        return $"Bet: {betAmount} | {tierText}";
     }
 
     private void UpdateNameplateTransforms()

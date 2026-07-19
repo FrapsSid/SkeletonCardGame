@@ -27,6 +27,7 @@ public class RoundCombinationDisplayUI : MonoBehaviour
 
     [Header("Highlighting")]
     [SerializeField] private Color satisfiedColor = new Color(0.4f, 1f, 0.4f);
+    [SerializeField] private Color antiTriggeredColor = new Color(1f, 0.3f, 0.3f);
     [SerializeField] private Color defaultColor = Color.white;
 
     private GameManager subscribedManager = null;
@@ -66,7 +67,10 @@ public class RoundCombinationDisplayUI : MonoBehaviour
         SetText(hardText, FormatCombination("Hard", combinations != null ? combinations.hardCombination : null));
         SetText(antiText, FormatCombination("Anti", combinations != null ? combinations.antiCombination : null));
         var personalPool = BuildPersonalPool();
-        ApplyHighlight(easyText, combinations?.easyCombination, personalPool);
+        ApplyHighlight(easyText, combinations?.easyCombination, personalPool, false);
+        ApplyHighlight(mediumText, combinations?.mediumCombination, personalPool, false);
+        ApplyHighlight(hardText, combinations?.hardCombination, personalPool, false);
+        ApplyHighlight(antiText, combinations?.antiCombination, personalPool, true);
     }
     private List<CardWithPool> BuildPersonalPool() {
         var pool = new List<CardWithPool>();
@@ -82,10 +86,13 @@ public class RoundCombinationDisplayUI : MonoBehaviour
         return pool;
     }
 
-    private void ApplyHighlight(TMP_Text text, Combination combination, List<CardWithPool> pool) {
+    private void ApplyHighlight(TMP_Text text, Combination combination, List<CardWithPool> pool, bool isAnti) {
         if (text == null) return;
         bool satisfied = combination != null && combination.IsSatisfied(pool);
-        text.color = satisfied ? satisfiedColor : defaultColor;
+        if (satisfied)
+            text.color = isAnti ? antiTriggeredColor : satisfiedColor;
+        else
+            text.color = defaultColor;
     }
 
     private string FormatCombination(string label, Combination combination)

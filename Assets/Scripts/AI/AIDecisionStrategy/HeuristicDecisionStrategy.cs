@@ -69,6 +69,11 @@ public class HeuristicDecisionStrategy : BaseAIDecisionStrategy
 
         List<StakeAsset> partsToCall = stakeCalculator.SelectBodypartsForTradeAction(1f, snapshot.AvailableAssets, snapshot.CurrentParticipationPrice);
 
+        if (partsToCall == null)
+        {
+            return new AIResponsePackage(AIActionType.Fold);
+        }
+
         int totalCost = partsToCall.Sum(part => part.stakeValue);
 
         // --- УСЛОВИЕ 1: Заявленной комбинации нет ---
