@@ -10,7 +10,7 @@ namespace Combinations.Rules
     /// </summary>
     public class BrokenSeal : TemplateBasedRule
     {
-        public override string Name => "Сломанная Печать";
+        public override string Name => "Broken seal";
 
         protected override PartitionTemplate[] Templates => new[]
         {

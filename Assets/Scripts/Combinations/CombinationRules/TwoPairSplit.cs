@@ -9,7 +9,7 @@ namespace Combinations.Rules
     /// </summary>
     public class TwoPairSplit : TemplateBasedRule
     {
-        public override string Name => "Две Пары С Расколом";
+        public override string Name => "Two Pair Split";
 
         protected override PartitionTemplate[] Templates => new[]
         {

@@ -10,7 +10,7 @@ namespace Combinations.Rules
     /// </summary>
     public class DoubleFork : TemplateBasedRule
     {
-        public override string Name => "Двойная Вилка";
+        public override string Name => "Double Fork";
 
         protected override PartitionTemplate[] Templates => new[]
         {

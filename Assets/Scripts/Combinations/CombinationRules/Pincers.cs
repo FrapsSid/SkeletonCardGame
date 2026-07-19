@@ -10,7 +10,7 @@ namespace Combinations.Rules
     /// </summary>
     public class Pincers : TemplateBasedRule
     {
-        public override string Name => "Клещи";
+        public override string Name => "Pincers";
 
         protected override PartitionTemplate[] Templates => new[]
         {

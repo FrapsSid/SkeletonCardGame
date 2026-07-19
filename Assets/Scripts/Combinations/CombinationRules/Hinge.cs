@@ -10,7 +10,7 @@ namespace Combinations.Rules
     /// </summary>
     public class Hinge : TemplateBasedRule
     {
-        public override string Name => "Шарнир";
+        public override string Name => "Hinge";
 
         protected override PartitionTemplate[] Templates => new[]
         {

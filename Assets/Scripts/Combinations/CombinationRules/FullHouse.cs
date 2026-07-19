@@ -9,7 +9,7 @@ namespace Combinations.Rules
     /// </summary>
     public class FullHouse : TemplateBasedRule
     {
-        public override string Name => "Фулл";
+        public override string Name => "Full House";
 
         protected override PartitionTemplate[] Templates => new[]
         {

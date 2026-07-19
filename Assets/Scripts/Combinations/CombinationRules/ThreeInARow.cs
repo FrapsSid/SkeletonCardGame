@@ -9,7 +9,7 @@ namespace Combinations.Rules
     /// </summary>
     public class ThreeInARow : TemplateBasedRule
     {
-        public override string Name => "Три Подряд";
+        public override string Name => "Three in a row";
 
         protected override PartitionTemplate[] Templates => new[]
         {

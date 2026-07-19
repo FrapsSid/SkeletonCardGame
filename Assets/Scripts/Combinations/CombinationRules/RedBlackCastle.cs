@@ -9,7 +9,7 @@ namespace Combinations.Rules
     /// </summary>
     public class RedBlackCastle : TemplateBasedRule
     {
-        public override string Name => "Красно-Черный Замок";
+        public override string Name => "Red-Black Castle";
 
         protected override PartitionTemplate[] Templates => new[]
         {

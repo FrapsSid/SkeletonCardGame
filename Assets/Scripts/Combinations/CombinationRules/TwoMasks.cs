@@ -10,7 +10,7 @@ namespace Combinations.Rules
     /// </summary>
     public class TwoMasks : TemplateBasedRule
     {
-        public override string Name => "Две Маски";
+        public override string Name => "Two Masks";
 
         protected override PartitionTemplate[] Templates => new[]
         {

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 public class SlideShowManager : MonoBehaviour
 {
@@ -130,14 +131,14 @@ public class SlideShowManager : MonoBehaviour
 
     void DetectSwipe()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
-            touchStartPos = Input.mousePosition;
+            touchStartPos = Mouse.current.position.ReadValue();
         }
 
-        if (Input.GetMouseButtonUp(0))
+        if (Mouse.current != null && Mouse.current.leftButton.wasReleasedThisFrame)
         {
-            Vector2 touchEndPos = Input.mousePosition;
+            Vector2 touchEndPos = Mouse.current.position.ReadValue();
             float swipeDistance = touchEndPos.x - touchStartPos.x;
             RectTransform swipeArea = contentArea != null ? contentArea : transform as RectTransform;
 
@@ -193,9 +194,12 @@ public class SlideShowManager : MonoBehaviour
             return;
         }
 
-        currentIndex = (currentIndex + 1) % panelCount;
-        ShowContent();
-        UpdateDots();
+        if (currentIndex < panelCount - 1)
+        {
+            currentIndex++;
+            ShowContent();
+            UpdateDots();
+        }
     }
 
     void PreviousContent()
@@ -206,9 +210,12 @@ public class SlideShowManager : MonoBehaviour
             return;
         }
 
-        currentIndex = (currentIndex - 1 + panelCount) % panelCount;
-        ShowContent();
-        UpdateDots();
+        if (currentIndex > 0)
+        {
+            currentIndex--;
+            ShowContent();
+            UpdateDots();
+        }
     }
 
     void ShowContent()
@@ -230,6 +237,11 @@ public class SlideShowManager : MonoBehaviour
                 contentPanels[i].SetActive(isActive);
             }
         }
+        if (prevButton != null)
+            prevButton.gameObject.SetActive(currentIndex > 0);
+            
+        if (nextButton != null)
+            nextButton.gameObject.SetActive(currentIndex < panelCount - 1);
 
         UpdateDots();
     }

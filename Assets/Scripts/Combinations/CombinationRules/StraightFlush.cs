@@ -8,7 +8,7 @@ namespace Combinations.Rules
     /// </summary>
     public class StraightFlush : TemplateBasedRule
     {
-        public override string Name => "Стрит-Флеш";
+        public override string Name => "Straight Flush";
 
         protected override PartitionTemplate[] Templates => new[]
         {

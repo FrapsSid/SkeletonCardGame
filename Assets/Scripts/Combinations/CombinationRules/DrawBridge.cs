@@ -10,7 +10,7 @@ namespace Combinations.Rules
     /// </summary>
     public class DrawBridge : TemplateBasedRule
     {
-        public override string Name => "Разводной Мост";
+        public override string Name => "Draw Bridge";
 
         protected override PartitionTemplate[] Templates => new[]
         {

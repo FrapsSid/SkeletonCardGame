@@ -9,7 +9,7 @@ namespace Combinations.Rules
     /// </summary>
     public class TripleStep : TemplateBasedRule
     {
-        public override string Name => "Тройная Ступень";
+        public override string Name => "Triple Step";
 
         protected override PartitionTemplate[] Templates => new[]
         {

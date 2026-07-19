@@ -8,7 +8,7 @@ namespace Combinations.Rules
     /// </summary>
     public class SuitedLadder4 : TemplateBasedRule
     {
-        public override string Name => "Мастная Лестница-4";
+        public override string Name => "Suited Ladder-4";
 
         protected override PartitionTemplate[] Templates => new[]
         {

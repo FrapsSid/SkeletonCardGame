@@ -10,7 +10,7 @@ namespace Combinations.Rules
     /// </summary>
     public class SuitCross : TemplateBasedRule
     {
-        public override string Name => "Перекрест Мастей";
+        public override string Name => "Suit Cross";
 
         protected override PartitionTemplate[] Templates => new[]
         {

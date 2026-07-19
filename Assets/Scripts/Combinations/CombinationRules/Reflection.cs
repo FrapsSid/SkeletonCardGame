@@ -10,7 +10,7 @@ namespace Combinations.Rules
     /// </summary>
     public class Reflection : TemplateBasedRule
     {
-        public override string Name => "Отражение";
+        public override string Name => "Reflection";
 
         protected override PartitionTemplate[] Templates => new[]
         {

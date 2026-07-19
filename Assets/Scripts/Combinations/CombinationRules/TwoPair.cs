@@ -9,7 +9,7 @@ namespace Combinations.Rules
     /// </summary>
     public class TwoPair : TemplateBasedRule
     {
-        public override string Name => "Две Пары";
+        public override string Name => "Two Pair";
 
         protected override PartitionTemplate[] Templates => new[]
         {

@@ -8,7 +8,7 @@ namespace Combinations.Rules
     /// </summary>
     public class FiveInARow : TemplateBasedRule
     {
-        public override string Name => "Пять Подряд";
+        public override string Name => "Five in a row";
 
         protected override PartitionTemplate[] Templates => new[]
         {

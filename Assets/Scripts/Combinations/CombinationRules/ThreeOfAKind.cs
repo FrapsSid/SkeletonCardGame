@@ -8,7 +8,7 @@ namespace Combinations.Rules
     /// </summary>
     public class ThreeOfAKind : TemplateBasedRule
     {
-        public override string Name => "Тройка";
+        public override string Name => "Three of a kind";
 
         protected override PartitionTemplate[] Templates => new[]
         {

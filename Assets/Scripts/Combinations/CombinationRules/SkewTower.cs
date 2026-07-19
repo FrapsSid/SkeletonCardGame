@@ -10,7 +10,7 @@ namespace Combinations.Rules
     /// </summary>
     public class SkewTower : TemplateBasedRule
     {
-        public override string Name => "Косая Башня";
+        public override string Name => "Skew Tower";
 
         protected override PartitionTemplate[] Templates => new[]
         {
