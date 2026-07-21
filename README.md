@@ -41,7 +41,7 @@ Innopolis University.
 
 | Build | Link | Status |
 |---|---|---|
-| Desktop (Windows) — Recommended | https://disk.yandex.ru/d/uV4SagDCX_ZLtA | Stable |
+| Desktop (Windows / MacOS) — Recommended | https://disk.yandex.ru/d/prVDFGyZzSJhRQ | Stable |
 | WebGL (browser) | https://necr0manth.dev/SkeletonCardGame/index.html | Unstable |
 
 Download the desktop build, extract the archive, and run the executable.
